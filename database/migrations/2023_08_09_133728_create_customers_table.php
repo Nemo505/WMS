@@ -8,28 +8,20 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     *
-     * @return void
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('customers', function (Blueprint $table) {
             $table->id();
-            $table->string('user_name');
             $table->string('name');
-
-            $table->string('phone')->nullable();
-            $table->string('password');
-
+            $table->string('phone');
             $table->string('email')->unique()->nullable();
-            $table->timestamp('email_verified_at')->nullable();
-
             $table->string('address')->nullable();
             $table->string('emergency')->nullable();
 
-            $table->integer('created_by')->nullable();
-            $table->integer('updated_by')->nullable();
-            $table->rememberToken();
+            $table->foreignId('created_by','user_id')->references('id')->on('users');
+            $table->foreignId('updated_by','user_id')->nullable()->references('id')->on('users');
+            
             $table->softDeletes();
             $table->timestamps();
         });
@@ -37,11 +29,9 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
-    public function down()
+    public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('customers');
     }
 };
