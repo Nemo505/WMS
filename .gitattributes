@@ -1,6 +1,10 @@
-# Enforce Unix newlines
-* text=auto eol=lf
+* text=auto
 
-# Ignores for analysis is used to produce the language stats bar which displays the languages percentages
-plugins/* linguist-vendored=true
-docs/* linguist-vendored=true
+*.blade.php diff=html
+*.css diff=css
+*.html diff=html
+*.md diff=markdown
+*.php diff=php
+
+/.github export-ignore
+CHANGELOG.md export-ignore
