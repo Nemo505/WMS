@@ -185,7 +185,7 @@
             </button>
           </div>
           <form method="GET" action="{{ route('customers.delete') }}">
-              <div class="modal-body">
+          <div class="modal-body">
                   @csrf
                   <div class="text-center">
                       Do you really want to del this record? This process cannot be undone.
@@ -230,6 +230,7 @@
                     </div>
                     <div class="col-6">
                         <p id="del_sos"></p>
+                        <input type="hidden" name="del_id">
                     </div>
                 </div>
 

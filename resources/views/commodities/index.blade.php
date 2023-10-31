@@ -39,8 +39,6 @@
             <form action="" method="GET">
 
               <div class="row d-flex justify-content-between">
-                <div class="col-6 d-flex justify-content-around">
-
                   <div class="col-4">
                     <div class="form-group">
                       <label for="commodity">Commodity</label>
@@ -62,34 +60,6 @@
 
                     </div>
                   </div>
-
-                  <div class="col-4">
-                    <div class="">
-                      <label for="from_date">From Date</label>
-                      @if(isset($_REQUEST['from_date']) && !empty($_REQUEST['from_date']))
-                        @php
-                            $new_from_date = date('Y-m-d', strtotime($_REQUEST['from_date']));
-                        @endphp
-                        <input type="date" value={{$new_from_date}} name="from_date" class="form-control"  id="from_date">
-                      @else
-                        <input type="date" name="from_date" class="form-control"  id="from_date">
-                      @endif
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div class="form-group">
-                      <label for="to_date">To Date</label>
-                      @if(isset($_REQUEST['to_date']) && !empty($_REQUEST['to_date']))
-                        @php
-                            $new_to_date = date('Y-m-d', strtotime($_REQUEST['to_date']));
-                        @endphp
-                        <input type="date" value={{$new_to_date}} name="to_date" class="form-control"  id="to_date">
-                      @else
-                        <input type="date" name="to_date" class="form-control"  id="to_date">
-                      @endif
-                    </div>
-                  </div>
-                </div>
 
                 <div class="col-6 d-flex justify-content-end">
                     <div class="col-2">

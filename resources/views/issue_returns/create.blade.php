@@ -480,8 +480,8 @@
                       $(`#usage_${i}`).html("Detailed Description");
                       $(`#img_${i}`).attr("src", "/storage/img/code/no-img.jpg");
 
-                      $(`.labelQty`).text(`__Qty`);
-                      $(".isQty").prop({
+                      $($(`label[for=qty_${i}]`)).text(`__Qty`);
+                      $(`#qty_${i}`).prop({
                                       "max" : ` `,
                                       "value" : 0,
                                    });

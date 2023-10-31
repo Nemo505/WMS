@@ -230,6 +230,7 @@
                     </div>
                     <div class="col-6">
                         <p id="del_sos"></p>
+                        <input type="hidden" name="del_id">
                     </div>
                 </div>
 

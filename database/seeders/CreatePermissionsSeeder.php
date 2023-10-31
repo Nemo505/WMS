@@ -644,14 +644,7 @@ class CreatePermissionsSeeder extends Seeder
                 'group' => 'instock',
                 'guard_name' => 'web',
             ]);
-        #barcode
-            DB::table('permissions')->insert([
-                'name' => 'barcode_scanner',
-                'display_name' => 'BarCode Scanner ',
-                'group' => 'barcode',
-                'guard_name' => 'web',
-            ]);
-
+      
     }
     
 }

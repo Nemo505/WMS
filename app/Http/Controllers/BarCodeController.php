@@ -13,19 +13,7 @@ use Auth;
 
 class BarCodeController extends Controller
 {
-    public function index(Request $request)
-    {
-        $check = Auth::user()->hasPermissionTo('barcode_scanner');
-
-        if ($check == false) {
-            return redirect()->back()->with('error','You do not have permission to access this page.');
-        }
-
-        $products = Product::orderbydesc('id') ->get();
-       
-        return view('products/scanner', [ 'products' => $products ]);
-    }
-
+   
     public function store(Request $request)
     {
         $x = substr ($request->barcode,0,-1);
