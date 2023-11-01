@@ -74,25 +74,34 @@ class ShelfNumberController extends Controller
         
         if ($validator->fails())
         {
-            return redirect()->route('shelf_nums.index')->with('error', 'Please try again. The same names are not allowed.');
+            return redirect()->route('shelf_nums.index')->with('error', 'Please try again.');
         }
 
         $c_warehouse_id = Warehouse::find($request->warehouse_id);
 
         if ($c_warehouse_id) {
             $c_shelf_id = Shelf::findOrFail($request->shelf_id);
-            $shelf_num = ShelfNumber::Create([
-                'name' => $request->name,
-                'warehouse_id' => $c_warehouse_id->id,
-                'shelf_id' => $c_shelf_id->id,
-                'created_by' => Auth::user()->id
-            ]);
-            if ($request->remarks) {
-                $shelf_num->update([
-                    'remarks' => $request->remarks,
+            $check_shelf = ShelfNumber::where('name', $request->name)
+                            ->where('warehouse_id', $c_warehouse_id->id)
+                            ->where('shelf_id', $c_shelf_id->id)
+                            ->first();
+            if (!$check_shelf) {
+
+                $shelf_num = ShelfNumber::Create([
+                    'name' => $request->name,
+                    'warehouse_id' => $c_warehouse_id->id,
+                    'shelf_id' => $c_shelf_id->id,
+                    'created_by' => Auth::user()->id
                 ]);
+                if ($request->remarks) {
+                    $shelf_num->update([
+                        'remarks' => $request->remarks,
+                    ]);
+                }
+                return redirect()->route('shelf_nums.index')->with('success', 'Shelf Number was successfully Created');
+            }else{
+                return redirect()->route('shelf_nums.index')->with('error', 'Please try again. The same names are not allowed.');
             }
-           return redirect()->route('shelf_nums.index')->with('success', 'Shelf Number was successfully Created');
         }
         return redirect()->route('shelf_nums.index')->with('error', 'Warehouse Not Found');
         
@@ -128,7 +137,7 @@ class ShelfNumberController extends Controller
 
        
 
-        return redirect()->route('shelf_nums.index')->with('success', 'shelf_num was successfully updated');
+        return redirect()->route('shelf_nums.index')->with('success', 'Shelf Number was successfully updated');
     }
 
     /**

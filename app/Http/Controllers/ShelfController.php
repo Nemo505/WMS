@@ -61,21 +61,28 @@ class ShelfController extends Controller
         
         if ($validator->fails())
         {
-            return redirect()->route('shelves.index')->with('error', 'Please try again. The same names are not allowed.');
+            return redirect()->route('shelves.index')->with('error', 'Please try again.');
         }
         $c_warehouse_id = Warehouse::find($request->warehouse_id);
         if ($c_warehouse_id) {
-            $shelf = Shelf::Create([
-                'name' => $request->name,
-                'warehouse_id' => $c_warehouse_id->id,
-                'created_by' => Auth::user()->id
-            ]);
-            if ($request->remarks) {
-                $shelf->update([
-                    'remarks' => $request->remarks,
+            $check_shelf = Shelf::where('name', $request->name)
+                                ->where('warehouse_id', $c_warehouse_id->id)
+                                ->first();
+            if (!$check_shelf) {
+                $shelf = Shelf::Create([
+                    'name' => $request->name,
+                    'warehouse_id' => $c_warehouse_id->id,
+                    'created_by' => Auth::user()->id
                 ]);
+                if ($request->remarks) {
+                    $shelf->update([
+                        'remarks' => $request->remarks,
+                    ]);
+                }
+                return redirect()->route('shelves.index')->with('success', 'Shelf was created successfully.');
+            }else{
+                return redirect()->route('shelves.index')->with('error', 'Please try again. The same names are not allowed.');
             }
-            return redirect()->route('shelves.index')->with('success', 'shelf was created successfully.');
         }
         return redirect()->route('shelves.index')->with('error', 'Warehouse Not Found');
        
@@ -122,7 +129,7 @@ class ShelfController extends Controller
         ]);
 
       
-        return redirect()->route('shelves.index')->with('success', 'shelf was successfully updated');
+        return redirect()->route('shelves.index')->with('success', 'Shelf was successfully updated');
     }
 
     /**

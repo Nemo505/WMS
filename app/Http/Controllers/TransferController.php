@@ -479,6 +479,7 @@ class TransferController extends Controller
                                     ]);
                                     
         foreach ($newRequest as $key => $value){
+            
             if (str_contains($key, 'transfer_')) {
                 $explode = explode("_",$key);
                 $transfer_id = "transfer_".$explode[1];
@@ -494,13 +495,11 @@ class TransferController extends Controller
                 }
 
                 if (!$request->$qty) {
-
                     $from_transfer_product->update([
                         'transfer_qty' =>  $from_transfer_product->transfer_qty - $transfer->transfer_qty,
                         'balance_qty' => $from_transfer_product->balance_qty + $transfer->transfer_qty,
                     ]);
                     
-
                     $t_history = TransferHistory::create([
                         'from_shelf_number_id' => $transfer->from_shelf_number_id,
                         'new_from_shelf_number_id' => $transfer->from_shelf_number_id,

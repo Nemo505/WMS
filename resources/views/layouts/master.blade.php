@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" style="overflow-x: auto;
-min-width: fit-content;">
+<html lang="en" >
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

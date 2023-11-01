@@ -37,6 +37,7 @@ return new class extends Migration
             $table->foreignId('updated_by','user_id')->nullable()->references('id')->on('users');
             
             $table->text('remarks')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

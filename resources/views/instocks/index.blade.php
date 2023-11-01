@@ -11,9 +11,34 @@
             <form action="" method="GET">
 
                 <div class="row d-flex justify-content-around">
+                    {{-- warehouse --}}
+                    <div class="col-2">
+                        <div class="form-group">
+                            <label for="warehouse_id">Warehouse</label>
+                            <div>
+
+                                <div> <select id='warehouse_id' name="warehouse_id" class=" form-control">
+                                    <option value="" disabled selected>Choose Warehouse</option>
+                                    @foreach ($warehouses as $warehouse)
+                                    @if (isset($_REQUEST['warehouse_id']))
+                                        @if ($warehouse->id == $_REQUEST['warehouse_id'])
+                                            <option value="{{ $warehouse->id }}" selected>{{ $warehouse->name }}</option>
+                                        @else
+                                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                                        @endif
+                                    @else
+                                        <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option> 
+                                    @endif
+                                    @endforeach
+                                    </select> 
+                                </div> 
+                            </div>
+
+                        </div>
+                    </div>
 
                     {{-- Code --}}
-                    <div class="col-2">
+                    <div class="col-1">
                     <div class="form-group">
                         <label for="code_id">Code </label>
                         <div>
@@ -64,28 +89,30 @@
                     
                     {{-- Commodity --}}
                     <div class="col-2">
-                    <div class="form-group">
-                        <label for="commodity_id">Commodity</label>
-                        <div>
+                        <div class="form-group">
+                            <label for="commodity_id">Commodity</label>
+                            <div>
 
-                        <div> <select id='commodity_id' name="commodity_id" class=" form-control">
-                            <option value="" disabled selected>Choose Commodity</option>
-                            @foreach ($commodities as $commodity)
-                            @if (isset($_REQUEST['commodity_id']))
-                                @if ($commodity->id == $_REQUEST['commodity_id'])
-                                    <option value="{{ $commodity->id }}" selected>{{ $commodity->name }}</option>
+                            <div> <select id='commodity_id' name="commodity_id" class=" form-control">
+                                <option value="" disabled selected>Choose Commodity</option>
+                                @foreach ($commodities as $commodity)
+                                @if (isset($_REQUEST['commodity_id']))
+                                    @if ($commodity->id == $_REQUEST['commodity_id'])
+                                        <option value="{{ $commodity->id }}" selected>{{ $commodity->name }}</option>
+                                    @else
+                                        <option value="{{ $commodity->id }}">{{ $commodity->name }}</option>
+                                    @endif
                                 @else
-                                    <option value="{{ $commodity->id }}">{{ $commodity->name }}</option>
+                                    <option value="{{ $commodity->id }}">{{ $commodity->name }}</option> 
                                 @endif
-                            @else
-                                <option value="{{ $commodity->id }}">{{ $commodity->name }}</option> 
-                            @endif
-                            @endforeach
-                            </select> </div> 
-                        </div>
+                                @endforeach
+                                </select> </div> 
+                            </div>
 
+                        </div>
                     </div>
-                    </div>
+
+                    
   
                     {{-- From Date --}}
                     <div class="col-2">
@@ -124,27 +151,20 @@
                         </div>
                     </div>
 
-                    <div class="col-2 d-flex justify-content-around">
-                        <div class="col-4">
+                    <div class="col-1 ">
                         <div class="form-group mt-4">
                             <button class="btn btn-primary" type="submit" name="search">Search</button>
-                        </div>
-                        </div>
-
-                        <div class="col-4">
-                        <div class="form-group mt-4">
-                            <button class="btn btn-primary" type="submit" name="export">Export</button>
-                        </div>
                         </div>
                     </div>
               </form>
           </div>
           <!-- /.card-header -->
-          <div class="card-body">
+          <div class="card-body" style="overflow-x: scroll;"> 
             <table id="example2" class="table table-bordered table-hover">
               <thead>
                 <tr>
                   <th>No</th>
+                  <th>Warehouse</th>
                   <th>Code</th>
                   <th>Brand</th>
                   <th>Commodity</th>
@@ -167,159 +187,227 @@
                     $i = 0;
                 @endphp
                 @foreach ($instocks as $instock)
-                @php
-                  ++$i;
+                    @php
+                    ++$i;
 
-                  $brand = \App\Models\Brand::find($instock->brand_id); 
-                  $commodity = \App\Models\Commodity::find($instock->commodity_id);
+                    $code = \App\Models\Code::find($instock->code_id); 
+                    $brand = \App\Models\Brand::find(optional($code)->brand_id); 
+                    $commodity = \App\Models\Commodity::find(optional($code)->commodity_id);
+                    $warehouse = \App\Models\Warehouse::find($instock->id);
 
-                  #fromdate to today
-                  if (isset($_REQUEST['from_date']) && !empty($_REQUEST['from_date']) && 
-                        isset($_REQUEST['to_date']) && !empty($_REQUEST['to_date']) ) 
-                    {
-                   
-                        $from_date = date('Y-m-d', strtotime($_REQUEST['from_date']));
-                        $to_date = date('Y-m-d', strtotime($_REQUEST['to_date']));
+                    #fromdate to today
+                    if (isset($_REQUEST['from_date']) && !empty($_REQUEST['from_date']) && 
+                            isset($_REQUEST['to_date']) && !empty($_REQUEST['to_date']) ) 
+                        {
+                    
+                            $from_date = date('Y-m-d', strtotime($_REQUEST['from_date']));
+                            $to_date = date('Y-m-d', strtotime($_REQUEST['to_date']));
 
-                        $from = \App\Models\Product::where('code_id', $instock->id)
-                                        ->orderBy('received_date', 'asc')
-                                        ->first();
+                            $from = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                            ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                            ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)   
+                                            ->orderBy('products.received_date', 'asc')
+                                            ->first();
 
 
-                        $received_qty = \App\Models\Product::where('code_id', $instock->id)
-                                        ->whereBetween('received_date', [$from->received_date, $to_date])
-                                        ->sum('received_qty');
+                            $received_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                            ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                            ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                            ->whereBetween('products.received_date', [$from->received_date, $to_date])
+                                            ->sum('products.received_qty');
 
-                        $transfer_in = \App\Models\Product::where('code_id', $instock->id)
-                                            ->whereBetween('received_date', [$from_date, $to_date])
-                                            ->where('type', 'transfer')
-                                            ->sum('received_qty');
+                            $transfer_in = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('products.received_date', [$from_date, $to_date])
+                                                ->where('products.type', 'transfer')
+                                                ->sum('products.received_qty');
 
-                        $transfer_out = \App\Models\Transfer::where('code_id', $instock->id)
-                                            ->whereBetween('transfer_date', [$from_date, $to_date])
-                                            ->sum('transfer_qty');
+                            $transfer_out = \App\Models\Transfer::where('transfers.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'transfers.from_shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('transfers.transfer_date', [$from_date, $to_date])
+                                                ->sum('transfers.transfer_qty');
 
-                        $balance_qty = \App\Models\Product::where('code_id', $instock->id)
-                                            ->whereBetween('received_date', [$from->received_date, $to_date])
-                                            ->sum('balance_qty');
+                            $balance_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('products.received_date', [$from->received_date, $to_date])
+                                                ->sum('products.balance_qty');
 
-                        $mr_qty = \App\Models\Issue::where('code_id', $instock->id)
-                                            ->whereBetween('issue_date', [$from_date, $to_date])
-                                            ->sum('mr_qty');
+                            $mr_qty = \App\Models\Issue::where('issues.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'issues.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('issues.issue_date', [$from_date, $to_date])
+                                                ->sum('issues.mr_qty');
 
-                        $mrr_qty = \App\Models\IssueReturn::where('code_id', $instock->id)
-                                            ->whereBetween('issue_return_date', [$from_date, $to_date])
-                                            ->sum('mrr_qty');
-        
-                        $sup_qty = \App\Models\SupplierReturn::where('code_id', $instock->id)
-                                        ->whereBetween('supplier_return_date', [$from_date, $to_date])                 
-                                        ->sum('supplier_return_qty');
+                            $mrr_qty = \App\Models\IssueReturn::where('issue_returns.code_id', $instock->code_id)
+                                                ->join('products', 'products.id', '=', 'issue_returns.product_id')
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('issue_returns.issue_return_date', [$from_date, $to_date])
+                                                ->sum('issue_returns.mrr_qty');
+            
+                            $sup_qty = \App\Models\SupplierReturn::where('supplier_returns.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'supplier_returns.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('supplier_returns.supplier_return_date', [$from_date, $to_date])                 
+                                                ->sum('supplier_returns.supplier_return_qty');
 
-                        $add_adjust = \App\Models\Adjustment::where('code_id', $instock->id)
-                                            ->whereBetween('adjustment_date', [$from_date, $to_date])
-                                            ->where('type', 'add')
-                                            ->sum('qty');
-        
-                        $sub_adjust = \App\Models\Adjustment::where('code_id', $instock->id)
-                                        ->whereBetween('adjustment_date', [$from_date, $to_date])
-                                        ->where('type', 'sub')
-                                        ->sum('qty');
+                            $add_adjust = \App\Models\Adjustment::where('adjustments.code_id', $instock->code_id)
+                                                ->join('products', 'products.id', '=', 'adjustments.product_id')
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('adjustments.adjustment_date', [$from_date, $to_date])
+                                                ->where('adjustments.type', 'add')
+                                                ->sum('adjustments.qty');
+            
+                            $sub_adjust = \App\Models\Adjustment::where('adjustments.code_id', $instock->code_id)
+                                                ->join('products', 'products.id', '=', 'adjustments.product_id')
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('adjustments.adjustment_date', [$from_date, $to_date])
+                                                ->where('adjustments.type', 'sub')
+                                                ->sum('adjustments.qty');
 
-                  }elseif (isset($_REQUEST['from_date']) && !empty($_REQUEST['from_date'])) {
-                        $from_date = date('Y-m-d', strtotime($_REQUEST['from_date']));
-                        $to_date = date('Y-m-d');
+                    }elseif (isset($_REQUEST['from_date']) && !empty($_REQUEST['from_date'])) {
+                            $from_date = date('Y-m-d', strtotime($_REQUEST['from_date']));
+                            $to_date = date('Y-m-d');
 
-                        $received_qty = \App\Models\Product::where('code_id', $instock->id)
-                                        ->sum('received_qty');
+                            $received_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)   
+                                                ->sum('products.received_qty');
 
-                     
-                        $transfer_in = \App\Models\Product::where('code_id', $instock->id)
-                                            ->whereBetween('received_date', [$from_date, $to_date])
-                                            ->where('type', 'transfer')
-                                            ->sum('received_qty');
+                        
+                            $transfer_in = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('products.received_date', [$from_date, $to_date])
+                                                ->where('products.type', 'transfer')
+                                                ->sum('products.received_qty');
 
-                        $transfer_out = \App\Models\Transfer::where('code_id', $instock->id)
-                                            ->whereBetween('transfer_date', [$from_date, $to_date])
-                                            ->sum('transfer_qty');
+                            $transfer_out = \App\Models\Transfer::where('transfers.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'transfers.from_shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('transfers.transfer_date', [$from_date, $to_date])
+                                                ->sum('transfers.transfer_qty');
 
-                        $balance_qty = \App\Models\Product::where('code_id', $instock->id)
-                                            ->sum('balance_qty');
+                            $balance_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->sum('products.balance_qty');
 
-                        $mr_qty = \App\Models\Issue::where('code_id', $instock->id)
-                                            ->whereBetween('issue_date', [$from_date, $to_date])
-                                            ->sum('mr_qty');
+                            $mr_qty = \App\Models\Issue::where('issues.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'issues.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('issues.issue_date', [$from_date, $to_date])
+                                                ->sum('issues.mr_qty');
 
-                        $mrr_qty = \App\Models\IssueReturn::where('code_id', $instock->id)
-                                            ->whereBetween('issue_return_date', [$from_date, $to_date])
-                                            ->sum('mrr_qty');
-        
-                        $sup_qty = \App\Models\SupplierReturn::where('code_id', $instock->id)
-                                            ->whereBetween('supplier_return_date', [$from_date, $to_date])                 
-                                            ->sum('supplier_return_qty');
+                            $mrr_qty = \App\Models\IssueReturn::where('issue_returns.code_id', $instock->code_id)
+                                                ->join('products', 'products.id', '=', 'issue_returns.product_id')
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('issue_returns.issue_return_date', [$from_date, $to_date])
+                                                ->sum('issue_returns.mrr_qty');
+            
+                            $sup_qty = \App\Models\SupplierReturn::where('supplier_returns.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'supplier_returns.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('supplier_returns.supplier_return_date', [$from_date, $to_date])                 
+                                                ->sum('supplier_returns.supplier_return_qty');
 
-                        $add_adjust = \App\Models\Adjustment::where('code_id', $instock->id)
-                                            ->whereBetween('adjustment_date', [$from_date, $to_date])
-                                            ->where('type', 'add')
-                                            ->sum('qty');
-        
-                        $sub_adjust = \App\Models\Adjustment::where('code_id', $instock->id)
-                                            ->whereBetween('adjustment_date', [$from_date, $to_date])
-                                            ->where('type', 'sub')
-                                            ->sum('qty');
+                            $add_adjust = \App\Models\Adjustment::where('adjustments.code_id', $instock->code_id)
+                                                ->join('products', 'products.id', '=', 'adjustments.product_id')
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('adjustments.adjustment_date', [$from_date, $to_date])
+                                                ->where('adjustments.type', 'add')
+                                                ->sum('adjustments.qty');
+            
+                            $sub_adjust = \App\Models\Adjustment::where('adjustments.code_id', $instock->code_id)
+                                                ->join('products', 'products.id', '=', 'adjustments.product_id')
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->whereBetween('adjustments.adjustment_date', [$from_date, $to_date])
+                                                ->where('adjustments.type', 'sub')
+                                                ->sum('adjustments.qty');
 
-                  }else{
-                        $received_qty = \App\Models\Product::where('code_id', $instock->id)
-                                            ->sum('received_qty');
+                    }else{
+                            $received_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)   
+                                                ->sum('products.received_qty');
 
-                        $transfer_in = \App\Models\Product::where('code_id', $instock->id)
-                                            ->sum('transfer_qty');
+                            $transfer_in = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('products.type', 'transfer')   
+                                                ->sum('products.transfer_qty');
 
-                        $transfer_out = \App\Models\Transfer::where('code_id', $instock->id)
-                                            ->sum('transfer_qty');
+                            $transfer_out = \App\Models\Transfer::where('code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'transfers.from_shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)  
+                                                ->sum('transfers.transfer_qty');
 
-                        $balance_qty = \App\Models\Product::where('code_id', $instock->id)
-                                            ->sum('balance_qty');
+                            $balance_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)   
+                                                ->sum('products.balance_qty');
 
-                        $mrr_qty = \App\Models\Product::where('code_id', $instock->id)
-                                            ->sum('mrr_qty');
+                            $mrr_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)   
+                                                ->sum('products.mrr_qty');
 
-                        $mr_qty = \App\Models\Product::where('code_id', $instock->id)
-                                            ->sum('mr_qty');
-        
-                        $sup_qty = \App\Models\Product::where('code_id', $instock->id)
-                                            ->sum('supplier_return_qty');
-                        $add_adjust = \App\Models\Product::where('code_id', $instock->id)
-                                            ->sum('add_adjustment');
+                            $mr_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)   
+                                                ->sum('products.mr_qty');
+            
+                            $sup_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)   
+                                                ->sum('products.supplier_return_qty');
 
-                        $sub_adjust = \App\Models\Product::where('code_id', $instock->id)
-                                            ->sum('sub_adjustment');
-                  }
+                            $add_adjust = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)                      
+                                                ->sum('products.add_adjustment');
 
-                @endphp
-                  <tr>
-                      <td>{{  $i }}</td>
+                            $sub_adjust = \App\Models\Product::where('products.code_id', $instock->code_id)
+                                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
+                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)   
+                                                ->sum('products.sub_adjustment');
+                    }
 
-                      <td>{{ $instock->name }}</td>
-                      <td>{{ optional($brand)->name }}</td>
-                      <td>{{ optional($commodity)->name }}</td>
+                    @endphp
+                    <tr>
+                        <td>{{  $i }}</td>
 
-                      <td>{{ $received_qty }}</td>
-                      <td>{{ $transfer_in }}</td>
-                      <td>{{ $transfer_out }}</td>
-                      <td>{{ $balance_qty }}</td>
+                        <td>{{ $warehouse->name }}</td>
+                        <td>{{ $code->name }}</td>
+                        <td>{{ optional($brand)->name }}</td>
+                        <td>{{ optional($commodity)->name }}</td>
 
-                      <td>{{ $mr_qty }}</td>
-                      <td>{{ $mrr_qty }}</td>
-                      <td>{{ $sup_qty }}</td>
-                      <td>{{ $add_adjust }}</td>
-                      <td>{{ $sub_adjust }}</td>
-                  </tr>
+                        <td>{{ $received_qty }}</td>
+                        <td>{{ $transfer_in }}</td>
+                        <td>{{ $transfer_out }}</td>
+                        <td>{{ $balance_qty }}</td>
+
+                        <td>{{ $mr_qty }}</td>
+                        <td>{{ $mrr_qty }}</td>
+                        <td>{{ $sup_qty }}</td>
+                        <td>{{ $add_adjust }}</td>
+                        <td>{{ $sub_adjust }}</td>
+                    </tr>
                 @endforeach
               </tbody>
 
               <tfoot>
               <tr>
                 <th>No</th>
+                <th>Warehouse</th>
                 <th>Code</th>
                 <th>Brand</th>
                 <th>Commodity</th>
@@ -364,6 +452,9 @@
   });
   $( "#commodity_id" ).ready(function() {
       $("#commodity_id").select2();
+  });
+  $( "#warehouse_id" ).ready(function() {
+      $("#warehouse_id").select2();
   });
 </script>
 
