@@ -24,15 +24,18 @@
                             <select class="form-control select2" required name="user" id="user">
                                 <option disabled selected>Select</option>
                                 @foreach ($users as $user)
-                                    @if (isset($_REQUEST['user_id']))
-                                        @if ($user->id == $_REQUEST['user_id'])
-                                            <option selected value="{{ $user->id }}">{{$user->name}}</option>
+                                    @if (!$user->hasRole('admin'))
+                                        
+                                        @if (isset($_REQUEST['user_id']))
+                                            @if ($user->id == $_REQUEST['user_id'])
+                                                <option selected value="{{ $user->id }}">{{$user->name}}</option>
+                                            @else
+                                                <option value="{{ $user->id }}">{{$user->name}}</option>
+                                            @endif
                                         @else
-                                            <option value="{{ $user->id }}">{{$user->name}}</option>
+                                            <option value="{{ $user->id}}">{{ $user->name}}</option>
                                         @endif
-                                    @else
-                                        <option value="{{ $user->id}}">{{ $user->name}}</option>
-                                    @endif
+                                    @endif 
                                 @endforeach
                             </select>
                         </div>

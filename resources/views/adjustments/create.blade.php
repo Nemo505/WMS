@@ -189,7 +189,7 @@
                   <div class="col-1">
                     <div class="form-group">
                       <label for="type_{{$i}}">Add or Sub<span style="color: red">*</span> </label> 
-                      <select id='type_{{$i}}' required name="type_{{$i}}" class=" form-control">
+                      <select id='type_{{$i}}' required name="type_{{$i}}" class=" form-control getBalance">
                         <option value="" disabled selected>Choose Type</option>
                         <option value="add"> add </option>
                         <option value="sub"> sub </option>
@@ -647,6 +647,13 @@
                   $(".getQty").empty();
                   $(".getQty").append(
                     '<option value="" >Choose Voucher</option>'
+                    );
+
+                  $(".getBalance").empty();
+                  $(".getBalance").append(
+                    `<option value="" disabled selected>Choose Type</option>
+                        <option value="add"> add </option>
+                        <option value="sub"> sub </option>`
                     );
                   $(".isUsage").text("Detailed Description");
                   $(`.isImg`).attr("src", `/storage/img/code/no-img.jpg`);

@@ -208,8 +208,7 @@
                                             ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)   
                                             ->orderBy('products.received_date', 'asc')
                                             ->first();
-
-
+                           
                             $received_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
                                             ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id') 
                                             ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)

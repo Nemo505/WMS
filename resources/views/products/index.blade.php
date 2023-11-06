@@ -126,13 +126,13 @@
                           <option value="" disabled selected>Choose Code</option>
                           @foreach ($codes as $code)
                             @if (isset($_REQUEST['code_id']))
-                                @if ($code->id == $_REQUEST['code_id'])
-                                    <option value="{{ $code->id }}" selected>{{ $code->name }}</option>
+                                @if ($code->name == $_REQUEST['code_id'])
+                                    <option value="{{ $code->name }}" selected>{{ $code->name }}</option>
                                 @else
-                                    <option value="{{ $code->id }}">{{ $code->name }}</option>
+                                    <option value="{{ $code->name }}">{{ $code->name }}</option>
                                 @endif
                             @else
-                                <option value="{{ $code->id }}">{{ $code->name }}</option> 
+                                <option value="{{ $code->name }}">{{ $code->name }}</option> 
                             @endif
                           @endforeach
                           </select> </div> 

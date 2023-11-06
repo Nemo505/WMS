@@ -64,7 +64,13 @@ class ProductController extends Controller
         })
         ->where(function ($query) use ($request){
             if($request->code_id){
-                return $query->where('code_id', $request->code_id);
+                $codes = Code::where('name',$request->code_id)->get();
+
+                $code_items = [];
+                foreach($codes as $code){
+                    array_push($code_items,$code->id);
+                }
+                return $query->whereIn('code_id', $code_items);
             }
         })
         ->where(function ($query) use ($request){
