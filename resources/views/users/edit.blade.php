@@ -53,8 +53,8 @@
                     <label for="password">Password update:  <span style="color: rgb(19, 124, 89)">(Choose or Keep blank.)</span></label> 
                     <input type="password" name="password" class="form-control" 
                            id="password" 
-                           pattern=".{8}" 
-                           title="8 characters">
+                          pattern=".{6,8}" 
+                          title="6 to 8 characters">
                   </div>
                 </div>              
                 <div class="col-6">

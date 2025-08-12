@@ -52,8 +52,8 @@
                     <label for="password">Password<span style="color: red">*</span> </label> 
                     <input type="password" name="password" required class="form-control" 
                           required id="password" 
-                          pattern=".{8}" 
-                          title="8 characters"
+                          pattern=".{6,8}" 
+                          title="6 to 8 characters"
                           placeholder="Enter Password">
                   </div>
                 </div>              

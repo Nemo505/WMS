@@ -79,7 +79,7 @@ class ShelfNumberController extends Controller
         
         if ($validator->fails())
         {
-            return redirect()->route('shelf_nums.index')->with('error', 'Please try again.');
+            return redirect()->route('shelf_nums.index')->with('error', 'Please try again. The same names are not allowed.');
         }
 
         $c_warehouse_id = Warehouse::find($request->warehouse_id);
