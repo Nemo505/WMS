@@ -5,7 +5,7 @@
       <ul class="navbar-nav ">
         
         <li class="nav-item d-none d-sm-inline-block logoContent">
-          <a href="" class="nav-link">HanSeinThant</a>
+          <a href="" class="nav-link">Kazue</a>
         </li>
       </ul>
   

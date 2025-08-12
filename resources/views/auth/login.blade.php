@@ -6,7 +6,7 @@
         <div class="col-md-8">
             <div class="card ">
                 <div class="text-center mt-4">
-                    <h4>{{ __('HanSeinThant') }}</h4>
+                    <h4>{{ __('Kazue(WMS)') }}</h4>
                     <p>Sign in</p>
                 </div>
 

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('phone');
             $table->string('email')->nullable();
             $table->string('address');
-            $table->string('emergency');
+            $table->string('emergency')->nullable();
 
             $table->foreignId('created_by','user_id')->references('id')->on('users');
             $table->foreignId('updated_by','user_id')->nullable()->references('id')->on('users');
