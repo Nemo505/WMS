@@ -12,6 +12,7 @@ use App\Imports\CommoditiesImport;
 use Redirect;
 use Auth;
 use Validator;
+use DB;
 
 class CommodityController extends Controller
 {
@@ -130,17 +131,17 @@ class CommodityController extends Controller
      */
     public function destroy(Request $request)
     {
-        $commodity = Commodity::findOrFail($request->del_id);
+        $commodity = Commodity::find($request->del_id);
         if($commodity){
             $check_code = Code::where('commodity_id', $commodity->id)->first();
             if ($check_code) {
-                return Redirect::route('commoditys.index')->with('error'," Please note that commodity containing active Codes cannot be deleted!");
+                return Redirect::route('commodities.index')->with('error'," Please note that commodity containing active Codes cannot be deleted!");
             } else {
                 $commodity->delete();
-                return Redirect::route('commoditys.index')->with('success','Successfully Deleted a Shelf Number');          
+                return Redirect::route('commodities.index')->with('success','Successfully Deleted a Shelf Number');          
             }         
         }else{
-            return Redirect::route('commoditys.index')->with('error','Shelf Number Not Found');
+            return Redirect::route('commodities.index')->with('error','Shelf Number Not Found');
         }
     }
 
@@ -176,19 +177,35 @@ class CommodityController extends Controller
     }
 
     public function import(Request $request){
-        $arrays = Excel::toArray(new CommoditiesImport, $request->file('commodities'));
-      
-        foreach ($arrays[0] as $row){
-            $commodity =  Commodity::where('name',  $row['commodity_name'])->first();
-
-            if(!$commodity){
-                Commodity::create([
-                    'name' => $row['commodity_name'],
-                    'created_by'=> Auth::user()->id,
-                ]);
+        try {
+            DB::beginTransaction();
+            $arrays = Excel::toArray(new CommoditiesImport, $request->file('commodities'));
+          
+            foreach ($arrays[0] as $rowNumber => $row) {
+                $commodityName = trim(preg_replace('/\s+/', ' ', $row['commodity_name']));
+                if (!empty($row['commodity_name'])) {
+        
+                    $commodity = Commodity::where('name', $commodityName)->first();
+        
+                    if(!$commodity){
+                        Commodity::create([
+                            'name' => $commodityName,
+                            'created_by' => Auth::user()->id,
+                        ]);
+                    }else {
+                            return redirect()->route('commodities.index')->with('error', "Commodity '$commodityName' already exists. No changes were made.");
+                        }
+                }else {
+                        return redirect()->route('commodities.index')->with('error', "Row number " . ($rowNumber + 2) . " is empty. No changes were made.");
+                    }
             }
+        
+        DB::commit();
+            return redirect()->route('commodities.index')->with('success', 'Commodity Imported successfully');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'An error occurred during import. No changes were made.');
         }
-        return redirect()->route('commodities.index')->with('success', 'Commodity Imported successfully');
 
     }
 

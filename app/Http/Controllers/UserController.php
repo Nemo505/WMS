@@ -63,7 +63,6 @@ class UserController extends Controller
             'user_name' => ['required', 'string', 'max:255','unique:users'],
             'phone' => 'required|unique:users|max:255',
             'address' => 'required',
-            'emergency' => 'required',
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
         
@@ -81,12 +80,16 @@ class UserController extends Controller
             'phone' => $request->phone,
             'address' => $request->address,
             'password' => Hash::make($request->password),
-            'emergency' => $request->emergency,
             'created_by' => Auth::user()->id,
         ]);
         if ($request->email) {
             $user->update([
                 'email' => $request->email,
+            ]);
+        }
+        if ($request->emergency) {
+            $user->update([
+                'emergency' => $request->emergency,
             ]);
         }
         return redirect()->route('users.index')->with('success', 'User was created successfully.');
@@ -115,7 +118,6 @@ class UserController extends Controller
             'name' => 'required',
             'phone' => 'required',
             'address' => 'required',
-            'emergency' => 'required',
             'id' => 'required',
             'user_name' => ['required', 'string', 'max:255'],
         ]);
@@ -142,10 +144,20 @@ class UserController extends Controller
             'user_name' => $request->user_name,
             'phone' => $request->phone,
             'address' => $request->address,
-            'emergency' => $request->emergency,
-            'email' => $request->email,
             'updated_by' => Auth::user()->id,
         ]);
+        
+         if ($request->email) {
+            $user->update([
+                'email' => $request->email,
+            ]);
+        }
+        if ($request->emergency) {
+            $user->update([
+                'emergency' => $request->emergency,
+            ]);
+        }
+        
         if (Auth::user()->id == $request->id) {
             return Redirect::back()->withInput()
                                  ->with('success', 'User was successfully updated');
@@ -160,7 +172,7 @@ class UserController extends Controller
      */
     public function destroy(Request $request)
     {
-       $user = user::findOrFail($request->id);
+       $user = user::findOrFail($request->del_id);
         if($user){
             $user->delete();
             return Redirect::route('users.index')->with('success','Successfully Deleted a user');          

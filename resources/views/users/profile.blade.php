@@ -120,7 +120,7 @@
                         <tr>
                             <th scope="row">Emgergency</th>
                             <td>
-                                <input type="text" disabled class="form-control" name="emergency" required value="{{$user->emergency}}">
+                                <input type="text" disabled class="form-control" name="emergency"  value="{{$user->emergency}}">
                             </td>
                         </tr>
                         <tr>

@@ -12,6 +12,7 @@ use App\Imports\BrandsImport;
 use Redirect;
 use Auth;
 use Validator;
+use DB;
 
 class BrandController extends Controller
 {
@@ -149,21 +150,40 @@ class BrandController extends Controller
     }
 
     public function import(Request $request){
-        $arrays = Excel::toArray(new BrandsImport, $request->file('brands'));
-      
-        foreach ($arrays[0] as $row){
-            $brand =  Brand::where('name',  $row['brand_name'])->first();
-
-            if(!$brand){
-                Brand::create([
-                    'name' => $row['brand_name'],
-                    'created_by'=> Auth::user()->id,
-                ]);
+        try {
+            DB::beginTransaction();
+    
+            $arrays = Excel::toArray(new BrandsImport, $request->file('brands'));
+    
+            foreach ($arrays[0] as $rowNumber => $row) {
+                $brandName = trim(preg_replace('/\s+/', ' ', $row['brand_name']));
+        
+                // Check if 'brand_name' is not null or empty after trimming
+                if (!empty($brandName)) {
+                    $brand = Brand::where('name', $brandName)->first();
+        
+                    if (!$brand) {
+                        Brand::create([
+                            'name' => $brandName,
+                            'created_by' => Auth::user()->id,
+                        ]);
+                    } else {
+                        return redirect()->route('brands.index')->with('error', "Brand '$brandName' already exists. No changes were made.");
+                    }
+                } else {
+                    return redirect()->route('brands.index')->with('error', "Row number " . ($rowNumber + 2) . " is empty. No changes were made.");
+                }
             }
+    
+            DB::commit();
+            return redirect()->route('brands.index')->with('success', 'Brands Imported successfully');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'An error occurred during import. No changes were made.');
         }
-        return redirect()->route('brands.index')->with('success', 'Brands Imported successfully');
-
     }
+    
+    
 
     public function sample(){
         $path = public_path(). "/excel/samples/Brands.xlsx";

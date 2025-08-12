@@ -20,6 +20,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SupplierReturnsExport;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\DB;
 use Redirect;
 use Auth;
 use Validator;
@@ -200,80 +201,82 @@ class SupplierReturnController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(),[
-            "warehouse_id" => 'required',
-            "shelfnum_id" => 'required',
-            "date" => 'required',
-            "sup_no" => 'required',
-            "supplier" => 'required',
-        ]); 
-
-        if ($validator->fails())
-        {
-            return Redirect::back()->withInput()
-                                    ->with('error', 'Please try again.');
-        }
-
-        $supplier = Supplier::where('name',$request->supplier)->first();
-       
-        $newRequest = $request->except(['_token',
-                                    'warehouse_id',
-                                    'shelfnum_id',
-                                    'sup_no',
-                                    'date',
-                                    'supplier',
-                                ]);
-
-        foreach ($newRequest as $key => $value){
-            if (str_contains($key, 'code_')) {
-                $explode = explode("_",$key);
-                $code = "code_".$explode[1];
-                $brand = "brand_".$explode[1];
-                $commodity = "commodity_".$explode[1];
-                $qty = "qty_".$explode[1];
-                $remarks = "remark_".$explode[1];
-                $vr_no = "vr_no_".$explode[1];
-
-                #for new 
-                $product = Product::find($request->$vr_no);
-                
-                if ($product) {
-                    # same sup no, product exist?
-                    $check_sup_returns = SupplierReturn::where('product_id', $product->id)
-                                        ->where('supplier_return_no', $request->sup_no)
-                                        ->where('shelf_number_id', $request->shelfnum_id)
-                                        ->where('supplier_id', $supplier->id)
-                                        ->first();
-                                        // dd($check_sup_returns, $product->id, $request->sup_no, $supplier->id);
-
-                    if (!$check_sup_returns) {
-                        
-                        if ($product->balance_qty >= $request->$qty) {
-                            # code...
-                            $sup_return = SupplierReturn::create([
-                                'supplier_return_no'=> $request->sup_no,
-                                'supplier_return_qty'=> $request->$qty,
-                                'shelf_number_id'=> $request->shelfnum_id,
-                                'supplier_return_date'=> $request->date,
-                                
-                                'remarks' => $request->$remarks,
-                                'product_id' => $product->id,
-                                'code_id' => $product->code_id,
-        
-                                'created_by'=> Auth::user()->id,
-                                'supplier_id'=> $supplier->id,
-                            ]);
-                            $product->update([
-                                'balance_qty' => $product->balance_qty - $request->$qty,
-                                'supplier_return_qty' => $product->supplier_return_qty + $request->$qty,
-                            ]);
+        DB::transaction(function () use ($request)  {
+            $validator = Validator::make($request->all(),[
+                "warehouse_id" => 'required',
+                "shelfnum_id" => 'required',
+                "date" => 'required',
+                "sup_no" => 'required',
+                "supplier" => 'required',
+            ]); 
     
-                        }
-                    }
+            if ($validator->fails())
+            {
+                return Redirect::back()->withInput()
+                                        ->with('error', 'Please try again.');
+            }
+    
+            $supplier = Supplier::where('name',$request->supplier)->first();
+           
+            $newRequest = $request->except(['_token',
+                                        'warehouse_id',
+                                        'shelfnum_id',
+                                        'sup_no',
+                                        'date',
+                                        'supplier',
+                                    ]);
+    
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'code_')) {
+                    $explode = explode("_",$key);
+                    $code = "code_".$explode[1];
+                    $brand = "brand_".$explode[1];
+                    $commodity = "commodity_".$explode[1];
+                    $qty = "qty_".$explode[1];
+                    $remarks = "remark_".$explode[1];
+                    $vr_no = "vr_no_".$explode[1];
+    
+                    #for new 
+                    $product = Product::find($request->$vr_no);
                     
+                    if ($product) {
+                        # same sup no, product exist?
+                        $check_sup_returns = SupplierReturn::where('product_id', $product->id)
+                                            ->where('supplier_return_no', $request->sup_no)
+                                            ->where('shelf_number_id', $request->shelfnum_id)
+                                            ->where('supplier_id', $supplier->id)
+                                            ->first();
+                                            // dd($check_sup_returns, $product->id, $request->sup_no, $supplier->id);
+    
+                        if (!$check_sup_returns) {
+                            
+                            if ($product->balance_qty >= $request->$qty) {
+                                # code...
+                                $sup_return = SupplierReturn::create([
+                                    'supplier_return_no'=> $request->sup_no,
+                                    'supplier_return_qty'=> $request->$qty,
+                                    'shelf_number_id'=> $request->shelfnum_id,
+                                    'supplier_return_date'=> $request->date,
+                                    
+                                    'remarks' => $request->$remarks,
+                                    'product_id' => $product->id,
+                                    'code_id' => $product->code_id,
+            
+                                    'created_by'=> Auth::user()->id,
+                                    'supplier_id'=> $supplier->id,
+                                ]);
+                                $product->update([
+                                    'balance_qty' => $product->balance_qty - $request->$qty,
+                                    'supplier_return_qty' => $product->supplier_return_qty + $request->$qty,
+                                ]);
+        
+                            }
+                        }
+                        
+                    }
                 }
             }
-        }
+        });
         return redirect()->route('supplier_returns.index')->with('success', 'New Supplier Return was created successfully');
 
     }
@@ -375,242 +378,243 @@ class SupplierReturnController extends Controller
      */
     public function update(Request $request)
     {
-        $validator = Validator::make($request->all(),[
-            "warehouse_id" => 'required',
-            "shelfnum_id" => 'required',
-            "date" => 'required',
-            "sup_no" => 'required',
-            "supplier" => 'required',
-        ]);
-
-        if ($validator->fails())
-        {
-            return Redirect::back()->withInput()
-                            ->with('error', 'Please try again.');
-        }
-
-        $old_sup_return = SupplierReturn::find($request->old_sup_return);
-        $supplier = Supplier::where('name',$request->supplier)->first();
-
-        $newRequest = $request->except(['_token',
-                                        'warehouse_id',
-                                        'shelfnum_id',
-                                        'date',
-                                        'supplier',
-                                        'sup_no',
-                                        'old_sup_return'
-                                    ]);
-        foreach ($newRequest as $key => $value){
-            if (str_contains($key, 'supreturn_')) {
-                $explode = explode("_",$key);
-                $qty = "qty_".$explode[1];
-                $sup_return_id = "supreturn_".$explode[1];
-
-                #sup_return_id
-                $sup_return = SupplierReturn::find($request->$sup_return_id);
-
-                if ($sup_return) {
-
-                    $sup_return_product = Product::find($sup_return->product_id);
-                    if ($sup_return_product){
-
-                        $sup_return_code = Code::find($sup_return_product->code_id);
-                    }
-                }
-                if (!$request->$qty) {
-
-                    $sup_return_history = SupplierReturnHistory::create([
-
-                        'shelf_number_id' => $sup_return->shelf_number_id,
-                        'new_shelf_number_id' => $sup_return->shelf_number_id,
-
-                        'product_id' => $sup_return->product_id,
-                        'new_product_id' => $sup_return->product_id,
-
-                        'code_id' => $sup_return->code_id,
-                        'new_code_id' => $sup_return->code_id,
-
-                        'supplier_return_no' => $sup_return->supplier_return_no,
-                        'new_supplier_return_no' => $sup_return->supplier_return_no,
-
-                        'supplier_return_qty' => $sup_return->supplier_return_qty,
-                        'new_supplier_return_qty' => $sup_return->supplier_return_qty,
-                        
-                        'supplier_id' => $sup_return->supplier_id,
-                        'new_supplier_id' => $sup_return->supplier_id,
-
-                        'supplier_return_date' => $sup_return->supplier_return_date,
-                        'new_supplier_return_date' => $sup_return->supplier_return_date,
-            
-                        'remarks' => $sup_return->remarks,
-                        'new_remarks' => $sup_return->remarks,
-            
-                        'method' => "delete",
-                        'created_by' => Auth::user()->id,
-                    ]);
-
-                    $sup_return_product->update([
-                        'supplier_return_qty' =>  $sup_return_product->supplier_return_qty - $sup_return->supplier_return_qty,
-                        'balance_qty' => $sup_return_product->balance_qty + $sup_return->supplier_return_qty,
-                    ]);
-
-                    $sup_return->delete();
-                }
-                
+        DB::transaction(function () use ($request)  {
+            $validator = Validator::make($request->all(),[
+                "warehouse_id" => 'required',
+                "shelfnum_id" => 'required',
+                "date" => 'required',
+                "sup_no" => 'required',
+                "supplier" => 'required',
+            ]);
+    
+            if ($validator->fails())
+            {
+                return Redirect::back()->withInput()
+                                ->with('error', 'Please try again.');
             }
-        }
-
-
-        foreach ($newRequest as $key => $value){
-            if (str_contains($key, 'qty_')) {
-                $explode = explode("_",$key);
-                $code = "code_".$explode[1];
-                $brand = "brand_".$explode[1];
-                $commodity = "commodity_".$explode[1];
-                $qty = "qty_".$explode[1];
-                $remarks = "remark_".$explode[1];
-                $vr_no = "vr_no_".$explode[1];
-                $sup_return_id = "supreturn_".$explode[1];
-
-                #sup_return_id
-                $sup_return = SupplierReturn::find($request->$sup_return_id);
-                $new_product = Product::find($request->$vr_no);
-
-                if ($sup_return) {
-
-                    $sup_return_product = Product::find($sup_return->product_id);
-                    $sup_return_code = Code::find($sup_return->code_id);
-                    
-                    if ($sup_return_product && $new_product){
-                        #check if changed product in existing sup_return 
-                        $check_return = SupplierReturn::where('supplier_return_no', $request->supplier_return_no)
-                                            ->where('product_id', $new_product->id)
-                                            ->where('id', '!=' , $sup_return->id)
-                                            ->first();
-
+    
+            $old_sup_return = SupplierReturn::find($request->old_sup_return);
+            $supplier = Supplier::where('name',$request->supplier)->first();
+    
+            $newRequest = $request->except(['_token',
+                                            'warehouse_id',
+                                            'shelfnum_id',
+                                            'date',
+                                            'supplier',
+                                            'sup_no',
+                                            'old_sup_return'
+                                        ]);
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'supreturn_')) {
+                    $explode = explode("_",$key);
+                    $qty = "qty_".$explode[1];
+                    $sup_return_id = "supreturn_".$explode[1];
+    
+                    #sup_return_id
+                    $sup_return = SupplierReturn::find($request->$sup_return_id);
+    
+                    if ($sup_return) {
+    
+                        $sup_return_product = Product::find($sup_return->product_id);
+                        if ($sup_return_product){
+    
+                            $sup_return_code = Code::find($sup_return_product->code_id);
+                        }
                     }
-                }
-
-
-                #update return product
-                if ($sup_return && $request->$code ) {
-                    if ($request->shelfnum_id != $sup_return->shelf_number_id || 
-                        $request->sup_no != $sup_return->supplier_return_no || 
-                        $request->date != $sup_return->supplier_return_date || 
-                        $supplier->id != $sup_return->supplier_id || 
-
-                        $request->$vr_no != $sup_return->product_id || 
-                        $request->$code != $sup_return_code->name || 
-                        $request->$qty != $sup_return->supplier_return_qty) {
-
-                            $sup_return_history = SupplierReturnHistory::create([
-
-                                'shelf_number_id' => $sup_return->shelf_number_id,
-                                'new_shelf_number_id' => $request->shelfnum_id,
-        
-                                'product_id' => $sup_return->product_id,
-                                'new_product_id' => $request->$vr_no,
-        
-                                'code_id' => $sup_return->code_id,
-                                'new_code_id' => $new_product->code_id,
-        
-                                'supplier_return_no' => $sup_return->supplier_return_no,
-                                'new_supplier_return_no' => $request->sup_no,
-        
-                                'supplier_return_qty' => $sup_return->supplier_return_qty,
-                                'new_supplier_return_qty' => $request->$qty,
-                                
-                                'supplier_id' => $sup_return->supplier_id,
-                                'new_supplier_id' => $supplier->id,
-        
-                                'supplier_return_date' => $sup_return->supplier_return_date,
-                                'new_supplier_return_date' => $request->date,
-                    
-                                'remarks' => $sup_return->remarks,
-                                'new_remarks' => $request->$remarks,
-                    
-                                'method' => "update",
-                                'created_by' => Auth::user()->id,
-                            ]);
-                        
-                    }
-
-                    $sup_return_product->update([
-                        'supplier_return_qty' =>  $sup_return_product->supplier_return_qty - $sup_return->supplier_return_qty,
-                        'balance_qty' => $sup_return_product->balance_qty + $sup_return->supplier_return_qty,
-                    ]);
-
-                    #if same product id, update OR reduce to old- add to new
-                    if ($sup_return->product_id == $request->$vr_no) {
-
-                        $sup_return_product->update([
-                            'supplier_return_qty' =>  $sup_return_product->supplier_return_qty + $request->$qty,
-                            'balance_qty' => $sup_return_product->balance_qty - $request->$qty,
-                        ]);
-
-                    }else{
-                        $new_product->update([
-                            'supplier_return_qty' =>  $new_product->supplier_return_qty + $request->$qty,
-                            'balance_qty' => $new_product->balance_qty - $request->$qty,
-                        ]);
-                    }
-
-                    $sup_return->update([
-                        'supplier_return_no'=> $request->sup_no,
-                        'supplier_return_qty'=> $request->$qty,
-                        'shelf_number_id'=> $request->shelfnum_id,
-                        'supplier_return_date'=> $request->date,
-                        
-                        'remarks' => $request->$remarks,
-                        'product_id' => $new_product->id,
-                        'code_id' => $new_product->code_id,
-
-                        'created_by'=> Auth::user()->id,
-                        'supplier_id'=>  $supplier->id,
-                    ]);
-                
-                }else{
-                    #new return update
-                    if ($new_product) {
-                        # same return no, product exist?
-                        $check_sup_returns = SupplierReturn::where('product_id', $new_product->id)
-                                            ->where('supplier_return_no', $request->sup_no)
-                                            ->where('shelf_number_id', $request->shelfnum_id)
-                                            ->where('supplier_id', $supplier->id)
-                                            ->first();
-                        if (!$check_sup_returns) {
-                           
-                            $sup_return = SupplierReturn::create([
-                                'supplier_return_no'=> $request->sup_no,
-                                'supplier_return_qty'=> $request->$qty,
-                                'shelf_number_id'=> $request->shelfnum_id,
-                                'supplier_return_date'=> $request->date,
-                                
-                                'remarks' => $request->$remarks,
-                                'product_id' => $new_product->id,
-                                'code_id' => $new_product->code_id,
-        
-                                'created_by'=> Auth::user()->id,
-                                'supplier_id'=>  $supplier->id,
-                            ]);
+                    if (!$request->$qty) {
+    
+                        $sup_return_history = SupplierReturnHistory::create([
+    
+                            'shelf_number_id' => $sup_return->shelf_number_id,
+                            'new_shelf_number_id' => $sup_return->shelf_number_id,
+    
+                            'product_id' => $sup_return->product_id,
+                            'new_product_id' => $sup_return->product_id,
+    
+                            'code_id' => $sup_return->code_id,
+                            'new_code_id' => $sup_return->code_id,
+    
+                            'supplier_return_no' => $sup_return->supplier_return_no,
+                            'new_supplier_return_no' => $sup_return->supplier_return_no,
+    
+                            'supplier_return_qty' => $sup_return->supplier_return_qty,
+                            'new_supplier_return_qty' => $sup_return->supplier_return_qty,
                             
-                            if ($new_product->balance_qty >= $request->$qty) {
-                                # code...
-                                $new_product->update([
-                                    'balance_qty' => $new_product->balance_qty - $request->$qty,
-                                    'supplier_return_qty' => $new_product->supplier_return_qty + $request->$qty,
+                            'supplier_id' => $sup_return->supplier_id,
+                            'new_supplier_id' => $sup_return->supplier_id,
+    
+                            'supplier_return_date' => $sup_return->supplier_return_date,
+                            'new_supplier_return_date' => $sup_return->supplier_return_date,
+                
+                            'remarks' => $sup_return->remarks,
+                            'new_remarks' => $sup_return->remarks,
+                
+                            'method' => "delete",
+                            'created_by' => Auth::user()->id,
+                        ]);
+    
+                        $sup_return_product->update([
+                            'supplier_return_qty' =>  $sup_return_product->supplier_return_qty - $sup_return->supplier_return_qty,
+                            'balance_qty' => $sup_return_product->balance_qty + $sup_return->supplier_return_qty,
+                        ]);
+    
+                        $sup_return->delete();
+                    }
+                    
+                }
+            }
+    
+    
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'qty_')) {
+                    $explode = explode("_",$key);
+                    $code = "code_".$explode[1];
+                    $brand = "brand_".$explode[1];
+                    $commodity = "commodity_".$explode[1];
+                    $qty = "qty_".$explode[1];
+                    $remarks = "remark_".$explode[1];
+                    $vr_no = "vr_no_".$explode[1];
+                    $sup_return_id = "supreturn_".$explode[1];
+    
+                    #sup_return_id
+                    $sup_return = SupplierReturn::find($request->$sup_return_id);
+                    $new_product = Product::find($request->$vr_no);
+    
+                    if ($sup_return) {
+    
+                        $sup_return_product = Product::find($sup_return->product_id);
+                        $sup_return_code = Code::find($sup_return->code_id);
+                        
+                        if ($sup_return_product && $new_product){
+                            #check if changed product in existing sup_return 
+                            $check_return = SupplierReturn::where('supplier_return_no', $request->supplier_return_no)
+                                                ->where('product_id', $new_product->id)
+                                                ->where('id', '!=' , $sup_return->id)
+                                                ->first();
+    
+                        }
+                    }
+    
+    
+                    #update return product
+                    if ($sup_return && $request->$code ) {
+                        if ($request->shelfnum_id != $sup_return->shelf_number_id || 
+                            $request->sup_no != $sup_return->supplier_return_no || 
+                            $request->date != $sup_return->supplier_return_date || 
+                            $supplier->id != $sup_return->supplier_id || 
+    
+                            $request->$vr_no != $sup_return->product_id || 
+                            $request->$code != $sup_return_code->name || 
+                            $request->$qty != $sup_return->supplier_return_qty) {
+    
+                                $sup_return_history = SupplierReturnHistory::create([
+    
+                                    'shelf_number_id' => $sup_return->shelf_number_id,
+                                    'new_shelf_number_id' => $request->shelfnum_id,
+            
+                                    'product_id' => $sup_return->product_id,
+                                    'new_product_id' => $request->$vr_no,
+            
+                                    'code_id' => $sup_return->code_id,
+                                    'new_code_id' => $new_product->code_id,
+            
+                                    'supplier_return_no' => $sup_return->supplier_return_no,
+                                    'new_supplier_return_no' => $request->sup_no,
+            
+                                    'supplier_return_qty' => $sup_return->supplier_return_qty,
+                                    'new_supplier_return_qty' => $request->$qty,
+                                    
+                                    'supplier_id' => $sup_return->supplier_id,
+                                    'new_supplier_id' => $supplier->id,
+            
+                                    'supplier_return_date' => $sup_return->supplier_return_date,
+                                    'new_supplier_return_date' => $request->date,
+                        
+                                    'remarks' => $sup_return->remarks,
+                                    'new_remarks' => $request->$remarks,
+                        
+                                    'method' => "update",
+                                    'created_by' => Auth::user()->id,
                                 ]);
-        
-                            }
+                            
                         }
     
+                        $sup_return_product->update([
+                            'supplier_return_qty' =>  $sup_return_product->supplier_return_qty - $sup_return->supplier_return_qty,
+                            'balance_qty' => $sup_return_product->balance_qty + $sup_return->supplier_return_qty,
+                        ]);
+    
+                        #if same product id, update OR reduce to old- add to new
+                        if ($sup_return->product_id == $request->$vr_no) {
+    
+                            $sup_return_product->update([
+                                'supplier_return_qty' =>  $sup_return_product->supplier_return_qty + $request->$qty,
+                                'balance_qty' => $sup_return_product->balance_qty - $request->$qty,
+                            ]);
+    
+                        }else{
+                            $new_product->update([
+                                'supplier_return_qty' =>  $new_product->supplier_return_qty + $request->$qty,
+                                'balance_qty' => $new_product->balance_qty - $request->$qty,
+                            ]);
+                        }
+    
+                        $sup_return->update([
+                            'supplier_return_no'=> $request->sup_no,
+                            'supplier_return_qty'=> $request->$qty,
+                            'shelf_number_id'=> $request->shelfnum_id,
+                            'supplier_return_date'=> $request->date,
+                            
+                            'remarks' => $request->$remarks,
+                            'product_id' => $new_product->id,
+                            'code_id' => $new_product->code_id,
+    
+                            'created_by'=> Auth::user()->id,
+                            'supplier_id'=>  $supplier->id,
+                        ]);
+                    
+                    }else{
+                        #new return update
+                        if ($new_product) {
+                            # same return no, product exist?
+                            $check_sup_returns = SupplierReturn::where('product_id', $new_product->id)
+                                                ->where('supplier_return_no', $request->sup_no)
+                                                ->where('shelf_number_id', $request->shelfnum_id)
+                                                ->where('supplier_id', $supplier->id)
+                                                ->first();
+                            if (!$check_sup_returns) {
+                               
+                                $sup_return = SupplierReturn::create([
+                                    'supplier_return_no'=> $request->sup_no,
+                                    'supplier_return_qty'=> $request->$qty,
+                                    'shelf_number_id'=> $request->shelfnum_id,
+                                    'supplier_return_date'=> $request->date,
+                                    
+                                    'remarks' => $request->$remarks,
+                                    'product_id' => $new_product->id,
+                                    'code_id' => $new_product->code_id,
+            
+                                    'created_by'=> Auth::user()->id,
+                                    'supplier_id'=>  $supplier->id,
+                                ]);
+                                
+                                if ($new_product->balance_qty >= $request->$qty) {
+                                    # code...
+                                    $new_product->update([
+                                        'balance_qty' => $new_product->balance_qty - $request->$qty,
+                                        'supplier_return_qty' => $new_product->supplier_return_qty + $request->$qty,
+                                    ]);
+            
+                                }
+                            }
+        
+                        }
+                    
+                         
                     }
-                
-                     
-                }
-                
-        }};
-
+                    
+            }};
+        });
 
         return redirect()->route('supplier_returns.index')->with('success', 'Supplier Return was successfully updated');
     }

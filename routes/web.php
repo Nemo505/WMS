@@ -34,7 +34,32 @@ use App\Http\Controllers\BarCodeController;
 |
 */
 Auth::routes();
+Route::get('/register', function () {
+    abort(404);
+});
 
+Route::get('cache-clear',function(){
+    Artisan::call('cache:clear');
+    Artisan::call('config:cache');
+    Artisan::call('view:clear');
+    return "Cleared!";
+});
+
+Route::get('migrate',function(){
+   Artisan::call('migrate');
+});
+
+Route::get('seed',function(){
+   Artisan::call('db:seed');
+});
+
+Route::get('migrate-refresh',function(){
+   Artisan::call('migrate:fresh');
+});
+
+Route::get('/linkstorage', function () {
+    Artisan::call('storage:link');
+});
 
 Route::group(['middleware' => 'auth'], function () {
       
@@ -140,6 +165,9 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('/store', [ShelfController::class ,'store'])->name('shelves.store');
             Route::post('/update', [ShelfController::class ,'update'])->name('shelves.update');
             Route::get('/delete', [ShelfController::class ,'destroy'])->name('shelves.delete');
+            
+            Route::post('/excel', [ShelfController::class ,'import'])->name('shelves.import');
+            Route::get('/sample', [ShelfController::class ,'sample'])->name('shelves.sample');
         });
         
         Route::prefix('shelf-nums')->group(function () {
@@ -147,7 +175,8 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('/store', [ShelfNumberController::class ,'store'])->name('shelf_nums.store');
             Route::post('/update', [ShelfNumberController::class ,'update'])->name('shelf_nums.update');
             Route::get('/delete', [ShelfNumberController::class ,'destroy'])->name('shelf_nums.delete');
-            //transfers(not create)
+            Route::post('/excel', [ShelfNumberController::class ,'import'])->name('shelf_nums.import');  //transfers(not create)
+            Route::get('/sample', [ShelfNumberController::class ,'sample'])->name('shelf_nums.sample');
             Route::get('/shelves-under-warehouses', [ShelfNumberController::class ,'warehouseShelves'])->name('shelf_nums.getShelf');
         });
         
@@ -196,10 +225,12 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('/excel', [ProductController::class ,'import'])->name('products.import');
             Route::get('/sample', [ProductController::class, 'sample'])->name('products.sample');
 
-            //barcode scanner
+            //barcode scanner transfer
             Route::get('/barcode-scanner', [BarCodeController::class, 'index'])->name('scanners.index');
             Route::get('/barcode-store', [BarCodeController::class, 'store'])->name('scanners.store');
             Route::get('/barcode-supplier', [BarCodeController::class, 'storeSupplier'])->name('scanners.storeSupplier');
+            #issue
+            Route::get('/barcode-store-mr', [BarCodeController::class, 'storeMR'])->name('scanners.storeMR');
             #fix
             Route::get('/barcode-store-mrr', [BarCodeController::class, 'storeMRR'])->name('scanners.storeMRR');
         });
@@ -224,7 +255,5 @@ Route::group(['middleware' => 'auth'], function () {
 });
 
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-
-Auth::routes();

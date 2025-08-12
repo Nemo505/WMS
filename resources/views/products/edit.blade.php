@@ -21,42 +21,6 @@
               <!-- mainform -->
               <div class="row">
                 <div class="col-4">
-                  <div class="form-group ">
-                    <label for="warehouse">Warehouse Name <span style="color: red">*</span></label>
-
-                    <select id='warehouse' required name="warehouse_id" class="form-control getShelfNum">
-                        <option value="" disabled selected>Choose Warehouse</option>
-                        @foreach ($warehouses as $warehouse)
-                          @if ($warehouse->id == $edit_warehouse->id)
-                              <option selected value="{{$warehouse->id}}">{{$warehouse->name}}</option>
-                          @else
-                              <option value="{{$warehouse->id}}">{{$warehouse->name}}</option>
-                          @endif
-                        @endforeach
-                    </select>
-                  </div>
-                </div>
-
-                <div class="col-4">
-                  <div class="form-group">
-                    <div class="form-group ">
-                      <label for="shelfnum">Shelf Number <span style="color: red">*</span></label>
-  
-                      <select id='shelfnum' required name="shelfnum_id" class="form-control">
-                        @foreach ($shelfnums as $shelfnum)
-                          @if ($shelfnum->id == $edit_shelfnum->id)
-                              <option selected value="{{$shelfnum->id}}">{{$shelfnum->shelfnumName}}( {{$shelfnum->shelfName}})</option>
-                          @else
-                              <option value="{{$shelfnum->id}}">{{$shelfnum->shelfnumName}}( {{$shelfnum->shelfName}})</option>
-                          @endif
-                        @endforeach
-  
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-4">
                   <label for="supplier">Supplier <span style="color: red">*</span></label>
                   <!-- Dropdown --> 
                   <select id='supplier' required name="supplier" class="form-control">
@@ -70,9 +34,7 @@
                       @endforeach
                   </select>
                 </div>
-              </div>
-              
-              <div class="row">
+                
                 <div class="col-4">
                   <div class="form-group">
                     <label for="vr_no">Voucher No <span style="color: red">*</span></label>
@@ -110,16 +72,26 @@
                 @foreach ($choosen_products as $choosen_product)
                 @php
                   ++$i;
+                  $edit_shelfnum = App\Models\ShelfNumber::where('shelf_numbers.id', $choosen_product->shelf_number_id)
+                                            ->join('shelves', 'shelves.id', '=', 'shelf_numbers.shelf_id')
+                                            ->join('warehouses', 'warehouses.id', '=', 'shelf_numbers.warehouse_id')
+                                            ->first([
+                                                'shelf_numbers.id', 'shelf_numbers.name', 'shelves.name as shelf_name', 'warehouses.name as warehouse_name'
+                                            ]);
                 @endphp
                   {{-- hidden all products --}}
                   <input type="hidden" value="{{$choosen_product->id}}" name="product_{{$i}}" >
-                  <div class="row d-flex justify-content-around deleteRow">
+                <div class="row d-flex justify-content-around deleteRow">
                     @if ($choosen_product->transfer_qty != null  && 
                           $choosen_product->transfer_qty != 0  ||
                           $choosen_product->mr_qty != 0 &&
                           $choosen_product->mr_qty != null ||
                           $choosen_product->supplier_return_qty != null &&
-                          $choosen_product->supplier_return_qty != 0 
+                          $choosen_product->supplier_return_qty != 0 ||
+                          $choosen_product->sub_adjustment != null &&
+                          $choosen_product->sub_adjustment != 0 ||
+                          $choosen_product->add_adjustment != null &&
+                          $choosen_product->add_adjustment != 0 
                         )
                       <div class="my-auto pl-1 text-center">
                           <i class="fas fa-window-close" 
@@ -135,6 +107,35 @@
 
                     <div class="col-2">
                       <div class="form-group">
+                        <label for="code">ShelfNumber <span style="color: red">*</span></label>
+                        <!-- Dropdown --> 
+                          @if ($choosen_product->transfer_qty != null  && 
+                              $choosen_product->transfer_qty != 0  ||
+                              $choosen_product->mr_qty != 0 &&
+                              $choosen_product->mr_qty != null ||
+                              $choosen_product->supplier_return_qty != null &&
+                              $choosen_product->supplier_return_qty != 0 ||
+                              $choosen_product->sub_adjustment != null &&
+                              $choosen_product->sub_adjustment != 0 ||
+                              $choosen_product->add_adjustment != null &&
+                              $choosen_product->add_adjustment != 0
+                            )
+                            
+                            <select id='shelfnum_{{$i}}' required disabled name="shelfnum_{{$i}}" class="form-control">
+                                  <option value="{{ $edit_shelfnum->id }}">
+                                       {{ $edit_shelfnum->name }} - {{ $edit_shelfnum->shelf_name }} - {{ $edit_shelfnum->warehouse_name }} </option>
+                            </select>
+                          
+                          @else
+                          <select id='shelfnum_{{$i}}' required name="shelfnum_{{$i}}" class="form-control">
+                                  <option value="{{ $edit_shelfnum->id }}">
+                                      {{ $edit_shelfnum->name }} - {{ $edit_shelfnum->shelf_name }} - {{ $edit_shelfnum->warehouse_name }} </option>
+                            </select>
+                          @endif
+                      </div>
+                    </div>
+                    <div class="col-1">
+                      <div class="form-group">
                         <label for="code">Code <span style="color: red">*</span></label>
                         <!-- Dropdown --> 
                           @if ($choosen_product->transfer_qty != null  && 
@@ -142,7 +143,11 @@
                               $choosen_product->mr_qty != 0 &&
                               $choosen_product->mr_qty != null ||
                               $choosen_product->supplier_return_qty != null &&
-                              $choosen_product->supplier_return_qty != 0 
+                              $choosen_product->supplier_return_qty != 0 ||
+                              $choosen_product->sub_adjustment != null &&
+                              $choosen_product->sub_adjustment != 0 ||
+                              $choosen_product->add_adjustment != null &&
+                              $choosen_product->add_adjustment != 0
                             )
                             <select id='code_{{$i}}' required disabled name="code_{{$i}}" class="form-control getCode">
                                   <option selected value="{{$choosen_product->code_name}}">{{$choosen_product->code_name}}</option>
@@ -155,16 +160,20 @@
                       </div>
                     </div>
 
-                    <div class="col-2">
+                    <div class="col-1">
                       <div class="form-group">
-                        <label for="brand">Brand Name <span style="color: red">*</span></label>
+                        <label for="brand">Brand <span style="color: red">*</span></label>
                         <!-- Dropdown --> 
                         @if ($choosen_product->transfer_qty != null  && 
                             $choosen_product->transfer_qty != 0  ||
                             $choosen_product->mr_qty != 0 &&
                             $choosen_product->mr_qty != null ||
                             $choosen_product->supplier_return_qty != null &&
-                            $choosen_product->supplier_return_qty != 0 
+                            $choosen_product->supplier_return_qty != 0 ||
+                            $choosen_product->sub_adjustment != null &&
+                            $choosen_product->sub_adjustment != 0 ||
+                            $choosen_product->add_adjustment != null &&
+                            $choosen_product->add_adjustment != 0
                           )
                           <select id='brand_{{$i}}' disabled required name="brand_{{$i}}" class=" form-control getBrand ">
                             <option selected value="{{$choosen_product->brand_id}}">{{$choosen_product->brand_name}}</option>
@@ -186,7 +195,11 @@
                             $choosen_product->mr_qty != 0 &&
                             $choosen_product->mr_qty != null ||
                             $choosen_product->supplier_return_qty != null &&
-                            $choosen_product->supplier_return_qty != 0 
+                            $choosen_product->supplier_return_qty != 0 ||
+                            $choosen_product->sub_adjustment != null &&
+                          $choosen_product->sub_adjustment != 0 ||
+                          $choosen_product->add_adjustment != null &&
+                          $choosen_product->add_adjustment != 0
                           )
                           <select id='commodity_{{$i}}' disabled required name="commodity_{{$i}}" class=" form-control ">
                             <option selected value="{{$choosen_product->commodity_id}}">{{$choosen_product->commodity_name}}</option>
@@ -208,7 +221,11 @@
                               $choosen_product->mr_qty != 0 &&
                               $choosen_product->mr_qty != null ||
                               $choosen_product->supplier_return_qty != null &&
-                              $choosen_product->supplier_return_qty != 0 
+                              $choosen_product->supplier_return_qty != 0 ||
+                              $choosen_product->sub_adjustment != null &&
+                          $choosen_product->sub_adjustment != 0 ||
+                          $choosen_product->add_adjustment != null &&
+                          $choosen_product->add_adjustment != 0
                           )
                             @php
                                 $sum = $choosen_product->transfer_qty + $choosen_product->mr_qty + $choosen_product->supplier_return_qty;
@@ -243,9 +260,13 @@
                           $choosen_product->mr_qty != 0 &&
                           $choosen_product->mr_qty != null ||
                           $choosen_product->supplier_return_qty != null &&
-                          $choosen_product->supplier_return_qty != 0 
+                          $choosen_product->supplier_return_qty != 0 ||
+                           $choosen_product->sub_adjustment != null &&
+                          $choosen_product->sub_adjustment != 0 ||
+                          $choosen_product->add_adjustment != null &&
+                          $choosen_product->add_adjustment != 0
                           )
-                            <select id='unit_{{$i}}' disabled required name="unit_{{$i}}" class=" form-control ">
+                            <select id='unit_{{$i}}' disabled required name="unit_{{$i}}" class=" form-control">
                                 @foreach ($units as $unit)
                                     @if ($unit->id == $choosen_product->unit_id)
                                         <option selected value="{{$unit->id}}">{{$unit->name}}</option>
@@ -255,7 +276,7 @@
                                 @endforeach
                             </select>
                           @else
-                          <select id='unit_{{$i}}' required name="unit_{{$i}}" class=" form-control ">
+                          <select id='unit_{{$i}}' required name="unit_{{$i}}" class=" form-control unit-select">
                               @foreach ($units as $unit)
                                   @if ($unit->id == $choosen_product->unit_id)
                                       <option selected value="{{$unit->id}}">{{$unit->name}}</option>
@@ -303,60 +324,27 @@
 @section('scripts')
 
 <script>
-  $( "#warehouse" ).ready(function() {
-      $("#warehouse").select2();
-  });
-  $( "#shelfnum" ).ready(function() {
-      $("#shelfnum").select2();
-  });
+ 
+//   $( "#shelfnum_{{$i}}" ).ready(function() {
+//       $("#shelfnum_{{$i}}").select2();
+//   });
   $( "#supplier" ).ready(function() {
       $("#supplier").select2();
   });
-  $( "#code_{{$i}}" ).ready(function() {
-      $("#code_{{$i}}").select2();
-  });
-  $( "#brand_{{$i}}" ).ready(function() {
-      $("#brand_{{$i}}").select2();
-  });
-  $( "#commodity_{{$i}}" ).ready(function() {
-      $("#commodity_{{$i}}").select2();
-  });
-  $( "#unit_{{$i}}" ).ready(function() {
-      $("#unit_{{$i}}").select2();
-  });
+//   $( "#code_{{$i}}" ).ready(function() {
+//       $("#code_{{$i}}").select2();
+//   });
+//   $( "#brand_{{$i}}" ).ready(function() {
+//       $("#brand_{{$i}}").select2();
+//   });
+//   $( "#commodity_{{$i}}" ).ready(function() {
+//       $("#commodity_{{$i}}").select2();
+//   });
+//   $( "#unit_{{$i}}" ).ready(function() {
+//       $("#unit_{{$i}}").select2();
+//   });
 
-</script>
 
-<script>
-  // accessing self numbers under choosen warehouse
-  $('.getShelfNum').on('change', function() {
-      var warehouse_id = this.value;
-      $.ajax({
-          url: "{{ route('products.getShelfNum') }}",
-          type: "GET",
-          data: {
-              "warehouse_id": warehouse_id,
-          },
-          cache: false,
-          success: function(result) {
-            console.log(result);
-              if (result) {
-                  $("#shelfnum").empty();
-                  $("#shelfnum").append(
-                          `<option value="">Choose Shelf Number</option>`
-                      );
-                  $.each(result, function(key, value) {
-                      $("#shelfnum").append(
-                          `<option value="${value.id}">${value.shelfnumName}  (${value.shelfName})</option>`
-                      );
-                  });
-              } else {
-                  $("#shelfnum").empty();
-              }
-          }
-      });
-  });
-     
 </script>
 
 <script>
@@ -366,6 +354,12 @@
 
   // moreCols
    $( "#newColumn" ).click(function() {
+       $( `#shelfnum_${i}` ).ready(function() {
+          $(`#shelfnum_${i}`).select2();
+      });
+       $( `#code_${i}` ).ready(function() {
+          $(`#code_${i}`).select2();
+      });
     ++i;
       var moreCols = `
                 <div class="row d-flex justify-content-around deleteRow">
@@ -375,6 +369,21 @@
                     </div>
                   </div>
                   <div class="col-2">
+                    <div class="form-group">
+                      <label for="shelfnum">ShelfNumber <span style="color: red">*</span></label>
+                        <div>
+                          <select id='shelfnum_${i}' required name="shelfnum_${i}" class="form-control">
+                              <option value="" disabled selected>Choose Shelf Number</option>
+                              @foreach ($shelfnums as $shelfnum)
+                                  <option value="{{ $shelfnum->id }}">
+                                       {{ $shelfnum->name }} - {{ $shelfnum->shelf_name }} - {{ $shelfnum->warehouse_name }} </option>
+                              @endforeach
+                          </select>
+                        </div>
+                    </div>
+                </div>
+                
+                  <div class="col-1">
                     <div class="form-group">
                       <label for="code">Code <span style="color: red">*</span></label>
                       <!-- Dropdown --> 
@@ -388,9 +397,9 @@
                     </div>
                   </div>
 
-                  <div class="col-2">
+                  <div class="col-1">
                     <div class="form-group">
-                      <label for="brand">Brand Name <span style="color: red">*</span></label>
+                      <label for="brand">Brand <span style="color: red">*</span></label>
                       <!-- Dropdown --> 
                       <select id='brand_${i}' required name="brand_${i}" class=" form-control getBrand">
                         <option value="" disabled selected>Choose Brand</option>

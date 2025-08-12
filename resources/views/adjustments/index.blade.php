@@ -273,7 +273,7 @@
 
           </div>
           <!-- /.card-header -->
-          <div class="card-body">
+          <div class="card-body" style="overflow-x: scroll;">
             <table id="example2" class="table table-bordered table-hover">
               <thead>
                 <tr>
@@ -314,12 +314,12 @@
 
                   $warehouse = \App\Models\Warehouse::find(optional($shelf_no)->warehouse_id);
 
-                  $code = \App\Models\Code::find($product->code_id);
+                  $code = \App\Models\Code::find(optional($product)->code_id);
                   $brand = \App\Models\Brand::find(optional($code)->brand_id); 
                   $commodity = \App\Models\Commodity::find(optional($code)->commodity_id);
 
-                  $unit = \App\Models\Unit::find($product->unit_id); 
-                  $supplier = \App\Models\Supplier::find($product->supplier_id);
+                  $unit = \App\Models\Unit::find(optional($product)->unit_id); 
+                  $supplier = \App\Models\Supplier::find(optional($product)->supplier_id);
                 @endphp
                   <tr>
                         <td>{{  $i }}</td>

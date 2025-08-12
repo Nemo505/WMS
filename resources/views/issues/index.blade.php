@@ -26,12 +26,14 @@
             {{-- form --}}
             @php
                 $s_issues =  App\Models\Issue::distinct()->get(['mr_no']);
+                $job_issues =  App\Models\Issue::where('job_no', '<>', '')
+                ->distinct()->get(['job_no']);
             @endphp
             <form action="" method="GET">
 
               <div class="row d-flex justify-content-around">
                 {{-- MR NO --}}
-                  <div class="col-2">
+                  <div class="col-1">
                     <div class="form-group">
                       <label for="mr_no">MR No</label>
                       <div>
@@ -47,6 +49,30 @@
                                 @endif
                             @else
                                 <option value="{{$s_issue->mr_no }}">{{ $s_issue->mr_no }}</option> 
+                            @endif
+                          @endforeach
+                        </select>
+                      </div>
+
+                    </div>
+                  </div>
+                {{-- Job NO --}}
+                  <div class="col-1">
+                    <div class="form-group">
+                      <label for="job_no">Job No</label>
+                      <div>
+
+                        <select id='job_no' name="job_no" class="form-control">
+                          <option value="" disabled selected>Choose Job No</option>
+                          @foreach ($job_issues as $job_issue)
+                            @if (isset($_REQUEST['job_no']))
+                                @if ($job_issue->job_no == $_REQUEST['job_no'])
+                                    <option value="{{ $job_issue->job_no }}" selected>{{ $job_issue->job_no }}</option>
+                                @else
+                                    <option value="{{ $job_issue->job_no }}">{{ $job_issue->job_no }}</option>
+                                @endif
+                            @else
+                                <option value="{{$job_issue->job_no }}">{{ $job_issue->job_no }}</option> 
                             @endif
                           @endforeach
                         </select>
@@ -191,7 +217,7 @@
                   <div class="col-2">
                     <div class="form-group">
                       <label for="department">Department</label>
-
+                    <div>
                       <select id='department_id' name="department_id" class=" form-control">
                         <option value="" disabled selected>Choose Department</option>
                         @foreach ($departments as $department)
@@ -207,6 +233,7 @@
                         @endforeach
                       </select>
 
+                    </div>
                     </div>
                   </div>
                   {{-- VRNO --}}
@@ -238,7 +265,7 @@
                   <div class="col-2">
                     <div class="form-group">
                       <label for="customer">Customer</label>
-
+                    <div>
                       <select id='customer_id' name="customer_id" class=" form-control">
                         <option value="" disabled selected>Choose Customer</option>
                         @foreach ($customers as $customer)
@@ -254,6 +281,7 @@
                         @endforeach
                       </select>
 
+                    </div>
                     </div>
                   </div>
                 
@@ -305,13 +333,14 @@
 
           </div>
           <!-- /.card-header -->
-          <div class="card-body">
+          <div class="card-body" style="overflow-x: scroll;">
             <table id="example2" class="table table-bordered table-hover">
               <thead>
                 <tr>
                   <th>No</th>
                   <th>Date</th>
                   <th>MR No</th>
+                  <th>Job No</th>
                   <th>Department</th>
                   <th>Warehouse</th>
                   <th>Shelf No</th>
@@ -357,6 +386,7 @@
                       <td>{{  $i }}</td>
                       <td>{{ $issue->issue_date }}</td>
                       <td>{{ $issue->mr_no }}</td>
+                      <td>{{ $issue->job_no }}</td>
                       <td>{{ optional($department)->name }}</td>
 
                       <td>{{ optional($warehouse)->name }}</td>
@@ -389,6 +419,7 @@
                 <th>No</th>
                 <th>Date</th>
                 <th>MR No</th>
+                <th>Job No</th>
                 <th>Department</th>
                 <th>Warehouse</th>
                 <th>Shelf No</th>
@@ -427,6 +458,9 @@
   });
   $( "#mr_no" ).ready(function() {
       $("#mr_no").select2();
+  });
+  $( "#job_no" ).ready(function() {
+      $("#job_no").select2();
   });
   $( "#department_id" ).ready(function() {
       $("#department_id").select2();

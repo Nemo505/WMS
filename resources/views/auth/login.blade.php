@@ -61,29 +61,7 @@
                             </div>
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-12 text-center">
-                                @if (Route::has('password.request'))
-                                    <a class="btn " href="{{ route('password.request') }}" 
-                                        onMouseOver="this.style.color='#00F'"
-                                        onMouseOut="this.style.color='#4d525b'"
-                                    >
-                                        <i class="fa fa-solid fa-lock" style="color: #4d525b;" ></i>
-                                        {{ __('Forgot Your Password?') }}
-                                    </a>
-                                @endif
-                            
-                                @if (Route::has('password.request'))
-                                    <a class="btn " href="{{ route('register') }}"
-                                        onMouseOver="this.style.color='#00F'"
-                                        onMouseOut="this.style.color='#4d525b'"
-                                    >
-                                        <i class="far fa-user-circle" style="color: #4d525b;"></i>
-                                        {{-- {{ __('Create an account?') }} --}}
-                                    </a>
-                                @endif
-                            </div>
-                        </div>
+                       
                     </form>
                 </div>
             </div>

@@ -60,9 +60,6 @@ class SupplierController extends Controller
     {
         $validator = Validator::make($request->all(),[
             'name' => 'required|unique:suppliers|max:255',
-            'phone' => 'required|unique:suppliers|max:255',
-            'address' => 'required',
-            'emergency' => 'required',
         ]);
         
         if ($validator->fails())
@@ -72,14 +69,26 @@ class SupplierController extends Controller
        
         $supplier = Supplier::Create([
             'name' => $request->name,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'emergency' => $request->emergency,
             'created_by' => Auth::user()->id,
         ]);
         if ($request->email) {
             $supplier->update([
                 'email' => $request->email,
+            ]);
+        }
+        if ($request->emergency) {
+            $supplier->update([
+                'emergency' => $request->emergency,
+            ]);
+        }
+        if ($request->phone) {
+            $supplier->update([
+                'phone' => $request->phone,
+            ]);
+        }
+        if ($request->address) {
+            $supplier->update([
+                'address' => $request->address,
             ]);
         }
 
@@ -116,9 +125,6 @@ class SupplierController extends Controller
     {
         $validator = Validator::make($request->all(),[
             'name' => 'required',
-            'phone' => 'required',
-            'address' => 'required',
-            'emergency' => 'required',
             'id' => 'required',
         ]);
 
@@ -137,13 +143,7 @@ class SupplierController extends Controller
             'updated_by' => Auth::user()->id,
         ]);
 
-        if ($request->email) {
-            # code...
-            $supplier->update([
-                'email' => $request->email,
-            ]);
-        }
-
+      
         return redirect()->route('suppliers.index')->with('success', 'Supplier was successfully updated');
     }
 
@@ -152,7 +152,7 @@ class SupplierController extends Controller
      */
     public function destroy(Request $request)
     {
-       $supplier = Supplier::findOrFail($request->id);
+       $supplier = Supplier::findOrFail($request->del_id);
         if($supplier){
             $supplier->delete();
             return Redirect::route('suppliers.index')->with('success','Successfully Deleted a supplier');          

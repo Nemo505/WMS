@@ -25,8 +25,8 @@
                 </div>
                 <div class="col-6">
                   <div class="form-group">
-                    <label for="phone">Phone<span style="color: red">*</span> </label> 
-                    <input type="number" name="phone" required class="form-control" id="phone" placeholder="Enter Phone Number">
+                    <label for="phone">Phone </label> 
+                    <input type="number" name="phone"  class="form-control" id="phone" placeholder="Enter Phone Number">
                   </div>
                 </div>              
             </div>
@@ -40,16 +40,16 @@
                 </div>
                 <div class="col-6">
                   <div class="form-group">
-                    <label for="emergency">Emergency<span style="color: red">*</span> </label> 
-                    <input type="text" name="emergency" required class="form-control" id="emergency" placeholder="Enter Emergency Contact">
+                    <label for="emergency">Emergency</label> 
+                    <input type="text" name="emergency" class="form-control" id="emergency" placeholder="Enter Emergency Contact">
                   </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-6">
                     <div class="form-group">
-                        <label for="address">Address<span style="color: red">*</span> </label> 
-                        <textarea name="address" required class="form-control"  rows="4"></textarea>
+                        <label for="address">Address </label> 
+                        <textarea name="address"  class="form-control"  rows="4"></textarea>
                     </div>
                 </div>
             </div>

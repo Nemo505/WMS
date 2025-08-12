@@ -69,8 +69,8 @@
               <div class="row">
                 <div class="col-6">
                   <div class="form-group">
-                    <label for="emergency">Emergency<span style="color: red">*</span> </label> 
-                    <input type="text" name="emergency" required class="form-control" id="emergency" placeholder="Enter Emergency Contact">
+                    <label for="emergency">Emergency </label> 
+                    <input type="text" name="emergency" class="form-control" id="emergency" placeholder="Enter Emergency Contact">
                   </div>
                 </div>
                 <div class="col-6">

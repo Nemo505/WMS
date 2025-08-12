@@ -296,7 +296,7 @@
 
           </div>
           <!-- /.card-header -->
-          <div class="card-body">
+          <div class="card-body" style="overflow-x: scroll;">
             <table id="example2" class="table table-bordered table-hover">
               <thead>
                 <tr>
@@ -313,6 +313,8 @@
                   <th>Qty</th>
                   <th>Remarks</th>
                   <th>VR No</th>
+                  <th>Created By</th>
+                  <th>Updated By</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -335,6 +337,8 @@
                   $commodity = \App\Models\Commodity::find(optional($code)->commodity_id);
 
                   $product = \App\Models\Product::find($transfer->product_id); 
+                  $created_by = \App\Models\User::find($transfer->created_by); 
+                  $updated_by = \App\Models\User::find($transfer->updated_by); 
                 @endphp
                   <tr>
                       <td>{{  $i }}</td>
@@ -352,6 +356,8 @@
                       <td>{{ $transfer->transfer_qty }}</td>
                       <td>{{ $transfer->remarks }}</td>
                       <td>{{ optional($product)->voucher_no  }}</td>
+                      <td>{{ optional($created_by)->user_name  }}</td>
+                      <td>{{ optional($updated_by)->user_name  }}</td>
                       <td>
                           <div class="d-flex justify-content-around"> 
                               <a href="{{ route("transfers.edit", ["id" => $transfer->id] )}}" >
@@ -379,6 +385,8 @@
                   <th>Qty</th>
                   <th>Remarks</th>
                   <th>VR No</th>
+                  <th>Created By</th>
+                  <th>Updated By</th>
                   <th>Action</th>
               </tr>
               </tfoot>

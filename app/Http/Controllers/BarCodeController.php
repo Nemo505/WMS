@@ -13,19 +13,7 @@ use Auth;
 
 class BarCodeController extends Controller
 {
-    public function index(Request $request)
-    {
-        $check = Auth::user()->hasPermissionTo('barcode_scanner');
-
-        if ($check == false) {
-            return redirect()->back()->with('error','You do not have permission to access this page.');
-        }
-
-        $products = Product::orderbydesc('id') ->get();
-       
-        return view('products/scanner', [ 'products' => $products ]);
-    }
-
+   
     public function store(Request $request)
     {
         $x = substr ($request->barcode,0,-1);
@@ -35,9 +23,39 @@ class BarCodeController extends Controller
                             ->join('brands', 'brands.id', '=', 'codes.brand_id')
                             ->join('commodities', 'commodities.id', '=', 'codes.commodity_id')
                             ->first(['products.id', 
-                                    'products.transfer_id', 
+                                    'products.transfer_id',
                                     'codes.name', 
+                                    'brands.id as brand_id', 
                                     'brands.name as brand_name', 
+                                    'commodities.id as commodity_id',
+                                    'commodities.name as commodity_name',
+                                    'products.voucher_no',
+                                    'products.balance_qty',
+                                    'codes.image',
+                                    'codes.usage',
+                                ]);
+
+        $transfer = Transfer::find(optional($product)->transfer_id);
+                         
+        return response()->json( ['product' => $product, 'transfer' => $transfer]);
+    }
+    
+    public function storeMR(Request $request)
+    {
+        $x = substr ($request->barcode,0,-1);
+        $product = Product::where('products.barcode', $x)
+                            ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
+                            ->join('codes', 'codes.id', '=', 'products.code_id')
+                            ->join('brands', 'brands.id', '=', 'codes.brand_id')
+                            ->join('commodities', 'commodities.id', '=', 'codes.commodity_id')
+                            ->first(['products.id', 
+                                    'products.shelf_number_id',
+                                    'shelf_numbers.name as shelfnum_name',
+                                    'products.transfer_id',
+                                    'codes.name', 
+                                    'brands.id as brand_id', 
+                                    'brands.name as brand_name', 
+                                    'commodities.id as commodity_id',
                                     'commodities.name as commodity_name',
                                     'products.voucher_no',
                                     'products.balance_qty',

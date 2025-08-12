@@ -268,7 +268,7 @@
 
           </div>
           <!-- /.card-header -->
-          <div class="card-body">
+          <div class="card-body" style="overflow-x: scroll;">
             <table id="example2" class="table table-bordered table-hover">
               <thead>
                 <tr>
@@ -283,7 +283,6 @@
                   <th>Commodity</th>
                   <th>Unit</th>
                   <th>MRR Qty</th>
-                  <th>Return</th>
                   <th>Remarks</th>
                   <th>VR No</th>
                   <th>Action</th>
@@ -332,7 +331,6 @@
                       <td>{{ optional($unit)->name }}</td>
 
                       <td>{{ $mrr->mrr_qty }}</td>
-                      <td>{{ optional($issue)->mr_qty }}</td>
 
                       <td>{{ $mrr->remarks }}</td>
                       <td>{{ optional($product)->voucher_no }}</td>
@@ -360,7 +358,6 @@
                 <th>Commodity</th>
                 <th>Unit</th>
                 <th>MRR Qty</th>
-                <th>Return</th>
                 <th>Remarks</th>
                 <th>VR No</th>
                 <th>Action</th>

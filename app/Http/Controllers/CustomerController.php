@@ -60,9 +60,6 @@ class CustomerController extends Controller
     {
         $validator = Validator::make($request->all(),[
             'name' => 'required|unique:customers|max:255',
-            'phone' => 'required|unique:customers|max:255',
-            'address' => 'required',
-            'emergency' => 'required',
         ]);
         
         if ($validator->fails())
@@ -72,14 +69,28 @@ class CustomerController extends Controller
        
         $customer = Customer::Create([
             'name' => $request->name,
-            'phone' => $request->phone,
-            'address' => $request->address,
             'emergency' => $request->emergency,
             'created_by' => Auth::user()->id,
         ]);
         if ($request->email) {
             $customer->update([
                 'email' => $request->email,
+            ]);
+        }
+        if ($request->emergency) {
+            $customer->update([
+                'emergency' => $request->emergency,
+            ]);
+        }
+        if ($request->phone) {
+            $customer->update([
+                'phone' => $request->phone,
+            
+            ]);
+        }
+        if ($request->address) {
+            $customer->update([
+                'address' => $request->address,
             ]);
         }
 
@@ -105,9 +116,6 @@ class CustomerController extends Controller
     {
         $validator = Validator::make($request->all(),[
             'name' => 'required',
-            'phone' => 'required',
-            'address' => 'required',
-            'emergency' => 'required',
             'id' => 'required',
         ]);
 
@@ -121,8 +129,8 @@ class CustomerController extends Controller
             'name' => $request->name,
             'phone' => $request->phone,
             'address' => $request->address,
-            'emergency' => $request->emergency,
             'email' => $request->email,
+            'emergency' => $request->emergency,
             'updated_by' => Auth::user()->id,
         ]);
 

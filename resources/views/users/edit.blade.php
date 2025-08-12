@@ -71,8 +71,8 @@
               <div class="row">
                 <div class="col-6">
                   <div class="form-group">
-                    <label for="emergency">Emergency<span style="color: red">*</span> </label> 
-                    <input type="text" name="emergency" required class="form-control" 
+                    <label for="emergency">Emergency</label> 
+                    <input type="text" name="emergency" class="form-control" 
                           id="emergency"
                           value="{{ $user->emergency }}"
                           >
@@ -81,7 +81,7 @@
                 <div class="col-6">
                     <div class="form-group">
                         <label for="address">Address<span style="color: red">*</span> </label> 
-                        <textarea name="address" required class="form-control"  rows="4"></textarea>
+                        <textarea name="address" required class="form-control"  rows="4">{{ $user->address }}</textarea>
                     </div>
                 </div>
             </div>

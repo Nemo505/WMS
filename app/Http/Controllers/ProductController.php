@@ -48,13 +48,10 @@ class ProductController extends Controller
                 return $query->where('voucher_no', $request->vr_no);
             }
         })
-        ->where(function ($query) use ($request){
-            if($request->warehouse_id){
-                $shelf_nos = ShelfNumber::where('warehouse_id',$request->warehouse_id)
-                                                ->get();
-                foreach($shelf_nos as $shelf_no){
-                    return $query->where('shelf_number_id', $shelf_no->id);
-                }
+       ->where(function ($query) use ($request) {
+            if ($request->warehouse_id) {
+                $shelf_nos = ShelfNumber::where('warehouse_id', $request->warehouse_id)->pluck('id');
+                $query->whereIn('shelf_number_id', $shelf_nos); 
             }
         })
         ->where(function ($query) use ($request){
@@ -62,9 +59,15 @@ class ProductController extends Controller
                 return $query->where('shelf_number_id', $request->shelf_num_id);
             }
         })
-        ->where(function ($query) use ($request){
+       ->where(function ($query) use ($request){
             if($request->code_id){
-                return $query->where('code_id', $request->code_id);
+                $codes = Code::where('name',$request->code_id)->get();
+
+                $code_items = [];
+                foreach($codes as $code){
+                    array_push($code_items,$code->id);
+                }
+                return $query->whereIn('code_id', $code_items);
             }
         })
         ->where(function ($query) use ($request){
@@ -110,8 +113,9 @@ class ProductController extends Controller
                 return $query->where('received_date', '<=',  $to_date);
             }
         })
-        ->orderbydesc('received_date')
-        ->get();
+        ->where('type', 'receive')
+        ->orderbydesc('id')
+        ->paginate(10);
 
         $warehouses = Warehouse::get();
         $suppliers = Supplier::get();
@@ -121,8 +125,22 @@ class ProductController extends Controller
         $shelfnums = ShelfNumber::get();
 
         if ($request->has('export')) {
-            $sort_products = $products->sort();
-            return $this->export($sort_products);
+            
+            $hasFilters = $request->product_id || $request->code_id || 
+                            $request->vr_no || $request->warehouse_id || 
+                            $request->shelf_num_id || 
+                            $request->brand_id || $request->commodity_id || 
+                            $request->from_date || $request->to_date;
+            if(!$hasFilters){
+                $query = Product::query();
+                $unsort_products = $query->orderBy('id', 'desc')->get();
+                $sort_products = $unsort_products->sort();
+                return $this->export($sort_products);
+            }else{
+                $sort_products = $products->sort();
+                return $this->export($sort_products);
+            }
+            
         }
 
         return view('products/index', ['warehouses' => $warehouses,
@@ -147,14 +165,18 @@ class ProductController extends Controller
         }
 
 
-        $warehouses = Warehouse::get();
+        $shelfnums = ShelfNumber::join('shelves', 'shelves.id', '=', 'shelf_numbers.shelf_id')
+                                ->join('warehouses', 'warehouses.id', '=', 'shelf_numbers.warehouse_id')
+                                ->select('shelf_numbers.id', 'shelf_numbers.name', 'shelves.name as shelf_name', 'warehouses.name as warehouse_name')
+                                ->get();
+
         $suppliers = Supplier::get();
         $codes = Code::distinct()
                     ->get(['codes.name']);
         $brands = Brand::get();
         $commodities = Commodity::get();
         $units = Unit::get();
-        return view('products/create', ['warehouses' => $warehouses,
+        return view('products/create', ['shelfnums' => $shelfnums,
                                         'suppliers' => $suppliers,
                                         'codes' => $codes,
                                         'brands' => $brands,
@@ -223,10 +245,7 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        
         $validator = Validator::make($request->all(),[
-            'warehouse_id' => 'required',
-            'shelfnum_id' => 'required',
             'supplier' => 'required',
             'vr_no' => 'required|unique:products,voucher_no',
             'date' => 'required',
@@ -241,11 +260,12 @@ class ProductController extends Controller
 
        
 
-        $newRequest = $request->except(['_token','warehouse_id','shelfnum_id','vr_no','supplier','date']);
+        $newRequest = $request->except(['_token','vr_no','supplier','date']);
 
         foreach ($newRequest as $key => $value){
             if (str_contains($key, 'code_')) {
                 $explode = explode("_",$key);
+                $shelfnum = "shelfnum_".$explode[1];
                 $code = "code_".$explode[1];
                 $brand = "brand_".$explode[1];
                 $commodity = "commodity_".$explode[1];
@@ -263,7 +283,7 @@ class ProductController extends Controller
                         # to check the same voucher same product exist
                     $check_product = Product::where('supplier_id', $request->supplier)
                                         ->where('code_id', $code_id->id)
-                                        ->where('shelf_number_id', $request->shelfnum_id)
+                                        ->where('shelf_number_id', $request->$shelfnum)
                                         ->where('voucher_no', $request->vr_no)
                                         ->where('type', 'receive')
                                         ->first();
@@ -283,7 +303,7 @@ class ProductController extends Controller
                             'received_qty' => $request->$qty,
                             'balance_qty' => $request->$qty,
                             'remarks' => $request->$remarks,
-                            'shelf_number_id'=> $request->shelfnum_id,
+                            'shelf_number_id'=> $request->$shelfnum,
                             'received_date'=> $request->date,
                             'voucher_no'=> $request->vr_no,
                             'supplier_id'=> $request->supplier,
@@ -311,7 +331,10 @@ class ProductController extends Controller
             return redirect()->back()->with('error','You do not have permission to access this page.');
         }
 
-        $warehouses = Warehouse::get();
+        $shelfnums = ShelfNumber::join('shelves', 'shelves.id', '=', 'shelf_numbers.shelf_id')
+                                ->join('warehouses', 'warehouses.id', '=', 'shelf_numbers.warehouse_id')
+                                ->select('shelf_numbers.id', 'shelf_numbers.name', 'shelves.name as shelf_name', 'warehouses.name as warehouse_name')
+                                ->get();
         $suppliers = Supplier::get();
         $codes = Code::distinct()->get(['name']);
         $units = Unit::get();
@@ -320,38 +343,17 @@ class ProductController extends Controller
         $product = Product::findOrFail($request->id);
         if ($product) {
             # code...
-            $edit_shelfnum = ShelfNumber::where('shelf_numbers.id', $product->shelf_number_id)
-                                            ->join('shelves', 'shelves.id', '=', 'shelf_numbers.shelf_id')
-                                            ->first([
-                                                'shelf_numbers.id', 
-                                                'shelves.name as shelfName', 
-                                                'shelf_numbers.name as shelfnumName', 
-                                                'shelf_numbers.warehouse_id'
-                                            ]);
-    
-            $edit_warehouse = Warehouse::findOrFail(optional($edit_shelfnum)->warehouse_id);
             $edit_supplier = Supplier::findOrFail($product->supplier_id);
-    
-     
-            //selected list under warehouseID
-            $shelfnums = ShelfNumber::where('shelf_numbers.warehouse_id', optional($edit_warehouse)->id)
-                                    ->join('shelves', 'shelves.id', '=', 'shelf_numbers.shelf_id')
-                                    ->get([
-                                        'shelf_numbers.id', 
-                                        'shelves.name as shelfName', 
-                                        'shelf_numbers.name as shelfnumName', 
-                                        'shelf_numbers.warehouse_id'
-                                    ]);
-    
+            
             //code list under shelfnumberID & type(receive) &supplierID
             $choosen_products = Product::where('products.voucher_no', $product->voucher_no)
-                                    ->where('products.shelf_number_id', $product->shelf_number_id)
                                     ->where('products.supplier_id', $product->supplier_id)
                                     ->join('codes', 'codes.id', '=', 'products.code_id')
                                     ->join('brands', 'brands.id', '=', 'codes.brand_id')
                                     ->join('commodities', 'commodities.id', '=', 'codes.commodity_id')
                                     ->join('units', 'units.id', '=', 'products.unit_id')
                                     ->get(['products.id', 
+                                            'products.shelf_number_id', 
                                             'codes.name as code_name', 
                                             'codes.brand_id',
                                             'brands.name as brand_name',
@@ -364,6 +366,8 @@ class ProductController extends Controller
                                             'products.transfer_qty',
                                             'products.supplier_return_qty',
                                             'products.mr_qty',
+                                            'products.sub_adjustment',
+                                            'products.add_adjustment',
                                         ]);
 
             //all transfer dates under productIDs
@@ -376,17 +380,14 @@ class ProductController extends Controller
                                             'transfers.transfer_date',
                                         ]);
 
-            return view('products/edit', ['warehouses' => $warehouses,
+            return view('products/edit', ['shelfnums' => $shelfnums,
                                             'suppliers' => $suppliers,
                                             'codes' => $codes,
                                             'units' => $units,
                                             'product' => $product,
     
-                                            'edit_warehouse' => $edit_warehouse,
-                                            'edit_shelfnum' => $edit_shelfnum,
                                             'edit_supplier' => $edit_supplier,
-    
-                                            'shelfnums' => $shelfnums,
+                                            
                                             'choosen_products' => $choosen_products,
                                             'transfer_date' => $transfer_date,
                                             ]);
@@ -400,11 +401,9 @@ class ProductController extends Controller
      */
     public function update(Request $request, product $product)
     {
-        if ($request->warehouse_id) {
+        if ($request->supplier) {
             # code..
             $validator = Validator::make($request->all(),[
-                'warehouse_id' => 'required',
-                'shelfnum_id' => 'required',
                 'supplier' => 'required',
                 'vr_no' => 'required',
                 'date' => 'required',
@@ -425,8 +424,6 @@ class ProductController extends Controller
         $old_product = Product::find($request->old_product);
         
         $newRequest = $request->except(['_token',
-                                        'warehouse_id',
-                                        'shelfnum_id',
                                         'supplier',
                                         'vr_no',
                                         'date'
@@ -474,6 +471,7 @@ class ProductController extends Controller
         foreach ($newRequest as $key => $value){
             if (str_contains($key, 'qty_')) {
                 $explode = explode("_",$key);
+                $shelfnum = "shelfnum_".$explode[1];
                 $code = "code_".$explode[1];
                 $brand = "brand_".$explode[1];
                 $commodity = "commodity_".$explode[1];
@@ -495,14 +493,15 @@ class ProductController extends Controller
                     $shelf_check_product = Product::where('products.supplier_id', $product->supplier_id)
                                             ->where('products.code_id', $code_id->id)
                                             ->where('products.voucher_no', $request->vr_no)
+                                            ->where('products.shelf_number_id', $request->$shelfnum)
                                             ->where('id', '!=',  $product->id)
                                             ->whereIn('type', ['receive', 'opening'])
                                             ->first();
 
                     if (!$shelf_check_product) {
                         # code...
-                        if ($request->shelfnum_id) {
-                            if ($request->shelfnum_id != $product->shelf_number_id || 
+                        if ($request->vr_no) {
+                            if ($request->$shelfnum != $product->shelf_number_id || 
                                 $request->$code != $code_id->name || 
                                 $request->date != $product->received_date || 
                                 $request->vr_no != $product->voucher_no || 
@@ -510,7 +509,7 @@ class ProductController extends Controller
                                 # code...
                                 $p_history = ProductHistory::create([
                                     'shelf_number_id' => $product->shelf_number_id,
-                                    'new_shelf_number_id' => $request->shelfnum_id,
+                                    'new_shelf_number_id' => $request->$shelfnum,
                                     'received_date' => $product->received_date,
                                     'new_received_date' => $request->date,
                         
@@ -543,6 +542,7 @@ class ProductController extends Controller
                                 ]);
                             }
     
+    
                                 $product->update([
                                     'code_id' => $code_id->id,
                                     'unit_id' => $request->$unit,
@@ -552,23 +552,21 @@ class ProductController extends Controller
                                     'remarks' => $request->$remarks,
                                     'received_date'=> $request->date,
     
-                                    'shelf_number_id'=> $request->shelfnum_id,
+                                    'shelf_number_id'=> $request->$shelfnum,
                                     'voucher_no'=> $request->vr_no,
                                     'supplier_id'=> $request->supplier,
                                    
                                     'updated_by' => Auth::user()->id
                                 ]);
-    
-                                
                         }else{
     
-                            if ($request->$code != $code_id->name || 
+                            if ($request->$shelfnum != $product->shelf_number_id || $request->$code != $code_id->name || 
                                 $request->date != $product->received_date ||
                                 $request->$qty != $product->received_qty) {
     
                                     $p_history = ProductHistory::create([
                                         'shelf_number_id' => $product->shelf_number_id,
-                                        'new_shelf_number_id' => $product->shelf_number_id,
+                                        'new_shelf_number_id' => $request->$shelfnum,
                                         'received_date' => $product->received_date,
                                         'new_received_date' => $request->date,
                             
@@ -604,7 +602,7 @@ class ProductController extends Controller
                             $product->update([
                                 'code_id' => $code_id->id,
                                 'unit_id' => $request->$unit,
-                                
+                                'shelf_number_id' =>  $request->$shelfnum,
                                 'received_qty' => $request->$qty,
                                 'balance_qty' => $request->$qty,
                                 'remarks' => $request->$remarks,
@@ -668,12 +666,12 @@ class ProductController extends Controller
                     
                    
                 }else{
-                    if ($request->shelfnum_id) {
+                    if ($request->vr_no) {
                         //no transfer product and new product
                         $shelf_check_product = Product::where('products.supplier_id', $request->supplier)
                                             ->where('products.code_id', $code_id->id)
                                             ->join('codes', 'codes.id', '=', 'products.code_id')
-                                            ->where('products.shelf_number_id', $request->shelfnum_id)
+                                            ->where('products.shelf_number_id', $request->$shelfnum)
                                             ->where('products.voucher_no', $request->vr_no)
                                             ->where('products.type', 'receive')
                                             ->first();
@@ -697,7 +695,7 @@ class ProductController extends Controller
                                 'remarks' => $request->$remarks,
                                 'received_date'=> $request->date,
 
-                                'shelf_number_id'=> $request->shelfnum_id,
+                                'shelf_number_id'=> $request->$shelfnum,
                                 'voucher_no'=> $request->vr_no,
                                 'supplier_id'=> $request->supplier,
                                 'created_by'=> Auth::user()->id,
@@ -710,7 +708,7 @@ class ProductController extends Controller
                         $check_product = Product::where('products.supplier_id', $old_product->supplier_id)
                                                     ->where('products.code_id', $code_id->id)
                                                     ->join('codes', 'codes.id', '=', 'products.code_id')
-                                                    ->where('products.shelf_number_id', $old_product->shelf_number_id)
+                                                    ->where('products.shelf_number_id', $request->$shelfnum)
                                                     ->where('products.voucher_no', $old_product->voucher_no)
                                                     ->where('products.type', 'receive')
                                                     ->first();
@@ -733,7 +731,7 @@ class ProductController extends Controller
                                 'remarks' => $request->$remarks,
                                 'received_date'=> $request->date,
 
-                                'shelf_number_id'=> $old_product->shelf_number_id,
+                                'shelf_number_id'=> $request->$shelfnum,
                                 'voucher_no'=> $old_product->voucher_no,
                                 'supplier_id'=> $old_product->supplier_id,
                                 'created_by'=> Auth::user()->id,
@@ -741,9 +739,8 @@ class ProductController extends Controller
 
                             ]);
                         }
-
-                    }
-                }
+}}
+                
         }};
 
 
@@ -788,6 +785,7 @@ class ProductController extends Controller
             
             $shelfnum = ShelfNumber::find($product->shelf_number_id); 
             $warehouse = Warehouse::find(optional($shelfnum)->warehouse_id); 
+            $shelf = Shelf::find(optional($shelfnum)->shelf_id); 
 
             $supplier = Supplier::find($product->supplier_id); 
             $code = Code::find($product->code_id); 
@@ -804,6 +802,7 @@ class ProductController extends Controller
                 "Date" => $product->received_date,
                 "Voucher No"  => $product->voucher_no,
                 "Warehouse"  => optional($warehouse)->name,
+                "Shelf" => optional($shelf)->name,
                 "Shelf No" => optional($shelfnum)->name,
                 "Supplier" => optional($supplier)->name,
                 "Code" => optional($code)->name,
@@ -817,8 +816,10 @@ class ProductController extends Controller
                 "SupplierReturn_Qty" => $product->supplier_return_qty,
                 "Balance_Qty" => $product->balance_qty,
                 "Type" => $product->type,
-                "Remarks" => $product->remarks,
                 "Transfer_No" => optional($transfer)->transfer_no,
+                "Remarks" => $product->remarks,
+                "Created By"  => optional($c_user)->user_name,
+                "Updated By"  => optional($u_user)->user_name,
             ];
         }
         $export = new ProductsExport([$sort_products]);

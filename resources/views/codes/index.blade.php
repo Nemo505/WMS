@@ -111,7 +111,7 @@
 
                                             <select id='code' name="code_id" class=" form-control">
                                                 <option value="" disabled selected>Choose Code</option>
-                                                @foreach ($codes as $code)
+                                                @foreach ($code_lists as $code)
                                                     @if (isset($_REQUEST['code_id']))
                                                         @if ($code->id == $_REQUEST['code_id'])
                                                             <option value="{{ $code->id }}" selected>
@@ -130,32 +130,8 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-2">
-                                        <div class="">
-                                          <label for="from_date">From Date</label>
-                                          @if(isset($_REQUEST['from_date']) && !empty($_REQUEST['from_date']))
-                                            @php
-                                                $new_from_date = date('Y-m-d', strtotime($_REQUEST['from_date']));
-                                            @endphp
-                                            <input type="date" value={{$new_from_date}} name="from_date" class="form-control"  id="from_date">
-                                          @else
-                                            <input type="date" name="from_date" class="form-control"  id="from_date">
-                                          @endif
-                                        </div>
-                                    </div>
-                                    <div class="col-2">
-                                        <div class="form-group">
-                                            <label for="to_date">To Date</label>
-                                            @if(isset($_REQUEST['to_date']) && !empty($_REQUEST['to_date']))
-                                            @php
-                                                $new_to_date = date('Y-m-d', strtotime($_REQUEST['to_date']));
-                                            @endphp
-                                            <input type="date" value={{$new_to_date}} name="to_date" class="form-control"  id="to_date">
-                                            @else
-                                            <input type="date" name="to_date" class="form-control"  id="to_date">
-                                            @endif
-                                        </div>
-                                    </div>
+                                   
+                                   
                                 </div>
 
                                 <div class="col-2 d-flex justify-content-start">
@@ -176,8 +152,8 @@
 
                     </div>
                     <!-- /.card-header -->
-                    <div class="card-body">
-                        <table id="example2" class="table table-bordered table-hover">
+                    <div class="card-body" style="overflow-x: scroll;">
+                        <table class="table table-bordered table-hover">
                             <thead>
                                 <tr>
                                     <th>No</th>
@@ -185,7 +161,7 @@
                                     <th>Name</th>
                                     <th>Brand</th>
                                     <th>Commodity</th>
-                                    <th>Usage</th>
+                                    <th >Usage</th>
                                     <th>Created_By</th>
                                     <th>Updated_By</th>
                                     <th>Created_at</th>
@@ -223,7 +199,7 @@
                                         <td class="brand_{{ $code->id }}" id="{{ optional($brand_name)->id }}">{{ optional($brand_name)->name }}</td>
                                         <td class="commodity_{{ $code->id }}" id="{{ optional($commodity_name)->id }}">{{ optional($commodity_name)->name }}</td>
                                        
-                                        <td class="usage_{{ $code->id }}">{{ $code->usage }}</td>
+                                        <td class="usage_{{ $code->id }}" >{{ $code->usage }}</td>
                                         <td>{{ optional($c_user)->name }}</td>
                                         <td>{{ optional($u_user)->name }}</td>
                                         <td>{{ date('Y-m-d', strtotime($code->created_at)) }}</td>
@@ -269,6 +245,48 @@
                         </table>
                     </div>
                     <!-- /.card-body -->
+                    
+                    <div class="card-footer clearfix">
+                        <ul class="pagination pagination-sm m-0 float-right">
+                        <li class="page-item {{ $codes->onFirstPage() ? 'disabled' : '' }}">
+                            <a class="page-link" href="{{ $codes->previousPageUrl() }}">&laquo;</a>
+                        </li>
+                        @php
+                            $numAdjacent = 2; // Number of adjacent page links to display
+                            $start = max(1, $codes->currentPage() - $numAdjacent);
+                            $end = min($start + $numAdjacent * 2, $codes->lastPage());
+                        @endphp
+                        @if($start > 1)
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $codes->url(1) }}">1</a>
+                            </li>
+                            @if($start > 2)
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            @endif
+                        @endif
+                        @for ($i = $start; $i <= $end; $i++)
+                            <li class="page-item {{ $i === $codes->currentPage() ? 'active' : '' }}">
+                                <a class="page-link" href="{{ $codes->url($i) }}">{{ $i }}</a>
+                            </li>
+                        @endfor
+                        @if($end < $codes->lastPage())
+                            @if($end < $codes->lastPage() - 1)
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            @endif
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $codes->url($codes->lastPage()) }}">{{ $codes->lastPage() }}</a>
+                            </li>
+                        @endif
+                        <li class="page-item {{ $codes->currentPage() === $codes->lastPage() ? 'disabled' : '' }}">
+                            <a class="page-link" href="{{ $codes->nextPageUrl() }}">&raquo;</a>
+                        </li>
+                    </ul>
+                    </div>
+                    
                 </div>
                 <!-- /.card -->
 
@@ -295,19 +313,20 @@
                         @csrf
                         <div class="form-group ">
                             <label for="c_brand">Brand Name <span style="color: red">*</span> </label>
-
-                            <select id='c_brand' required name="brand_id" class="form-control">
-                                <option value="" disabled selected>Choose Brand</option>
-                                @foreach ($brands as $brand)
-                                    <option value="{{ $brand->id }}">
-                                        {{ $brand->name }}</option>
-                                @endforeach
-                            </select>
+                            <div>
+                                <select id='c_brand' required name="brand_id" class="">
+                                    <option value="" disabled selected>Choose Brand</option>
+                                    @foreach ($brands as $brand)
+                                        <option value="{{ $brand->id }}">
+                                            {{ $brand->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
 
                         <div class="form-group ">
                             <label for="c_commodity">Commodity Name <span style="color: red">*</span> </label>
-
+                            <div>
                             <select id='c_commodity' required name="commodity_id" class="form-control getbrand">
                                 <option value="" disabled selected>Choose Commodity</option>
                                 @foreach ($commodities as $commodity)
@@ -315,6 +334,7 @@
                                         {{ $commodity->name }}</option>
                                 @endforeach
                             </select>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -323,7 +343,7 @@
                                 placeholder="Enter Code">
                         </div>
                         <div class="form-group">
-                            <label for="image">File <span style="color: red">*</span> </label>
+                            <label for="image">File </label>
                             <input type="file" class="form-control" id="image" name="image">
                         </div>
                         <div class="form-group">
@@ -360,7 +380,7 @@
 
                         <div class="form-group ">
                             <label for="e_brand">Brand Name <span style="color: red">*</span> </label>
-
+                            <div>
                             <select id='e_brand' required name="e_brand_id" class="form-control">
                                 <option value="" disabled selected>Choose Brand</option>
                                 @foreach ($brands as $brand)
@@ -368,11 +388,12 @@
                                         {{ $brand->name }}</option>
                                 @endforeach
                             </select>
+                            </div>
                         </div>
                         
                         <div class="form-group ">
                             <label for="e_commodity">Commodity Name <span style="color: red">*</span> </label>
-
+                            <div>
                             <select id='e_commodity' required name="e_commodity_id" class="form-control getbrand">
                                 <option value="" disabled selected>Choose commodity</option>
                                 @foreach ($commodities as $commodity)
@@ -380,6 +401,7 @@
                                         {{ $commodity->name }}</option>
                                 @endforeach
                             </select>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -388,7 +410,7 @@
                             <input type="hidden" name="edit_id">
                         </div>
                         <div class="form-group">
-                            <label for="edit_image">File <span style="color: red">*</span> </label>
+                            <label for="edit_image">File</label>
                             <div class="d-flex">
                                 <img src="" alt="code" name="e_image" height="auto" width="35">
                                 <input type="file" class="form-control ml-1" id="edit_image" name="edit_image">
@@ -546,6 +568,23 @@
         $("#brand").ready(function() {
             $("#brand").select2();
         });
+        
+        $(document).ready(function() {
+            $('#c_brand').select2({
+                dropdownParent: $('#create-modal')
+            });
+            $('#c_commodity').select2({
+                dropdownParent: $('#create-modal')
+            });
+            
+            $('#e_brand').select2({
+                dropdownParent: $('#edit-modal')
+            });
+            $('#e_commodity').select2({
+                dropdownParent: $('#edit-modal')
+            });
+        });
+
       
     </script>
 
@@ -560,8 +599,8 @@
 
             $('input[name=edit_id]').val(id);
             $('input[name=edit_name]').val(name);
-            $('select[name=e_commodity_id]').val(commodity);
-            $('select[name=e_brand_id]').val(brand);
+            $('select[name=e_commodity_id]').val(commodity).trigger('change');
+            $('select[name=e_brand_id]').val(brand).trigger('change');
             $('textarea[name=edit_usage]').html(usage);
             $('img[name=e_image]').attr('src', img);
         })

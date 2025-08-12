@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('issues', function (Blueprint $table) {
             $table->id();
             $table->string('mr_no');
+            $table->string('job_no')->nullable();
             $table->decimal('mr_qty', 14, 3);
             $table->decimal('mrr_qty', 14, 3)->nullable();
 

@@ -14,7 +14,7 @@
       <!-- general form elements -->
       <div class="card card-primary">
         <!-- form start -->
-        <form method="POST" action="{{route('supplier_returns.update')}}">
+        <form method="POST" id="myForm" action="{{route('supplier_returns.update')}}">
           @csrf
           <div class="card-body">
 
@@ -273,7 +273,7 @@
           <div class="d-flex justify-content-around">
 
             <a type="" class="btn btn-secondary">Cancel</a>
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" class="btn btn-primary changeBtn" onclick="changeButtonType()">Submit</button>
           </div>
         </div>
 
@@ -974,150 +974,154 @@
 </script>
 
 <script>
-
+ let isScannerInput = '';
   $('#scanner').keyup(function() {
       var value = $('#scanner').val();
       if(value.length == 10) {
-          $('.submit_barcode').click();
-      }
-  });
-
-  $('.submit_barcode').click(function () {
-    if ($('#supplier').val() != null && $('#supplier').val() != '') {
-      if ($('#scanner').val() != null && $('#scanner').val() != '') {
-        ++i;
-            $.ajax({
-                url: "{{ route('scanners.storeSupplier') }}",
-                type: "GET",
-                data: {
-                  "barcode": $('#scanner').val(),
-                  "shelfnum_id": $("#shelfnum_id").val(),
-                  "supplier": $("#supplier").val(),
-                },
-                cache: false,
-                success: function (result) {
-                  if (result !== null) {
-
+           if (isScannerInput === value) {
+              $('#scanner').val('');
+               
+            }else{
+                if ($('#supplier').val() != null && $('#supplier').val() != '') {
+                  if ($('#scanner').val() != null && $('#scanner').val() != '') {
+                    ++i;
+                        $.ajax({
+                            url: "{{ route('scanners.storeSupplier') }}",
+                            type: "GET",
+                            data: {
+                              "barcode": $('#scanner').val(),
+                              "shelfnum_id": $("#shelfnum_id").val(),
+                              "supplier": $("#supplier").val(),
+                            },
+                            cache: false,
+                            success: function (result) {
+                              if (result !== null) {
+            
+                                $('#scanner').val('');
+                                var img = result['product'].image;
+                                $( ".moreCols" ).append(
+                                  `
+                                  <div class="row d-flex justify-content-around deleteRow">
+                                    <div class="my-auto pl-4 text-center">
+                                      <div class="form-group ">
+                                        <input type="checkbox" class="form-check-input" id="">
+                                      </div>
+                                    </div>
+                  
+                                    <div class="col-1 justify-content-center align-items-center">
+                                      <div class="form-group">
+                                        <img src={{ URL::asset('${img}')}} id="img_${i}"
+                                                class="isImg"
+                                                alt="code" height="100" 
+                                                width="100%" 
+                                                style="object-fit: contain" >
+                  
+                                            
+                                      </div>
+                                    </div>
+                
+                                    <div class="col-1">
+                                      <div class="form-group">
+                                        <label for="code">Code<span style="color: red">*</span> </label> 
+                                        <!-- Dropdown --> 
+                                        <select id='code_${i}' required name="code_${i}" class="form-control getCode">
+                                          <option value="${result['product'].name}" >${result['product'].name}</option>
+                                        </select>
+                  
+                                      </div>
+                                    </div>
+                
+                                    <div class="col-1">
+                                      <div class="form-group">
+                                        <label for="brand">Brand <span style="color: red">*</span> </label> 
+                                        <!-- Dropdown --> 
+                                        <select id='brand_${i}' required name="brand_${i}" class=" form-control getBrand">
+                                          <option value="${result['product'].brand_id}" >${result['product'].brand_name}</option>
+                                          
+                                        </select>
+                                      </div>
+                                    </div>
+                
+                                    <div class="col-1">
+                                      <div class="form-group">
+                                        <label for="commodity">Commodity<span style="color: red">*</span> </label> 
+                                        <!-- Dropdown --> 
+                                        <select id='commodity_${i}' required name="commodity_${i}" class=" form-control getVr">
+                                          <option value="${result['product'].commodity_id}" >${result['product'].commodity_name}</option>
+                                          
+                                        </select>
+                                      </div>
+                                    </div>
+                
+                                    <div class="col-2">
+                                      <div class="form-group">
+                                        <label for="vr_no">Voucher_No<span style="color: red">*</span> </label> 
+                                        <!-- Dropdown --> 
+                                        <select id='vr_no_${i}' required name="vr_no_${i}" class=" form-control getQty">
+            
+                                          ${result['transfer'] !== null ?
+                                          
+                                            `<option value="${result['product'].id}" >${result['product'].voucher_no} || ${result['transfer'].transfer_no}</option>`
+                                          :
+                                            `<option value="${result['product'].id}" >${result['product'].voucher_no}</option>`
+                                          
+                                         }
+                                          
+                                        </select>
+                                      </div>
+                                    </div>
+                
+                                    <div class="col-1">
+                                      <div class="form-group">
+                                        <label for="qty_${i}" class="labelQty">${result['product'].balance_qty} Qty </label> 
+                                        <input type="number" class="form-control"
+                                         required id="qty_${i}" 
+                                         name="qty_${i}" step=".01" 
+                                         min=0.01 oninput="validity.valid||(value='');" 
+                                         max=${result['product'].balance_qty}
+                                         value=0
+                                         placeholder="">
+                                       
+                                      </div>
+                                    </div>
+                
+                                    <div class="col-2">
+                                      <div class="form-group">
+                                        <label for="usage">Usage</label> 
+                                        <p id="usage_${i}" 
+                                            name="usage_${i}" 
+                                            style="color: rgb(149, 155, 155)"
+                                            class="isUsage"
+                                            >${result['product'].usage}
+                                          </p>
+                                      </div>
+                                    </div>
+                
+                                    <div class="col-2">
+                                      <div class="form-group">
+                                        <label for="remark">Remark</label> 
+                                        <input type="text" class="form-control" id="remark_${i}" name="remark_${i}" placeholder="">
+                                      </div>
+                                    </div>
+                
+                                  </div>
+                                  `
+                                )
+                              }
+                            }
+                        });
+                  }else{
                     $('#scanner').val('');
-                    var img = result['product'].image;
-                    $( ".moreCols" ).append(
-                      `
-                      <div class="row d-flex justify-content-around deleteRow">
-                        <div class="my-auto pl-4 text-center">
-                          <div class="form-group ">
-                            <input type="checkbox" class="form-check-input" id="">
-                          </div>
-                        </div>
-      
-                        <div class="col-1 justify-content-center align-items-center">
-                          <div class="form-group">
-                            <img src={{ URL::asset('${img}')}} id="img_${i}"
-                                    class="isImg"
-                                    alt="code" height="100" 
-                                    width="100%" 
-                                    style="object-fit: contain" >
-      
-                                
-                          </div>
-                        </div>
-    
-                        <div class="col-1">
-                          <div class="form-group">
-                            <label for="code">Code<span style="color: red">*</span> </label> 
-                            <!-- Dropdown --> 
-                            <select id='code_${i}' required name="code_${i}" class="form-control getCode">
-                              <option value="${result['product'].name}" >${result['product'].name}</option>
-                            </select>
-      
-                          </div>
-                        </div>
-    
-                        <div class="col-1">
-                          <div class="form-group">
-                            <label for="brand">Brand <span style="color: red">*</span> </label> 
-                            <!-- Dropdown --> 
-                            <select id='brand_${i}' required name="brand_${i}" class=" form-control getBrand">
-                              <option value="${result['product'].brand_name}" >${result['product'].brand_name}</option>
-                              
-                            </select>
-                          </div>
-                        </div>
-    
-                        <div class="col-1">
-                          <div class="form-group">
-                            <label for="commodity">Commodity<span style="color: red">*</span> </label> 
-                            <!-- Dropdown --> 
-                            <select id='commodity_${i}' required name="commodity_${i}" class=" form-control getVr">
-                              <option value="${result['product'].commodity_name}" >${result['product'].commodity_name}</option>
-                              
-                            </select>
-                          </div>
-                        </div>
-    
-                        <div class="col-2">
-                          <div class="form-group">
-                            <label for="vr_no">Voucher_No<span style="color: red">*</span> </label> 
-                            <!-- Dropdown --> 
-                            <select id='vr_no_${i}' required name="vr_no_${i}" class=" form-control getQty">
-
-                              ${result['transfer'] !== null ?
-                              
-                                `<option value="${result['product'].id}" >${result['product'].voucher_no} || ${result['transfer'].transfer_no}</option>`
-                              :
-                                `<option value="${result['product'].id}" >${result['product'].voucher_no}</option>`
-                              
-                             }
-                              
-                            </select>
-                          </div>
-                        </div>
-    
-                        <div class="col-1">
-                          <div class="form-group">
-                            <label for="qty_${i}" class="labelQty">${result['product'].balance_qty} Qty </label> 
-                            <input type="number" class="form-control"
-                             required id="qty_${i}" 
-                             name="qty_${i}" step=".01" 
-                             min=0.01 oninput="validity.valid||(value='');" 
-                             max=${result['product'].balance_qty}
-                             value=0
-                             placeholder="">
-                           
-                          </div>
-                        </div>
-    
-                        <div class="col-2">
-                          <div class="form-group">
-                            <label for="usage">Usage</label> 
-                            <p id="usage_${i}" 
-                                name="usage_${i}" 
-                                style="color: rgb(149, 155, 155)"
-                                class="isUsage"
-                                >${result['product'].usage}
-                              </p>
-                          </div>
-                        </div>
-    
-                        <div class="col-2">
-                          <div class="form-group">
-                            <label for="remark">Remark</label> 
-                            <input type="text" class="form-control" id="remark_${i}" name="remark_${i}" placeholder="">
-                          </div>
-                        </div>
-    
-                      </div>
-                      `
-                    )
                   }
+                }else{
+                  $('#scanner').val('');
                 }
-            });
-      }else{
-        $('#scanner').val('');
+                 isScannerInput = value;
+            }
       }
-    }else{
-      $('#scanner').val('');
-    }
   });
+
+   
 </script>
 
 <script>
@@ -1128,6 +1132,39 @@
     $('#scanner').focus();
     $('.submit_barcode').css('display','block');
   })
+</script>
+
+<script>
+    function changeButtonType() {
+        // start
+         var codetxt=$(`#code_${i}`).val();
+         var brandtxt=$(`#brand_${i}`).val();
+         var commoditytxt=$(`#commodity_${i}`).val();
+         var vr_notxt=$(`#vr_no_${i}`).val();
+         
+         var qtytxt=$(`#qty_${i}`).val();
+         
+        if (!codetxt && codetxt== ''){
+            alert('please enter code');
+        }else if(!brandtxt && brandtxt== ''){
+          alert('please enter bandname');   
+            
+        }else if(!commoditytxt && commoditytxt== ''){
+          alert('please enter commodity');
+        }else if(!vr_notxt && vr_notxt== ''){
+          alert('please enter Vr No');  
+        }else if(qtytxt == 0){
+          alert('please enter qty');  
+        }else{
+             // end
+            var button = document.querySelector('.changeBtn');
+            button.type = 'submit';
+            // Optionally, trigger the form submission after changing the button type
+            var form = document.getElementById('myForm');
+            form.submit();
+        }
+    }
+
 </script>
 
 @endsection

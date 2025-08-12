@@ -15,6 +15,11 @@
             Add New
         </a>
     @endif
+        <a href="" type="button" class="btn btn-success" data-toggle="modal" data-target="#import-modal" >
+            <i class="fas fa-upload" style="color: #ffffff;"></i>
+            Import
+        </a>
+
 
 @endsection
 
@@ -26,7 +31,7 @@
                     <div class="card-header">
                         {{-- form --}}
                         @php
-                            $s_shelf_nums = App\Models\ShelfNumber::get();
+                            $s_shelf_nums = App\Models\ShelfNumber::distinct()->pluck('name');
                         @endphp
                         <form action="" method="GET">
 
@@ -37,19 +42,19 @@
                                         <div class="form-group">
                                             <label for="shelf_num">Shelf Number</label>
 
-                                            <select id='shelf_num' name="shelf_num_id" class=" form-control">
-                                                <option value="" disabled selected>Choose Number</option>
+                                            <select id='shelf_num' name="shelf_num_name" class=" form-control">
+                                                <option value="" selected>Choose Number</option>
                                                 @foreach ($s_shelf_nums as $s_shelf_num)
-                                                    @if (isset($_REQUEST['shelf_num_id']))
-                                                        @if ($s_shelf_num->id == $_REQUEST['shelf_num_id'])
-                                                            <option value="{{ $s_shelf_num->id }}" selected>
-                                                                {{ $s_shelf_num->name }}</option>
+                                                    @if (isset($_REQUEST['shelf_num_name']))
+                                                        @if ($s_shelf_num == $_REQUEST['shelf_num_name'])
+                                                            <option value="{{ $s_shelf_num }}" selected>
+                                                                {{ $s_shelf_num }}</option>
                                                         @else
-                                                            <option value="{{ $s_shelf_num->id }}">{{ $s_shelf_num->name }}
+                                                            <option value="{{ $s_shelf_num }}">{{ $s_shelf_num }}
                                                             </option>
                                                         @endif
                                                     @else
-                                                        <option value="{{ $s_shelf_num->id }}">{{ $s_shelf_num->name }}
+                                                        <option value="{{ $s_shelf_num }}">{{ $s_shelf_num }}
                                                         </option>
                                                     @endif
                                                 @endforeach
@@ -62,20 +67,20 @@
                                         <div class="form-group">
                                             <label for="shelf">Shelf Name</label>
 
-                                            <select id='shelf' name="shelf_id" class=" form-control">
-                                                <option value="" disabled selected>Choose Shelf</option>
-                                                @foreach ($shelves as $shelf)
-                                                    @if (isset($_REQUEST['shelf_id']))
-                                                        @if ($shelf->id == $_REQUEST['shelf_id'])
-                                                            <option value="{{ $shelf->id }}" selected>
-                                                                {{ $shelf->name }}</option>
+                                            <select id='shelf' name="shelf_name" class=" form-control">
+                                                <option value="" selected>Choose Shelf</option>
+                                                @foreach ($shelves as $shelf_name)
+                                                    @if (isset($_REQUEST['shelf_name']))
+                                                        @if ($shelf_name == $_REQUEST['shelf_name'])
+                                                            <option  value="{{ $shelf_name }}" selected>
+                                                                {{ $shelf_name }}</option>
                                                         @else
-                                                            <option value="{{ $shelf->id }}">
-                                                                {{ $shelf->name }}</option>
+                                                            <option value="{{ $shelf_name }}">
+                                                                {{ $shelf_name }}</option>
                                                         @endif
                                                     @else
-                                                        <option value="{{ $shelf->id }}">
-                                                            {{ $shelf->name }}</option>
+                                                        <option value="{{ $shelf_name }}">
+                                                            {{ $shelf_name }}</option>
                                                     @endif
                                                 @endforeach
                                             </select>
@@ -87,7 +92,7 @@
                                             <label for="warehouse">Warehouse Name</label>
 
                                             <select id='warehouse' name="warehouse_id" class=" form-control">
-                                                <option value="" disabled selected>Choose Warehouse</option>
+                                                <option value=""  selected>Choose Warehouse</option>
                                                 @foreach ($warehouses as $warehouse)
                                                     @if (isset($_REQUEST['warehouse_id']))
                                                         @if ($warehouse->id == $_REQUEST['warehouse_id'])
@@ -123,7 +128,7 @@
 
                     </div>
                     <!-- /.card-header -->
-                    <div class="card-body">
+                    <div class="card-body" style="overflow-x: scroll;">
                         <table id="example2" class="table table-bordered table-hover">
                             <thead>
                                 <tr>
@@ -328,6 +333,48 @@
         <!-- /.modal-dialog -->
     </div>
     <!-- /.del modal -->
+    
+     <!--import modal -->
+    <div class="modal fade" id="import-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Add Code Lists!</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ route('shelf_nums.import') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    @csrf
+                    <div class="row">
+                        <div class="col-8">
+                            <div class="form-group ">
+                                <label class="form-label" >Excel <span style="color: red">*</span> </label>
+                                <input type="file"required class="form-control" name="shelf-nums" required>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                          <div class="form-group ">
+                              <label class="form-label">Sample File</label>
+                                <a href="{{ route("shelf_nums.sample")}}" type="button"class="btn btn-success">
+                                    <i class="fas fa-file-download mr-1"></i>Download
+                                </a>
+                          </div>
+                      </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    
 
     <!--del modal -->
     <div class="modal fade" id="del-modal">

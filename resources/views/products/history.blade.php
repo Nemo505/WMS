@@ -19,11 +19,13 @@
       <div class="col-12">
         <div class="card">
           <!-- /.card-header -->
-          <div class="card-body">
+          <div class="card-body" style="overflow-x: scroll;">
             <table id="example2" class="table table-bordered table-hover">
               <thead>
                 <tr>
                   <th>No</th>
+                  <th>Action</th>
+                  
                   <th>Date</th>
                   <th>New Date</th>
 
@@ -54,7 +56,7 @@
 
                   <th>Remark</th>
                   <th>New Remark</th>
-                  <th>Action</th>
+                  
                 </tr>
               </thead>
               <tbody>
@@ -98,6 +100,13 @@
                 @endphp
                   <tr>
                       <td>{{  $i }}</td>
+                      <td >
+                            @if ($history->method == 'update')
+                                <span class="badge badge-pill fs-6 " style="background-color: rgb(127, 255, 180)">{{ $history->method }}</span>
+                            @else
+                                <span class="badge badge-pill fs-6" style="background-color: rgb(250, 171, 171)" >{{ $history->method }}</span>
+                            @endif 
+                      </td>
                       <td>{{ $history->received_date }}</td>
                       <td>{{ $history->new_received_date }}</td>
                       <td>{{ optional($shelf_no)->name }} ( {{ optional($shelf_no)->shelf_name }})</td>
@@ -125,13 +134,7 @@
 
                       <td>{{ $history->remarks }}</td>
                       <td>{{ $history->new_remark }}</td>
-                      <td >
-                            @if ($history->method == 'update')
-                                <span class="badge badge-pill fs-6 " style="background-color: rgb(127, 255, 180)">{{ $history->method }}</span>
-                            @else
-                                <span class="badge badge-pill fs-6" style="background-color: rgb(250, 171, 171)" >{{ $history->method }}</span>
-                            @endif 
-                      </td>
+                      
                   </tr>
                 @endforeach
               </tbody>
@@ -139,6 +142,8 @@
               <tfoot>
               <tr>
                 <th>No</th>
+                <th>Action</th>
+                
                 <th>Date</th>
                 <th>New Date</th>
                 <th>Shelf Number</th>
@@ -168,7 +173,7 @@
 
                 <th>Remark</th>
                 <th>New Remark</th>
-                <th>Action</th>
+                
               </tr>
               </tfoot>
             </table>
