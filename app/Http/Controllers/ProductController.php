@@ -38,7 +38,7 @@ class ProductController extends Controller
             return redirect()->back()->with('error','You do not have permission to access this page.');
         }
 
-        $products = Product::where(function($query) use ($request){
+        $exportQuery = Product::where(function($query) use ($request){
             if($request->product_id){
                 return $query->where('id', $request->product_id);
             }
@@ -114,9 +114,7 @@ class ProductController extends Controller
             }
         })
         ->where('type', 'receive')
-        ->orderbydesc('id')
-        ->paginate(10);
-
+        ->orderbydesc('id');
         $warehouses = Warehouse::get();
         $suppliers = Supplier::get();
         $codes = Code::distinct()->get(['name']);
@@ -137,12 +135,12 @@ class ProductController extends Controller
                 $sort_products = $unsort_products->sort();
                 return $this->export($sort_products);
             }else{
-                $sort_products = $products->sort();
+                $sort_products = $exportQuery->get()->sort();
                 return $this->export($sort_products);
             }
             
         }
-
+        $products = $exportQuery->paginate(10);
         return view('products/index', ['warehouses' => $warehouses,
                                         'suppliers' => $suppliers,
                                         'codes' => $codes,

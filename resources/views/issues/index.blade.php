@@ -375,7 +375,7 @@
                   $warehouse = \App\Models\Warehouse::find(optional($shelf_no)->warehouse_id);
                   $product =  \App\Models\Product::find($issue->product_id);
 
-                  $code = \App\Models\Code::find($product->code_id);
+                  $code = \App\Models\Code::find(optional($product)->code_id);
                   $brand = \App\Models\Brand::find(optional($code)->brand_id); 
                   $commodity = \App\Models\Commodity::find(optional($code)->commodity_id);
                   $unit = \App\Models\Unit::find(optional($product)->unit_id);

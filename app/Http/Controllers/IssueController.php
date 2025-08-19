@@ -860,7 +860,7 @@ class IssueController extends Controller
             $shelf_number = ShelfNumber::find($issue->shelf_number_id); 
             $warehouse = Warehouse::find(optional($shelf_number)->warehouse_id); 
 
-            $code = Code::find($product->code_id); 
+            $code = Code::find(optional($product)->code_id); 
             $brand = Brand::find(optional($code)->brand_id); 
             $commodity = Brand::find(optional($code)->commodity_id); 
 
