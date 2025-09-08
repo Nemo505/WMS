@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\CustomersExport;
 use Redirect;
 use Auth;
 use Validator;
@@ -36,6 +38,10 @@ class CustomerController extends Controller
         ->orderbydesc('id')
         ->get();
 
+        if ($request->has('export')) {
+            $sort_customers = $customers->sort();
+            return $this->export($sort_customers);
+        }
         return view('customers/index', [ 'customers' => $customers ]);
     }
 
@@ -149,6 +155,36 @@ class CustomerController extends Controller
         }else{
             return Redirect::route('customers.index')->with('error','Customer Not Found');
         }
+    }
+
+    #export excel
+    public function export($sort_customers)
+    {
+        // $check = Auth::user()->hasPermissionTo('export_brand');
+
+        // if ($check == false) {
+        //     return redirect()->back()->with('error','You do not have permission to access this page.');
+        // }
+
+        for ($i = 0; $i < count($sort_customers); $i++) {
+            # code...
+            $customer = $sort_customers[$i];
+            $c_user = User::find($customer->created_by); 
+            $u_user = User::find($customer->updated_by); 
+
+            $sort_customers[$i] = [
+                "No" =>  count($sort_customers) - $i,
+                "Customer ID" => $customer->id,
+                'Customer Name' => $customer->name,
+                "Created By" => optional($c_user)->name,
+                "Updated By" => optional($u_user)->name,
+                "Created At" => $customer->created_at,
+                "Updated At" => $customer->updated_at,
+            ];
+        }
+        $export = new CustomersExport([$sort_customers]);
+
+        return Excel::download($export, 'customers ' . date("Y-m-d") . '.xlsx');
     }
 
 }

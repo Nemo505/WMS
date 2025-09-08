@@ -73,11 +73,16 @@
 
                 </div>
 
-                <div class="col-6 d-flex justify-content-end">
-                    <div class="col-2">
+                <div class="col-2 d-flex justify-content-end">
+                    <div class="col-6">
                       <div class="form-group mt-4">
                         <button class="btn btn-primary" type="submit" name="search">Search</button>
                       </div>
+                    </div>
+                    <div class="col-6 ">
+                        <div class="form-group mt-4">
+                            <button class="btn btn-primary" type="submit" name="export">Export</button>
+                        </div>
                     </div>
                 </div>
 

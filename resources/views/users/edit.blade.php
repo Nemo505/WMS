@@ -93,7 +93,7 @@
           <div class="card-footer ">
             <div class="d-flex justify-content-around">
 
-              <a type="" class="btn btn-secondary">Cancel</a>
+              <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
               <button type="submit" class="btn btn-primary">Submit</button>
             </div>
           </div>
