@@ -751,8 +751,22 @@ class ProductController extends Controller
         if ($check == false) {
             return redirect()->back()->with('error','You do not have permission to access this page.');
         }
+        $histories = ProductHistory::orderBy('id', 'desc')
+        ->where(function ($query) use ($request){
+            if($request->from_date){
+                $from_date = date('Y-m-d', strtotime($request->from_date));
+                return $query->where('received_date', '>=',  $from_date);
 
-        $histories = ProductHistory::orderby('id', 'desc')->get();;
+            }
+        })
+        ->where(function ($query) use ($request){
+            if($request->to_date){
+                $to_date = date('Y-m-d', strtotime($request->to_date));
+                return $query->where('received_date', '<=',  $to_date);
+            }
+        })->orderbydesc('id')
+        ->get();
+
         return view('products/history', ['histories' => $histories ]);
     }
     /**
@@ -896,6 +910,26 @@ class ProductController extends Controller
         }
     }
 
+    public function backup()
+    {
+        $dbHost = env('DB_HOST');
+        $dbName = env('DB_DATABASE');
+        $dbUser = env('DB_USERNAME');
+        $dbPass = env('DB_PASSWORD');
+
+        $fileName = 'backup-' . date('Y-m-d_H-i-s') . '.sql';
+        $filePath = storage_path('app/' . $fileName);
+
+        // Run mysqldump command
+        $mysqldumpPath = "C:\\xampp\\mysql\\bin\\mysqldump.exe";
+        $command = "\"$mysqldumpPath\" -h$dbHost -u$dbUser -p\"$dbPass\" $dbName > \"$filePath\"";
+
+
+        system($command);
+
+        // Return file as download
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
 
 
 }

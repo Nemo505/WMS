@@ -6,6 +6,12 @@
 @endsection
 
 @section('buttons')
+
+    <a href="{{ route("products.backup")}}" type="button" class="btn btn-secondary" >
+      <i class="fas fa-cloud-download-alt"></i>
+      BackUp
+    </a> 
+
     <a href="{{ route("products.history")}}" type="button" class="btn btn-primary" >
       <i class="fas fa-history"></i>
       History
@@ -352,7 +358,7 @@
                       
                       <td>{{ $product->remarks }}</td>
                       <td>{{ optional($transfer)->transfer_no }}</td>
-                       <td>{{ optional($created_by)->user_name  }}</td>
+                      <td>{{ optional($created_by)->user_name  }}</td>
                       <td>{{ optional($updated_by)->user_name  }}</td>
                       <td>
                           <div class="d-flex justify-content-around"> 
@@ -372,7 +378,7 @@
 
               <tfoot>
               <tr>
-                <th>No</th>
+                  <th>No</th>
                   <th>Date</th>
                   <th>VR No</th>
                   <th>BarCode</th>

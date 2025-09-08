@@ -18,6 +18,64 @@
     <div class="row">
       <div class="col-12">
         <div class="card">
+
+           <div class="card-header">
+            {{-- form --}}
+           
+            <form action="" method="GET">
+
+              <div class="row d-flex justify-content-around">
+                 
+                  {{-- From Date --}}
+                  <div class="col-2">
+                    <div class="form-group">
+                      <label for="from_date">From Date</label>
+
+                      <div style="width: 80%">
+                          @if(isset($_REQUEST['from_date']) && !empty($_REQUEST['from_date']))
+                            @php
+                                $new_from_date = date('Y-m-d', strtotime($_REQUEST['from_date']));
+                            @endphp
+                            <input type="date" value={{$new_from_date}} name="from_date" class="form-control"  id="from_date">
+                          @else
+                            <input type="date" name="from_date" class="form-control"  id="from_date">
+                          @endif
+                      </div>
+
+                    </div>
+                  </div>
+                  {{-- To date --}}
+                  <div class="col-2">
+                    <div class="form-group">
+                      <label for="to_date">To Date</label>
+
+                      <div style="width: 80%">
+                        @if(isset($_REQUEST['to_date']) && !empty($_REQUEST['to_date']))
+                          @php
+                              $new_to_date = date('Y-m-d', strtotime($_REQUEST['to_date']));
+                          @endphp
+                          <input type="date" value={{$new_to_date}} name="to_date" class="form-control"  id="to_date">
+                        @else
+                          <input type="date" name="to_date" class="form-control"  id="to_date">
+                        @endif
+                      </div>
+
+                    </div>
+                  </div>
+
+                  <div class="col-1">
+                      <div class="form-group mt-4">
+                        <button class="btn btn-primary" type="submit" name="search">Search</button>
+                      </div>
+                  </div>
+                  
+                  <div class="col"></div>
+
+              </div>
+            </form>
+
+          </div>
+
           <!-- /.card-header -->
           <div class="card-body" style="overflow-x: scroll;">
             <table id="example2" class="table table-bordered table-hover">
@@ -56,6 +114,9 @@
 
                   <th>Remark</th>
                   <th>New Remark</th>
+
+                  <th>Created By</th>
+                  <th>Updated By</th>
                   
                 </tr>
               </thead>
@@ -97,6 +158,9 @@
 
                   $supplier = \App\Models\Supplier::find($history->supplier_id);
                   $new_supplier = \App\Models\Supplier::find($history->new_supplier_id);
+
+                  $created_by = \App\Models\User::find($history->created_by); 
+                  $updated_by = \App\Models\User::find($history->updated_by); 
                 @endphp
                   <tr>
                       <td>{{  $i }}</td>
@@ -134,7 +198,8 @@
 
                       <td>{{ $history->remarks }}</td>
                       <td>{{ $history->new_remark }}</td>
-                      
+                      <td>{{ optional($created_by)->user_name  }}</td>
+                      <td>{{ optional($updated_by)->user_name  }}</td>
                   </tr>
                 @endforeach
               </tbody>
@@ -174,6 +239,8 @@
                 <th>Remark</th>
                 <th>New Remark</th>
                 
+                <th>Created By</th>
+                <th>Updated By</th>
               </tr>
               </tfoot>
             </table>

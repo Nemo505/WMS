@@ -225,6 +225,9 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('/excel', [ProductController::class ,'import'])->name('products.import');
             Route::get('/sample', [ProductController::class, 'sample'])->name('products.sample');
 
+            # backup route
+            Route::get('/back-up', [ProductController::class, 'backup'])->name('products.backup');
+
             //barcode scanner transfer
             Route::get('/barcode-scanner', [BarCodeController::class, 'index'])->name('scanners.index');
             Route::get('/barcode-store', [BarCodeController::class, 'store'])->name('scanners.store');
@@ -233,6 +236,8 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('/barcode-store-mr', [BarCodeController::class, 'storeMR'])->name('scanners.storeMR');
             #fix
             Route::get('/barcode-store-mrr', [BarCodeController::class, 'storeMRR'])->name('scanners.storeMRR');
+            
+
         });
         
         Route::prefix('adjustments')->group(function () {
