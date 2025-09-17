@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\CodesExport;
 use App\Imports\CodesImport;
+use \Milon\Barcode\DNS1D;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing;
 use Redirect;
@@ -104,13 +105,18 @@ class CodeController extends Controller
         {
             return redirect()->route('codes.index')->with('error', 'Please try again. The same names are not allowed.');
         }
-       
+
+        do {
+            $number = mt_rand(100000000, 999999999);
+        } while (Code::where('barcode', $number)->exists());
+
         $code = Code::Create([
             'name' => $request->name,
             'commodity_id' => $request->commodity_id,
             'brand_id' => $request->brand_id,
             'created_by' => Auth::user()->id,
             'usage' => $request->usage ?? '-',
+            'barcode' => $number,
         ]);
 
         if ($request->file('image')) {
@@ -198,6 +204,19 @@ class CodeController extends Controller
         }
     }
 
+        /**
+     * Remove the specified resource from storage.
+     */
+    public function printBarcode(Request $request)
+    {
+        $code = Code::findOrFail($request->id);
+        if($code){
+            return view('codes.barcode',['code' => $code]);
+        }else{
+            return Redirect::route('codes.index')->with('error','Code Not Found');
+        }
+    }
+
 
     //export excel
     public function export($sort_codes)
@@ -256,12 +275,17 @@ class CodeController extends Controller
                                     ->first();
         
                         if(!$code){
+                            do {
+                                $number = mt_rand(100000000, 999999999);
+                            } while (Code::where('barcode', $number)->exists());
+
                             Code::create([
                                 'name' => $codeName,
                                 'brand_id' => $brand->id,
                                 'commodity_id' => $commodity->id,
                                 'usage' => $row['usage'] ?? "-",
                                 'created_by' => Auth::user()->id,
+                                'barcode' => $number,
                             ]);
                         }else {
                             return redirect()->route('codes.index')->with('error', "Codes '$codeName' already exists. No changes were made.");
@@ -278,81 +302,6 @@ class CodeController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'An error occurred during import. No changes were made.');
         }
-
-    }
-
-    public function oldimport(Request $request){
-        $arrays = Excel::toArray(new CodesImport, $request->file('codes'));
-        $spreadsheet = IOFactory::load(request()->file('codes'));
-      
-        foreach ($arrays[0] as $row){
-            Code::create([
-                'name' => $row['code_name'],
-                'brand_id' => $row['brand_id'],
-                'commodity_id' => $row['commodity_id'],
-                'usage' => $row['usage'] ?? "-",
-                'created_by'=> Auth::user()->id,
-            ]);
-            
-        }
-        
-        $i = 0;
-        $last_code = Code::orderby('id', 'desc')->first();
-        $first_id = $last_code->id - count($arrays[0]);
-
-        foreach ($spreadsheet->getActiveSheet()->getDrawingCollection() as $drawing) {
-            
-            if ($drawing instanceof MemoryDrawing) {
-                ob_start();
-                call_user_func(
-                    $drawing->getRenderingFunction(),
-                    $drawing->getImageResource()
-                );
-                $imageContents = ob_get_contents();
-                ob_end_clean();
-                switch ($drawing->getMimeType()) {
-                    case MemoryDrawing::MIMETYPE_PNG :
-                        $extension = 'png';
-                        break;
-                    case MemoryDrawing::MIMETYPE_GIF:
-                        $extension = 'gif';
-                        break;
-                    case MemoryDrawing::MIMETYPE_JPEG :
-                        $extension = 'jpg';
-                        break;
-                }
-            } else {
-                if ($drawing->getPath()) {
-                    // Check if the source is a URL or a file path
-                    if ($drawing->getIsURL()) {
-                        $imageContents = file_get_contents($drawing->getPath());
-                        $filePath = tempnam(sys_get_temp_dir(), 'Drawing');
-                        file_put_contents($filePath , $imageContents);
-                        $mimeType = mime_content_type($filePath);
-                        // You could use the below to find the extension from mime type.
-                        // https://gist.github.com/alexcorvi/df8faecb59e86bee93411f6a7967df2c#gistcomment-2722664
-                        $extension = File::mime2ext($mimeType);
-                        unlink($filePath);            
-                    }
-                    else {
-                        $zipReader = fopen($drawing->getPath(),'r');
-                        $imageContents = '';
-                        while (!feof($zipReader)) {
-                            $imageContents .= fread($zipReader,1024);
-                        }
-                        fclose($zipReader);
-                        $extension = $drawing->getExtension();            
-                    }
-                }
-            }
-            $myFileName = time() .++$i. '.' . $extension;
-            file_put_contents('storage/img/code/' .$myFileName,$imageContents);
-
-            Code::where('id', ++$first_id)->update([
-                'image' => "storage/img/code/$myFileName",
-            ]);
-        }
-        return redirect()->route('codes.index')->with('success', 'Codes Imported successfully');
 
     }
 

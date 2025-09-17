@@ -18,7 +18,6 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductsExport;
 use App\Imports\ProductsImport;
-use \Milon\Barcode\DNS1D;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Redirect;
@@ -256,8 +255,6 @@ class ProductController extends Controller
                                     ->with('error', 'Please try again.');
         }
 
-       
-
         $newRequest = $request->except(['_token','vr_no','supplier','date']);
 
         foreach ($newRequest as $key => $value){
@@ -278,7 +275,7 @@ class ProductController extends Controller
                                 ->first();
 
                 if ($code_id) {
-                        # to check the same voucher same product exist
+                    # to check the same voucher same product exist
                     $check_product = Product::where('supplier_id', $request->supplier)
                                         ->where('code_id', $code_id->id)
                                         ->where('shelf_number_id', $request->$shelfnum)
@@ -286,13 +283,6 @@ class ProductController extends Controller
                                         ->where('type', 'receive')
                                         ->first();
                     if (!$check_product) {
-
-                        do {
-                            #random number
-                            $number = mt_rand(100000000, 999999999);
-                            $check_barcode = Product::where('barcode', $number)->first();
-
-                        } while ($check_barcode);
 
                         $product = Product::create([
                             'code_id' => $code_id->id,
@@ -306,8 +296,6 @@ class ProductController extends Controller
                             'voucher_no'=> $request->vr_no,
                             'supplier_id'=> $request->supplier,
                             'created_by'=> Auth::user()->id,
-                            'barcode' => $number,
-
                         ]);
                     }
                 }else{
@@ -676,14 +664,6 @@ class ProductController extends Controller
                                             
     
                         if (!$shelf_check_product) {
-
-                            do {
-                                #random number
-                                $number = mt_rand(100000000, 999999999);
-                                $check_barcode = Product::where('barcode', $number)->first();
-    
-                            } while ($check_barcode);
-
                             $new_product = Product::Create([
                                 'code_id' => $code_id->id,
                                 'unit_id' => $request->$unit,
@@ -697,7 +677,6 @@ class ProductController extends Controller
                                 'voucher_no'=> $request->vr_no,
                                 'supplier_id'=> $request->supplier,
                                 'created_by'=> Auth::user()->id,
-                                'barcode' =>  $number,
     
                             ]);
                         }
@@ -713,12 +692,7 @@ class ProductController extends Controller
                                                     
 
                         if (!$check_product) {
-                            do {
-                                #random number
-                                $number = mt_rand(100000000, 999999999);
-                                $check_barcode = Product::where('barcode', $number)->first();
-    
-                            } while ($check_barcode);
+                          
 
                             $new_product = Product::Create([
                                 'code_id' => $code_id->id,
@@ -733,12 +707,10 @@ class ProductController extends Controller
                                 'voucher_no'=> $old_product->voucher_no,
                                 'supplier_id'=> $old_product->supplier_id,
                                 'created_by'=> Auth::user()->id,
-                                'barcode' =>  $number,
 
                             ]);
                         }
-}}
-                
+            }}            
         }};
 
 
@@ -769,18 +741,7 @@ class ProductController extends Controller
 
         return view('products/history', ['histories' => $histories ]);
     }
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function printBarcode(Request $request)
-    {
-        $product = Product::findOrFail($request->id);
-        if($product){
-            return view('products.barcode',['product' => $product]);
-        }else{
-            return Redirect::route('products.index')->with('error','Product Not Found');
-        }
-    }
+   
 
     //export excel
     public function export($sort_products)
@@ -855,13 +816,6 @@ class ProductController extends Controller
                 $check_voucher = Product::where('voucher_no', $row['voucher_no'])
                                             ->first();
                 if (!$check_voucher) {
-                   
-                    do {
-                        #random number
-                        $number = mt_rand(100000000, 999999999);
-                        $check_barcode = Product::where('barcode', $number)->first();
-
-                    } while ($check_barcode);
 
                     Product::create([
                         'received_date' => date('Y-m-d', strtotime($row['date'])),
@@ -874,7 +828,6 @@ class ProductController extends Controller
                         'received_qty' => $row['qty'],
                         'balance_qty' => $row['qty'],
                         'type' => 'opening',
-                        'barcode' => $number,
                         'created_by'=> Auth::user()->id,
                     ]);
                 }else{
@@ -889,7 +842,6 @@ class ProductController extends Controller
                         'received_qty' => $row['qty'],
                         'balance_qty' => $row['qty'],
                         'type' => 'opening',
-                        'barcode' => $check_voucher->barcode,
                         'created_by'=> Auth::user()->id,
                     ]);
                 }

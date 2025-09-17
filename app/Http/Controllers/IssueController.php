@@ -40,7 +40,7 @@ class IssueController extends Controller
             return redirect()->back()->with('error','You do not have permission to access this page.');
         }
 
-        $issues = Issue::where(function($query) use ($request){
+        $exportQuery = Issue::where(function($query) use ($request){
             if($request->issue_id){
                 return $query->where('id', $request->issue_id);
             }
@@ -160,8 +160,7 @@ class IssueController extends Controller
                 return $query->where('issue_date', '<=',  $to_date);
             }
         })
-        ->orderbydesc('id')
-        ->get();
+        ->orderbydesc('id');
 
         $warehouses = Warehouse::get();
         $customers = Customer::get();
@@ -176,9 +175,11 @@ class IssueController extends Controller
                         ->get(['products.voucher_no']);
 
         if ($request->has('export')) {
-            $sort_issues = $issues->sort();
+            $sort_issues = $exportQuery->orderByDesc('id')->get();
             return $this->export($sort_issues);
         }
+
+        $issues = $exportQuery->paginate(10);
 
         return view('issues/index', ['warehouses' => $warehouses,
                                         'customers' => $customers,
@@ -868,7 +869,7 @@ class IssueController extends Controller
             $u_user = User::find($issue->updated_by); 
 
             $sort_issues[$i] = [
-                "No" =>  count($sort_issues) - $i,
+                "No" => $i + 1,
                 "Date" => $issue->issue_date,
                 "MR No" => $issue->mr_no,
                 "Job No" => $issue->job_no,

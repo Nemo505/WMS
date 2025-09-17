@@ -35,7 +35,7 @@ class TransferController extends Controller
             return redirect()->back()->with('error','You do not have permission to access this page.');
         }
 
-        $transfers = Transfer::where(function($query) use ($request){
+        $exportQuery = Transfer::where(function($query) use ($request){
             if($request->transfer_id){
                 return $query->where('id', $request->transfer_id);
             }
@@ -116,9 +116,7 @@ class TransferController extends Controller
                 return $query->where('transfer_date', '<=',  $to_date);
             }
         })
-        ->orderbydesc('transfer_date')
-        ->get();
-        
+        ->orderbydesc('transfer_date');
 
         $warehouses = Warehouse::get();
         $codes = Code::get();
@@ -129,8 +127,10 @@ class TransferController extends Controller
         $vr_nos = Product::distinct()->get(['voucher_no']);
 
         if ($request->has('export')) {
-            return $this->export($transfers);
+            $exportTransfer = $exportQuery->get();
+            return $this->export($exportTransfer);
         }
+        $transfers = $exportQuery->paginate(10);
 
         return view('transfers/index', ['warehouses' => $warehouses,
                                         'vr_nos' => $vr_nos,

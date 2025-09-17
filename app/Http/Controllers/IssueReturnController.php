@@ -39,7 +39,7 @@ class IssueReturnController extends Controller
             return redirect()->back()->with('error','You do not have permission to access this page.');
         }
 
-        $mrrs = IssueReturn::where(function($query) use ($request){
+        $exportQuery = IssueReturn::where(function($query) use ($request){
             if($request->mrr_id){
                 return $query->where('id', $request->mrr_id);
             }
@@ -153,8 +153,7 @@ class IssueReturnController extends Controller
                 return $query->where('issue_return_date', '<=',  $to_date);
             }
         })
-        ->orderbydesc('issue_return_date')
-        ->get();
+        ->orderbydesc('issue_return_date');
 
         $warehouses = Warehouse::get();
         $customers = Customer::get();
@@ -168,9 +167,11 @@ class IssueReturnController extends Controller
                         ->get(['products.voucher_no']);
 
         if ($request->has('export')) {
-            $sort_mrrs = $mrrs->sort();
+            $sort_mrrs = $exportQuery->orderByDesc('issue_return_date')->get();
             return $this->export($sort_mrrs);
         }
+
+        $mrrs = $exportQuery->paginate(10);
 
         return view('issue_returns/index', ['warehouses' => $warehouses,
                                         'customers' => $customers,
@@ -743,7 +744,7 @@ class IssueReturnController extends Controller
               $u_user = User::find($mrr->updated_by); 
   
               $sort_mrrs[$i] = [
-                  "No" =>  count($sort_mrrs) - $i,
+                  "No" => $i + 1,
                   "Date" => $mrr->issue_return_date,
                   "MRR No" => $mrr->mrr_no,
                   'Warehouse' => optional($warehouse)->name,

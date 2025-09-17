@@ -75,6 +75,11 @@
             <i class="fas fa-sliders-h mr-1" style="color: rgb(136, 32, 139);"></i>Adjustment</a>
         </li>
 
+        <li class="nav-item d-none d-sm-inline-block">
+            <a href="{{ route("canceled.index")}}" class="nav-link">
+            <i class="fas fa-ban mr-1" style="color: rgb(136, 32, 139);"></i>CanceledList</a>
+        </li>
+
         <li class="nav-item dropdown d-none d-sm-inline-block">
             <a class="nav-link d-flex align-items-center " data-toggle="dropdown" href="#" >
                 <i class="fas fa-tags  mr-1" style="color: rgb(136, 32, 139);"></i>

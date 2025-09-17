@@ -36,7 +36,7 @@
                       <label for="transfer_no">Transfer No</label>
 
                       <select id='transfer_no' name="transfer_no" class=" form-control">
-                        <option value="" disabled selected>Choose Transfer No</option>
+                        <option value="" selected>Choose Transfer No</option>
                         @foreach ($s_transfers as $s_transfer)
                           @if (isset($_REQUEST['transfer_no']))
                               @if ($s_transfer->transfer_no == $_REQUEST['transfer_no'])
@@ -58,7 +58,7 @@
                       <label for="vr_no">VR No</label>
 
                       <select id='vr_no' name="vr_no" class=" form-control">
-                        <option value="" disabled selected>Choose VR No</option>
+                        <option value="" selected>Choose VR No</option>
                         @foreach ($vr_nos as $vr_no)
                           @if (isset($_REQUEST['vr_no']))
                               @if ($vr_no->voucher_no == $_REQUEST['vr_no'])
@@ -80,7 +80,7 @@
                       <label for="from_warehouse_id">Warehouse From</label>
 
                       <select id='from_warehouse_id' name="from_warehouse_id" class=" form-control">
-                        <option value="" disabled selected>Choose Warehouse</option>
+                        <option value="" selected>Choose Warehouse</option>
                         @foreach ($warehouses as $warehouse)
                           @if (isset($_REQUEST['from_warehouse_id']))
                               @if ($warehouse->id == $_REQUEST['from_warehouse_id'])
@@ -102,7 +102,7 @@
                         <label for="from_shelf_num_id">Shelf Number From</label>
 
                         <select id='from_shelf_num_id' name="from_shelf_num_id" class=" form-control">
-                        <option value="" disabled selected>Choose Shelf No</option>
+                        <option value="" selected>Choose Shelf No</option>
 
                         @foreach ($shelfnums as $shelfnum)
                         @php
@@ -128,7 +128,7 @@
                       <label for="to_warehouse_id">Warehouse To</label>
 
                       <select id='to_warehouse_id' name="to_warehouse_id" class=" form-control">
-                        <option value="" disabled selected>Choose Warehouse</option>
+                        <option value="" selected>Choose Warehouse</option>
                         @foreach ($warehouses as $warehouse)
                           @if (isset($_REQUEST['to_warehouse_id']))
                               @if ($warehouse->id == $_REQUEST['to_warehouse_id'])
@@ -150,7 +150,7 @@
                       <label for="to_shelf_num_id">Shelf Number To</label>
 
                       <select id='to_shelf_num_id' name="to_shelf_num_id" class=" form-control">
-                        <option value="" disabled selected>Choose Shelf No</option>
+                        <option value="" selected>Choose Shelf No</option>
 
                         @foreach ($shelfnums as $shelfnum)
                         @php
@@ -184,7 +184,7 @@
                           <label for="code_id">Codes</label>
     
                           <select id='code_id' name="code_id" class=" form-control">
-                            <option value="" disabled selected>Choose Code</option>
+                            <option value="" selected>Choose Code</option>
                             @foreach ($codes as $code)
                               @if (isset($_REQUEST['code_id']))
                                   @if ($code->id == $_REQUEST['code_id'])
@@ -207,7 +207,7 @@
                           <label for="brand_id">Brand</label>
     
                           <select id='brand_id' name="brand_id" class=" form-control">
-                            <option value="" disabled selected>Choose Brand</option>
+                            <option value="" selected>Choose Brand</option>
                             @foreach ($brands as $brand)
                               @if (isset($_REQUEST['brand_id']))
                                   @if ($brand->id == $_REQUEST['brand_id'])
@@ -230,7 +230,7 @@
                           <label for="commodity_id">Commodity</label>
     
                           <select id='commodity_id' name="commodity_id" class=" form-control">
-                            <option value="" disabled selected>Choose Commodity</option>
+                            <option value="" selected>Choose Commodity</option>
                             @foreach ($commodities as $commodity)
                               @if (isset($_REQUEST['commodity_id']))
                                   @if ($commodity->id == $_REQUEST['commodity_id'])
@@ -297,7 +297,7 @@
           </div>
           <!-- /.card-header -->
           <div class="card-body" style="overflow-x: scroll;">
-            <table id="example2" class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover">
               <thead>
                 <tr>
                   <th>No</th>
@@ -393,6 +393,46 @@
             </table>
           </div>
           <!-- /.card-body -->
+            <div class="card-footer clearfix">
+                <ul class="pagination pagination-sm m-0 float-right">
+                  <li class="page-item {{ $transfers->onFirstPage() ? 'disabled' : '' }}">
+                      <a class="page-link" href="{{ $transfers->previousPageUrl() }}">&laquo;</a>
+                  </li>
+                    @php
+                        $numAdjacent = 2; // Number of adjacent page links to display
+                        $start = max(1, $transfers->currentPage() - $numAdjacent);
+                        $end = min($start + $numAdjacent * 2, $transfers->lastPage());
+                    @endphp
+                    @if($start > 1)
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $transfers->url(1) }}">1</a>
+                        </li>
+                        @if($start > 2)
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        @endif
+                    @endif
+                    @for ($i = $start; $i <= $end; $i++)
+                        <li class="page-item {{ $i === $transfers->currentPage() ? 'active' : '' }}">
+                            <a class="page-link" href="{{ $transfers->url($i) }}">{{ $i }}</a>
+                        </li>
+                    @endfor
+                    @if($end < $transfers->lastPage())
+                        @if($end < $transfers->lastPage() - 1)
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        @endif
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $transfers->url($transfers->lastPage()) }}">{{ $transfers->lastPage() }}</a>
+                        </li>
+                    @endif
+                    <li class="page-item {{ $transfers->currentPage() === $transfers->lastPage() ? 'disabled' : '' }}">
+                        <a class="page-link" href="{{ $transfers->nextPageUrl() }}">&raquo;</a>
+                    </li>
+                </ul>
+            </div>
         </div>
         <!-- /.card -->
 

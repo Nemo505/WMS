@@ -36,7 +36,7 @@
                       <label for="mrr_no">MRR No</label>
 
                       <select id='mrr_no' name="mrr_no" class=" form-control">
-                        <option value="" disabled selected>Choose MRR No</option>
+                        <option value=""  selected>Choose MRR No</option>
                         @foreach ($s_issues as $s_issue)
                           @if (isset($_REQUEST['mrr_no']))
                               @if ($s_issue->mrr_no == $_REQUEST['mrr_no'])
@@ -58,7 +58,7 @@
                       <label for="warehouse_id">Warehouse</label>
 
                       <select id='warehouse_id' name="warehouse_id" class=" form-control">
-                        <option value="" disabled selected>Choose Warehouse</option>
+                        <option value=""  selected>Choose Warehouse</option>
                         @foreach ($warehouses as $warehouse)
                           @if (isset($_REQUEST['warehouse_id']))
                               @if ($warehouse->id == $_REQUEST['warehouse_id'])
@@ -80,7 +80,7 @@
                       <label for="shelf_num_id">Shelf Number</label>
 
                       <select id='shelf_num_id' name="shelf_num_id" class=" form-control">
-                        <option value="" disabled selected>Choose Shelf No</option>
+                        <option value=""  selected>Choose Shelf No</option>
 
                         @foreach ($shelfnums as $shelfnum)
                         @php
@@ -107,7 +107,7 @@
                       <label for="code_id">Codes</label>
 
                       <select id='code_id' name="code_id" class=" form-control">
-                        <option value="" disabled selected>Choose Code</option>
+                        <option value=""  selected>Choose Code</option>
                         @foreach ($codes as $code)
                           @if (isset($_REQUEST['code_id']))
                               @if ($code->name == $_REQUEST['code_id'])
@@ -130,7 +130,7 @@
                       <label for="brand_id">Brand</label>
 
                       <select id='brand_id' name="brand_id" class=" form-control">
-                        <option value="" disabled selected>Choose Brand</option>
+                        <option value=""  selected>Choose Brand</option>
                         @foreach ($brands as $brand)
                           @if (isset($_REQUEST['brand_id']))
                               @if ($brand->id == $_REQUEST['brand_id'])
@@ -153,7 +153,7 @@
                       <label for="commodity_id">Commodity</label>
 
                       <select id='commodity_id' name="commodity_id" class=" form-control">
-                        <option value="" disabled selected>Choose Commodity</option>
+                        <option value=""  selected>Choose Commodity</option>
                         @foreach ($commodities as $commodity)
                           @if (isset($_REQUEST['commodity_id']))
                               @if ($commodity->id == $_REQUEST['commodity_id'])
@@ -180,7 +180,7 @@
                       <label for="vr_no">VR No</label>
 
                       <select id='vr_no' name="vr_no" class=" form-control">
-                        <option value="" disabled selected>Choose VR No</option>
+                        <option value=""  selected>Choose VR No</option>
                         @foreach ($vr_nos as $vr_no)
                           @if (isset($_REQUEST['vr_no']))
                               @if ($vr_no->voucher_no == $_REQUEST['vr_no'])
@@ -203,7 +203,7 @@
                       <label for="customer">Customer</label>
 
                       <select id='customer_id' name="customer_id" class=" form-control">
-                        <option value="" disabled selected>Choose Customer</option>
+                        <option value=""  selected>Choose Customer</option>
                         @foreach ($customers as $customer)
                           @if (isset($_REQUEST['customer_id']))
                               @if ($customer->id == $_REQUEST['customer_id'])
@@ -269,7 +269,7 @@
           </div>
           <!-- /.card-header -->
           <div class="card-body" style="overflow-x: scroll;">
-            <table id="example2" class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover">
               <thead>
                 <tr>
                   <th>No</th>
@@ -366,6 +366,46 @@
             </table>
           </div>
           <!-- /.card-body -->
+            <div class="card-footer clearfix">
+                <ul class="pagination pagination-sm m-0 float-right">
+                  <li class="page-item {{ $mrrs->onFirstPage() ? 'disabled' : '' }}">
+                      <a class="page-link" href="{{ $mrrs->previousPageUrl() }}">&laquo;</a>
+                  </li>
+                    @php
+                        $numAdjacent = 2; // Number of adjacent page links to display
+                        $start = max(1, $mrrs->currentPage() - $numAdjacent);
+                        $end = min($start + $numAdjacent * 2, $mrrs->lastPage());
+                    @endphp
+                    @if($start > 1)
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $mrrs->url(1) }}">1</a>
+                        </li>
+                        @if($start > 2)
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        @endif
+                    @endif
+                    @for ($i = $start; $i <= $end; $i++)
+                        <li class="page-item {{ $i === $mrrs->currentPage() ? 'active' : '' }}">
+                            <a class="page-link" href="{{ $mrrs->url($i) }}">{{ $i }}</a>
+                        </li>
+                    @endfor
+                    @if($end < $mrrs->lastPage())
+                        @if($end < $mrrs->lastPage() - 1)
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        @endif
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $mrrs->url($mrrs->lastPage()) }}">{{ $mrrs->lastPage() }}</a>
+                        </li>
+                    @endif
+                    <li class="page-item {{ $mrrs->currentPage() === $mrrs->lastPage() ? 'disabled' : '' }}">
+                        <a class="page-link" href="{{ $mrrs->nextPageUrl() }}">&raquo;</a>
+                    </li>
+                </ul>
+            </div>
         </div>
         <!-- /.card -->
 

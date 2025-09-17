@@ -22,6 +22,7 @@ use App\Http\Controllers\AdjustmentController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\BarCodeController;
+use App\Http\Controllers\CanceledCodeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -187,6 +188,23 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('/delete', [CodeController::class ,'destroy'])->name('codes.delete');
             Route::post('/excel', [CodeController::class ,'import'])->name('codes.import');
             Route::get('/sample', [CodeController::class ,'sample'])->name('codes.sample');
+
+            #BarCode
+            Route::get('/printBarcode', [CodeController::class ,'printBarcode'])->name('codes.printBarcode');
+            #barcode scanner transfer
+            Route::get('/barcode-scanner', [BarCodeController::class, 'index'])->name('scanners.index');
+            Route::get('/barcode-store', [BarCodeController::class, 'store'])->name('scanners.store');
+            Route::get('/barcode-supplier', [BarCodeController::class, 'storeSupplier'])->name('scanners.storeSupplier');
+            #issue
+            Route::get('/barcode-store-mr', [BarCodeController::class, 'storeMR'])->name('scanners.storeMR');
+            #fix
+            Route::get('/barcode-store-mrr', [BarCodeController::class, 'storeMRR'])->name('scanners.storeMRR');
+
+        });
+
+        Route::prefix('canceled')->group(function () {
+            Route::get('/canceled-codes', [CanceledCodeController::class, 'index'])->name('canceled.index');
+            Route::get('/canceled-codes/{code}', [CanceledCodeController::class, 'show'])->name('canceled.show');
         });
         
         
@@ -216,7 +234,6 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('/store', [ProductController::class ,'store'])->name('products.store');
             Route::get('/edit', [ProductController::class ,'edit'])->name('products.edit');
             Route::post('/update', [ProductController::class ,'update'])->name('products.update');
-            Route::get('/printBarcode', [ProductController::class ,'printBarcode'])->name('products.printBarcode');
             //transfer, issues
             Route::get('/shelfno-under-shelf', [ProductController::class ,'getShelfNum'])->name('products.getShelfNum');
             Route::get('/fromCode', [ProductController::class ,'getFromCode'])->name('products.getFromCode');
@@ -227,16 +244,6 @@ Route::group(['middleware' => 'auth'], function () {
 
             # backup route
             Route::get('/back-up', [ProductController::class, 'backup'])->name('products.backup');
-
-            //barcode scanner transfer
-            Route::get('/barcode-scanner', [BarCodeController::class, 'index'])->name('scanners.index');
-            Route::get('/barcode-store', [BarCodeController::class, 'store'])->name('scanners.store');
-            Route::get('/barcode-supplier', [BarCodeController::class, 'storeSupplier'])->name('scanners.storeSupplier');
-            #issue
-            Route::get('/barcode-store-mr', [BarCodeController::class, 'storeMR'])->name('scanners.storeMR');
-            #fix
-            Route::get('/barcode-store-mrr', [BarCodeController::class, 'storeMRR'])->name('scanners.storeMRR');
-            
 
         });
         

@@ -861,7 +861,7 @@
               $('#scanner').val('');
                
             }else{
- 
+      
                 if ($('#shelfnum_id').val() != null && $('#shelfnum_id').val() != '') {
                   if ($('#scanner').val() != null && $('#scanner').val() != '') {
                     ++i;

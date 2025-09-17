@@ -154,7 +154,7 @@
 
                       <div>
                          <div> <select id='brand_id' name="brand_id" class=" form-control">
-                          <option value="" disabled selected>Choose Brand</option>
+                          <option value="" selected>Choose Brand</option>
                           @foreach ($brands as $brand)
                             @if (isset($_REQUEST['brand_id']))
                                 @if ($brand->id == $_REQUEST['brand_id'])
@@ -290,7 +290,6 @@
                   <th>No</th>
                   <th>Date</th>
                   <th>VR No</th>
-                  <th>BarCode</th>
                   <th>Warehouse</th>
                   <th>Shelf No</th>
                   <th>Supplier</th>
@@ -340,12 +339,7 @@
                       <td>{{  $i }}</td>
                       <td>{{ $product->received_date }}</td>
                       <td>{{ $product->voucher_no }}</td>
-                      <td class="text-center">
-                        <a href="{{ route('products.printBarcode', ['id' => $product->id]) }}"
-                            target="_blank">
-                            {!!DNS1D::getBarcodeSVG($product->barcode, 'C39+',1,55,'black', true) !!}
-                        </a>
-                      </td>
+                     
                       <td>{{ optional($warehouse)->name }}</td>
                       <td>{{ optional($shelf_no)->name }} ( {{ optional($shelf_no)->shelf_name }})</td>
                       <td>{{ optional($supplier)->name }}</td>
@@ -381,7 +375,6 @@
                   <th>No</th>
                   <th>Date</th>
                   <th>VR No</th>
-                  <th>BarCode</th>
                   <th>Warehouse</th>
                   <th>Shelf No</th>
                   <th>Supplier</th>
@@ -400,7 +393,6 @@
             </table>
           </div>
           <!-- /.card-body -->
-          
             <div class="card-footer clearfix">
                     <ul class="pagination pagination-sm m-0 float-right">
                     <li class="page-item {{ $products->onFirstPage() ? 'disabled' : '' }}">
