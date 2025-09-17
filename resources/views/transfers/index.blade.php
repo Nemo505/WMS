@@ -320,7 +320,7 @@
               </thead>
               <tbody>
                 @php
-                    $i = 0;
+                  $i = $transfers->firstItem() - 1;
                 @endphp
                 @foreach ($transfers as $transfer)
                 @php

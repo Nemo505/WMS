@@ -130,7 +130,7 @@ class TransferController extends Controller
             $exportTransfer = $exportQuery->get();
             return $this->export($exportTransfer);
         }
-        $transfers = $exportQuery->paginate(10);
+        $transfers = $exportQuery->paginate(10)->appends(request()->query());
 
         return view('transfers/index', ['warehouses' => $warehouses,
                                         'vr_nos' => $vr_nos,

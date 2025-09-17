@@ -136,7 +136,7 @@
                             </thead>
                             <tbody>
                                 @php
-                                    $i = 0;
+                                    $i = $histories->firstItem() - 1;
                                 @endphp
                                 @foreach ($codes as $code)
                                     @php
@@ -180,12 +180,20 @@
                                         <td>{{ date('Y-m-d', strtotime($code->updated_at)) }}</td>
                                         <td>
                                             <div class="d-flex justify-content-around">
-                                                <a href="" data-toggle="modal" data-target="#edit-modal"
-                                                    id="{{ $code->id }}" class="edit_class">
-                                                    <i class="far fa-bookmark" style="color: rgb(221, 142, 40)"></i>
+                                                <a href="{{ route('canceled.show', $code->id) }}" 
+                                                    class="btn btn-sm rounded-pill text-white"
+                                                    style="background: linear-gradient(45deg, #af53af, #0e0418);
+                                                            transition: all 0.3s ease-in-out;"
+                                                    onmouseover="this.style.background='linear-gradient(45deg, #ff77ff, #270418)'; 
+                                                                    this.style.transform='translateY(-2px)'"
+                                                    onmouseout="this.style.background='linear-gradient(45deg, #af53af, #0e0418)'; 
+                                                                this.style.transform='translateY(0)'">
+                                                    Detail
                                                 </a>
-                                            </div>
 
+
+
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -213,43 +221,43 @@
                     
                     <div class="card-footer clearfix">
                         <ul class="pagination pagination-sm m-0 float-right">
-                        <li class="page-item {{ $codes->onFirstPage() ? 'disabled' : '' }}">
-                            <a class="page-link" href="{{ $codes->previousPageUrl() }}">&laquo;</a>
-                        </li>
-                        @php
-                            $numAdjacent = 2; // Number of adjacent page links to display
-                            $start = max(1, $codes->currentPage() - $numAdjacent);
-                            $end = min($start + $numAdjacent * 2, $codes->lastPage());
-                        @endphp
-                        @if($start > 1)
-                            <li class="page-item">
-                                <a class="page-link" href="{{ $codes->url(1) }}">1</a>
+                            <li class="page-item {{ $codes->onFirstPage() ? 'disabled' : '' }}">
+                                <a class="page-link" href="{{ $codes->previousPageUrl() }}">&laquo;</a>
                             </li>
-                            @if($start > 2)
-                                <li class="page-item disabled">
-                                    <span class="page-link">...</span>
+                            @php
+                                $numAdjacent = 2; // Number of adjacent page links to display
+                                $start = max(1, $codes->currentPage() - $numAdjacent);
+                                $end = min($start + $numAdjacent * 2, $codes->lastPage());
+                            @endphp
+                            @if($start > 1)
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ $codes->url(1) }}">1</a>
+                                </li>
+                                @if($start > 2)
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                @endif
+                            @endif
+                            @for ($i = $start; $i <= $end; $i++)
+                                <li class="page-item {{ $i === $codes->currentPage() ? 'active' : '' }}">
+                                    <a class="page-link" href="{{ $codes->url($i) }}">{{ $i }}</a>
+                                </li>
+                            @endfor
+                            @if($end < $codes->lastPage())
+                                @if($end < $codes->lastPage() - 1)
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                @endif
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ $codes->url($codes->lastPage()) }}">{{ $codes->lastPage() }}</a>
                                 </li>
                             @endif
-                        @endif
-                        @for ($i = $start; $i <= $end; $i++)
-                            <li class="page-item {{ $i === $codes->currentPage() ? 'active' : '' }}">
-                                <a class="page-link" href="{{ $codes->url($i) }}">{{ $i }}</a>
+                            <li class="page-item {{ $codes->currentPage() === $codes->lastPage() ? 'disabled' : '' }}">
+                                <a class="page-link" href="{{ $codes->nextPageUrl() }}">&raquo;</a>
                             </li>
-                        @endfor
-                        @if($end < $codes->lastPage())
-                            @if($end < $codes->lastPage() - 1)
-                                <li class="page-item disabled">
-                                    <span class="page-link">...</span>
-                                </li>
-                            @endif
-                            <li class="page-item">
-                                <a class="page-link" href="{{ $codes->url($codes->lastPage()) }}">{{ $codes->lastPage() }}</a>
-                            </li>
-                        @endif
-                        <li class="page-item {{ $codes->currentPage() === $codes->lastPage() ? 'disabled' : '' }}">
-                            <a class="page-link" href="{{ $codes->nextPageUrl() }}">&raquo;</a>
-                        </li>
-                    </ul>
+                        </ul>
                     </div>
                     
                 </div>

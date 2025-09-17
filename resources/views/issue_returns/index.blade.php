@@ -290,7 +290,7 @@
               </thead>
               <tbody>
                 @php
-                    $i = 0;
+                  $i = $mrrs->firstItem() - 1;
                 @endphp
                 @foreach ($mrrs as $mrr)
                 

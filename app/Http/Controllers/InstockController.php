@@ -57,10 +57,7 @@ class InstockController extends Controller
             return $this->export($instocks->get(), $request->from_date, $request->to_date);
         }
         
-        
-        $instocks = $instocks->paginate(10);
-
-       
+        $instocks = $instocks->paginate(10)->appends(request()->query());
 
         $codes = Code::distinct()->get(['name']);
         $brands = Brand::get();

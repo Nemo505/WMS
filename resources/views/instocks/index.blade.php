@@ -194,7 +194,7 @@
               </thead>
               <tbody>
                 @php
-                    $i = 0;
+                    $i = $instocks->firstItem() - 1;
                 @endphp
                 @foreach ($instocks as $instock)
                     @php

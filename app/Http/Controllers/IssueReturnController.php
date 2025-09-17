@@ -171,7 +171,7 @@ class IssueReturnController extends Controller
             return $this->export($sort_mrrs);
         }
 
-        $mrrs = $exportQuery->paginate(10);
+        $mrrs = $exportQuery->paginate(10)->appends(request()->query());
 
         return view('issue_returns/index', ['warehouses' => $warehouses,
                                         'customers' => $customers,

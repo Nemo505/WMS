@@ -179,7 +179,7 @@ class IssueController extends Controller
             return $this->export($sort_issues);
         }
 
-        $issues = $exportQuery->paginate(10);
+        $issues = $exportQuery->paginate(10)->appends(request()->query());
 
         return view('issues/index', ['warehouses' => $warehouses,
                                         'customers' => $customers,

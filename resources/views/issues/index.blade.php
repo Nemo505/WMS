@@ -358,7 +358,7 @@
               </thead>
               <tbody>
                 @php
-                    $i = 0;
+                  $i = $issues->firstItem() - 1;
                 @endphp
                 @foreach ($issues as $issue)
                 @php

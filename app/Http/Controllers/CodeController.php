@@ -57,7 +57,6 @@ class CodeController extends Controller
             $query->where('created_at', '<=',  $to_date);
         }
 
-        $codes = $query->orderByDesc('id')->paginate(10);
         
         $code_lists = Code::get();
         $brands = Brand::get();
@@ -75,6 +74,8 @@ class CodeController extends Controller
                 return $this->export($sort_codes);
             }
         }
+        $codes = $query->orderByDesc('id')->paginate(10)->appends(request()->query());
+
         return view('codes/index', [ 'codes' => $codes,
                                         'code_lists' => $code_lists,
                                         'brands' => $brands,

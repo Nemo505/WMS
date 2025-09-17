@@ -307,7 +307,7 @@
               </thead>
               <tbody>
                 @php
-                    $i = 0;
+                    $i = $products->firstItem() - 1;;
                 @endphp
                 @foreach ($products as $product)
                 @php

@@ -139,7 +139,7 @@ class ProductController extends Controller
             }
             
         }
-        $products = $exportQuery->paginate(10);
+        $products = $exportQuery->paginate(10)->appends(request()->query());
         return view('products/index', ['warehouses' => $warehouses,
                                         'suppliers' => $suppliers,
                                         'codes' => $codes,
@@ -737,7 +737,8 @@ class ProductController extends Controller
                 return $query->where('received_date', '<=',  $to_date);
             }
         })->orderbydesc('id')
-        ->get();
+        ->paginate(10)
+        ->appends(request()->query());
 
         return view('products/history', ['histories' => $histories ]);
     }

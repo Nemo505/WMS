@@ -61,7 +61,7 @@
                                             <label for="brand">Brand</label>
 
                                             <select id='brand' name="brand_id" class=" form-control">
-                                                <option value="" disabled selected>Choose Brand</option>
+                                                <option value="" selected>Choose Brand</option>
                                                 @foreach ($brands as $brand)
                                                     @if (isset($_REQUEST['brand_id']))
                                                         @if ($brand->id == $_REQUEST['brand_id'])
@@ -85,7 +85,7 @@
                                             <label for="commodity">Commodity</label>
 
                                             <select id='commodity' name="commodity_id" class=" form-control">
-                                                <option value="" disabled selected>Choose commodity</option>
+                                                <option value="" selected>Choose commodity</option>
                                                 @foreach ($commodities as $commodity)
                                                     @if (isset($_REQUEST['commodity_id']))
                                                         @if ($commodity->id == $_REQUEST['commodity_id'])
@@ -110,7 +110,7 @@
                                             <label for="code">Code</label>
 
                                             <select id='code' name="code_id" class=" form-control">
-                                                <option value="" disabled selected>Choose Code</option>
+                                                <option value="" selected>Choose Code</option>
                                                 @foreach ($code_lists as $code)
                                                     @if (isset($_REQUEST['code_id']))
                                                         @if ($code->id == $_REQUEST['code_id'])
@@ -159,7 +159,11 @@
                                     <th>No</th>
                                     <th>Image</th>
                                     <th>Name</th>
-                                    <th>BarCode</th>
+                                    @auth
+                                        @if(auth()->user()->name === 'admin')
+                                            <th>BarCode</th>
+                                        @endif
+                                    @endauth
                                     <th>Brand</th>
                                     <th>Commodity</th>
                                     <th >Usage</th>
@@ -172,7 +176,7 @@
                             </thead>
                             <tbody>
                                 @php
-                                    $i = 0;
+                                    $i = $codes->firstItem() - 1;
                                 @endphp
                                 @foreach ($codes as $code)
                                     @php
@@ -197,16 +201,18 @@
                                             @endif
                                         </td>
                                         <td class="name_{{ $code->id }}">{{ $code->name}}</td>
-                                       <td class="text-center">
-                                            <a href="{{ route('codes.printBarcode', ['id' => $code->id]) }}" target="_blank">
-                                                {!! DNS1D::getBarcodeSVG($code->barcode, 'C39+', 1, 55, 'black', false) !!}
-                                                <div style="color: black; font-size: 12px;">
-                                                    {{ $code->name }}
-                                                </div>
-                                            </a>
-                                        </td>
-
-
+                                        @auth
+                                            @if(auth()->user()->name === 'admin')
+                                            <td class="text-center">
+                                                <a href="{{ route('codes.printBarcode', ['id' => $code->id]) }}" target="_blank">
+                                                    {!! DNS1D::getBarcodeSVG($code->barcode, 'C39+', 1, 55, 'black', false) !!}
+                                                    <div style="color: black; font-size: 12px;">
+                                                        {{ $code->name }}
+                                                    </div>
+                                                </a>
+                                            </td>
+                                            @endif
+                                        @endauth
                                         <td class="brand_{{ $code->id }}" id="{{ optional($brand_name)->id }}">{{ optional($brand_name)->name }}</td>
                                         <td class="commodity_{{ $code->id }}" id="{{ optional($commodity_name)->id }}">{{ optional($commodity_name)->name }}</td>
                                        
@@ -243,7 +249,11 @@
                                     <th>No</th>
                                     <th>Image</th>
                                     <th>Name</th>
-                                    <th>BarCode</th>
+                                    @auth
+                                        @if(auth()->user()->name === 'admin')
+                                            <th>BarCode</th>
+                                        @endif
+                                    @endauth
                                     <th>Brand</th>
                                     <th>Commodity</th>
                                     <th>Usage</th>

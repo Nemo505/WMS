@@ -78,7 +78,7 @@
 
           <!-- /.card-header -->
           <div class="card-body" style="overflow-x: scroll;">
-            <table id="example2" class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover">
               <thead>
                 <tr>
                   <th>No</th>
@@ -122,7 +122,7 @@
               </thead>
               <tbody>
                 @php
-                    $i = 0;
+                    $i = $histories->firstItem() - 1;
                 @endphp
                 @foreach ($histories as $history)
                 @php
@@ -205,47 +205,87 @@
               </tbody>
 
               <tfoot>
-              <tr>
-                <th>No</th>
-                <th>Action</th>
-                
-                <th>Date</th>
-                <th>New Date</th>
-                <th>Shelf Number</th>
-                <th>New Shelf Number</th>
+                <tr>
+                  <th>No</th>
+                  <th>Action</th>
+                  
+                  <th>Date</th>
+                  <th>New Date</th>
+                  <th>Shelf Number</th>
+                  <th>New Shelf Number</th>
 
-                <th>Code</th>
-                <th>New Code</th>
+                  <th>Code</th>
+                  <th>New Code</th>
 
-                <th>Unit</th>
-                <th>New Unit</th>
+                  <th>Unit</th>
+                  <th>New Unit</th>
 
-                <th>Received Qty</th>
-                <th>New Received Qty</th>
+                  <th>Received Qty</th>
+                  <th>New Received Qty</th>
 
-                <th>Balance</th>
-                <th>Transfer Qty</th>
-                <th>MR Qty</th>
-                <th>MRR Qty</th>
-                <th>SupplierReturn Qty</th>
+                  <th>Balance</th>
+                  <th>Transfer Qty</th>
+                  <th>MR Qty</th>
+                  <th>MRR Qty</th>
+                  <th>SupplierReturn Qty</th>
 
-                <th>Sub Adjustment</th>
-                <th>Add Adjustment</th>
-                <th>Transfer No</th>
+                  <th>Sub Adjustment</th>
+                  <th>Add Adjustment</th>
+                  <th>Transfer No</th>
 
-                <th>Supplier</th>
-                <th>New Supplier</th>
+                  <th>Supplier</th>
+                  <th>New Supplier</th>
 
-                <th>Remark</th>
-                <th>New Remark</th>
-                
-                <th>Created By</th>
-                <th>Updated By</th>
-              </tr>
+                  <th>Remark</th>
+                  <th>New Remark</th>
+                  
+                  <th>Created By</th>
+                  <th>Updated By</th>
+                </tr>
               </tfoot>
             </table>
           </div>
           <!-- /.card-body -->
+              <div class="card-footer clearfix">
+                  <ul class="pagination pagination-sm m-0 float-right">
+                      <li class="page-item {{ $histories->onFirstPage() ? 'disabled' : '' }}">
+                          <a class="page-link" href="{{ $histories->previousPageUrl() }}">&laquo;</a>
+                      </li>
+                      @php
+                          $numAdjacent = 2; // Number of adjacent page links to display
+                          $start = max(1, $histories->currentPage() - $numAdjacent);
+                          $end = min($start + $numAdjacent * 2, $histories->lastPage());
+                      @endphp
+                      @if($start > 1)
+                          <li class="page-item">
+                              <a class="page-link" href="{{ $histories->url(1) }}">1</a>
+                          </li>
+                          @if($start > 2)
+                              <li class="page-item disabled">
+                                  <span class="page-link">...</span>
+                              </li>
+                          @endif
+                      @endif
+                      @for ($i = $start; $i <= $end; $i++)
+                          <li class="page-item {{ $i === $histories->currentPage() ? 'active' : '' }}">
+                              <a class="page-link" href="{{ $histories->url($i) }}">{{ $i }}</a>
+                          </li>
+                      @endfor
+                      @if($end < $histories->lastPage())
+                          @if($end < $histories->lastPage() - 1)
+                              <li class="page-item disabled">
+                                  <span class="page-link">...</span>
+                              </li>
+                          @endif
+                          <li class="page-item">
+                              <a class="page-link" href="{{ $histories->url($histories->lastPage()) }}">{{ $histories->lastPage() }}</a>
+                          </li>
+                      @endif
+                      <li class="page-item {{ $histories->currentPage() === $histories->lastPage() ? 'disabled' : '' }}">
+                          <a class="page-link" href="{{ $histories->nextPageUrl() }}">&raquo;</a>
+                      </li>
+                  </ul>
+              </div>
         </div>
         <!-- /.card -->
 

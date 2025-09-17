@@ -50,16 +50,16 @@ class CanceledCodeController extends Controller
             $query->where('created_at', '<=', $to_date);
         }
 
-        $codes = $query->orderByDesc('id')->paginate(10);
         $code_lists = Code::withoutGlobalScope('notCanceled')->whereNotNull('canceled_at')->get();
         $brands = Brand::get();
         $commodities = Commodity::get();
 
         // Export
         if ($request->has('export')) {
-            $exportCodes = $query->orderByDesc('id')->get(); // no need for sort()
+            $exportCodes = $query->orderByDesc('id')->get(); 
             return $this->export($exportCodes);
         }
+        $codes = $query->orderByDesc('id')->paginate(10)->appends(request()->query());
 
         return view('canceled.index', [
             'codes' => $codes,
