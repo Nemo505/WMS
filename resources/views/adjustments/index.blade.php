@@ -37,7 +37,7 @@
                       <label for="adjust_no">Adjustment No</label>
 
                       <select id='adjust_no' name="adjust_no" class=" form-control">
-                        <option value="" disabled selected>Choose Adjustment No</option>
+                        <option value="" selected>Choose Adjustment No</option>
                         @foreach ($s_adjustments as $s_adjustment)
                           @if (isset($_REQUEST['adjust_no']))
                               @if ($s_adjustment->adjustment_no == $_REQUEST['adjust_no'])
@@ -60,7 +60,7 @@
                       <label for="warehouse_id">Warehouse</label>
 
                       <select id='warehouse_id' name="warehouse_id" class=" form-control">
-                        <option value="" disabled selected>Choose Warehouse</option>
+                        <option value="" selected>Choose Warehouse</option>
                         @foreach ($warehouses as $warehouse)
                           @if (isset($_REQUEST['warehouse_id']))
                               @if ($warehouse->id == $_REQUEST['warehouse_id'])
@@ -82,7 +82,7 @@
                       <label for="shelf_num_id">Shelf Number</label>
 
                       <select id='shelf_num_id' name="shelf_num_id" class=" form-control">
-                        <option value="" disabled selected>Choose Shelf No</option>
+                        <option value="" selected>Choose Shelf No</option>
 
                         @foreach ($shelfnums as $shelfnum)
                         @php
@@ -109,7 +109,7 @@
                       <label for="code_id">Codes</label>
 
                       <select id='code_id' name="code_id" class=" form-control">
-                        <option value="" disabled selected>Choose Code</option>
+                        <option value="" selected>Choose Code</option>
                         @foreach ($codes as $code)
                           @if (isset($_REQUEST['code_id']))
                               @if ($code->name == $_REQUEST['code_id'])
@@ -132,7 +132,7 @@
                       <label for="brand_id">Brand</label>
 
                       <select id='brand_id' name="brand_id" class=" form-control">
-                        <option value="" disabled selected>Choose Brand</option>
+                        <option value="" selected>Choose Brand</option>
                         @foreach ($brands as $brand)
                           @if (isset($_REQUEST['brand_id']))
                               @if ($brand->id == $_REQUEST['brand_id'])
@@ -155,7 +155,7 @@
                       <label for="commodity_id">Commodity</label>
 
                       <select id='commodity_id' name="commodity_id" class=" form-control">
-                        <option value="" disabled selected>Choose Commodity</option>
+                        <option value="" selected>Choose Commodity</option>
                         @foreach ($commodities as $commodity)
                           @if (isset($_REQUEST['commodity_id']))
                               @if ($commodity->id == $_REQUEST['commodity_id'])
@@ -183,7 +183,7 @@
                       <label for="supplier">Supplier</label>
 
                       <select id='supplier_id' name="supplier_id" class=" form-control">
-                        <option value="" disabled selected>Choose Supplier</option>
+                        <option value="" selected>Choose Supplier</option>
                         @foreach ($suppliers as $supplier)
                           @if (isset($_REQUEST['supplier_id']))
                               @if ($supplier->id == $_REQUEST['supplier_id'])
@@ -206,7 +206,7 @@
                       <label for="vr_no">VR No</label>
 
                       <select id='vr_no' name="vr_no" class=" form-control">
-                        <option value="" disabled selected>Choose VR No</option>
+                        <option value="" selected>Choose VR No</option>
                         @foreach ($s_products as $s_product)
                           @if (isset($_REQUEST['vr_no']))
                               @if ($s_product->voucher_no == $_REQUEST['vr_no'])

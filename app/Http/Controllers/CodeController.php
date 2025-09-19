@@ -47,32 +47,14 @@ class CodeController extends Controller
             $query->where('commodity_id', $request->commodity_id);
         }
 
-        if ($request->from_date) {
-            $from_date = date('Y-m-d H:i:s', strtotime($request->from_date));
-            $query->where('created_at', '>=',  $from_date);
-        }
-
-        if ($request->to_date) {
-            $to_date = date('Y-m-d H:i:s', strtotime($request->to_date));
-            $query->where('created_at', '<=',  $to_date);
-        }
-
         
         $code_lists = Code::get();
         $brands = Brand::get();
         $commodities = Commodity::get();
 
         if ($request->has('export')) {
-            $hasFilters = $request->code_id || $request->brand_id || $request->commodity_id || $request->from_date || $request->to_date;
-            if(!$hasFilters){
-                $query = Code::query();
-                $unsort_codes = $query->orderBy('id', 'desc')->get();
-                $sort_codes = $unsort_codes->sort();
-                return $this->export($sort_codes);
-            }else{
-                $sort_codes = $codes->sort();
-                return $this->export($sort_codes);
-            }
+            $exportCodes = $query->orderByDesc('id')->get()->sort(); 
+            return $this->export($exportCodes);
         }
         $codes = $query->orderByDesc('id')->paginate(10)->appends(request()->query());
 
@@ -205,7 +187,7 @@ class CodeController extends Controller
         }
     }
 
-        /**
+    /**
      * Remove the specified resource from storage.
      */
     public function printBarcode(Request $request)
@@ -218,8 +200,22 @@ class CodeController extends Controller
         }
     }
 
+    public function cancel(Request $request)
+    {
+       $code = Code::findOrFail($request->cancel_id);
+        if($code){
+            $code->canceled_at = now();
+            $code->save();
 
-    //export excel
+            return redirect()->route('codes.index')
+                     ->with('success', 'Code has been successfully canceled.');
+           
+        }else{
+            return Redirect::route('codes.index')->with('error','Code Not Found');
+        }
+    }
+
+    #export excel
     public function export($sort_codes)
     {
         $check = Auth::user()->hasPermissionTo('export_code');
@@ -245,13 +241,14 @@ class CodeController extends Controller
                 'Usage' => $code->usage,
                 "created by" => optional($c_user)->name,
                 "updated by" => optional($u_user)->name,
+                "canceled at" => $code->canceled_at,
                 "created at" => $code->created_at,
                 "updated at" => $code->updated_at,
             ];
         }
         $export = new CodesExport($sort_codes);
 
-        return Excel::download($export,'codes'.date("Y-m-d").'.xlsx');
+        return Excel::download($export,'codes_'.date("Y-m-d").'.xlsx');
     }
     
     public function import(Request $request){

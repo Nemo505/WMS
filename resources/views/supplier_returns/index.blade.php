@@ -292,54 +292,31 @@
                 @php
                     $i = 0;
                 @endphp
-                @foreach ($sup_returns as $sup_return)
-                @php
-                  ++$i;
-                  $shelf_no = \App\Models\ShelfNumber::where('shelf_numbers.id', $sup_return->shelf_number_id)
-                                                    ->join('shelves', 'shelves.id', '=', 'shelf_numbers.shelf_id')
-                                                    ->first([
-                                                        'shelf_numbers.id', 
-                                                        'shelf_numbers.name', 
-                                                        'shelves.name as shelf_name', 
-                                                        'shelf_numbers.warehouse_id'
-                                                    ]); 
-                  $warehouse = \App\Models\Warehouse::find(optional($shelf_no)->warehouse_id);
-                  $product =  \App\Models\Product::find($sup_return->product_id);
-
-                  $code = \App\Models\Code::find($product->code_id);
-                  $brand = \App\Models\Brand::find(optional($code)->brand_id); 
-                  $commodity = \App\Models\Commodity::find(optional($code)->commodity_id);
-                  $unit = \App\Models\Unit::find(optional($product)->unit_id);
-
-                  $supplier = \App\Models\Supplier::find($sup_return->supplier_id);
-                @endphp
-                  <tr>
-                      <td>{{  $i }}</td>
-                      <td>{{ $sup_return->supplier_return_date }}</td>
-                      <td>{{ $sup_return->supplier_return_no }}</td>
-
-                      <td>{{ optional($warehouse)->name }}</td>
-                      <td>{{ optional($shelf_no)->name }} ( {{ optional($shelf_no)->shelf_name }})</td>
-                      <td>{{ optional($supplier)->name }}</td>
-
-                      <td>{{ optional($code)->name }}</td>
-                      <td>{{ optional($brand)->name }}</td>
-                      <td>{{ optional($commodity)->name }}</td>
-                      <td>{{ optional($unit)->name }}</td>
-
-                      <td>{{ $sup_return->supplier_return_qty }}</td>
-
-                      <td>{{ $sup_return->remarks }}</td>
-                      <td>{{ optional($product)->voucher_no }}</td>
-                      <td>
-                          <div class="d-flex justify-content-around"> 
-                              <a href="{{ route("supplier_returns.edit", ["id" => $sup_return->id] )}}" >
-                                  <i class="far fa-edit" style="color: rgb(221, 142, 40)"></i>
-                              </a>
-                          </div>
-                      </td>
-                  </tr>
+                @foreach($sup_returns as $i => $sup_return)
+                <tr>
+                    <td>{{ $i + 1 }}</td>
+                    <td>{{ $sup_return->supplier_return_date }}</td>
+                    <td>{{ $sup_return->supplier_return_no }}</td>
+                    <td>{{ $sup_return->shelfNum?->warehouse?->name }}</td>
+                    <td>{{ $sup_return->shelfNum?->name }} ({{ $sup_return->shelfNum?->shelf?->name }})</td>
+                    <td>{{ $sup_return->supplier?->name }}</td>
+                    <td>{{ $sup_return->code?->name }}</td>
+                    <td>{{ $sup_return->code?->brand?->name }}</td>
+                    <td>{{ $sup_return->code?->commodity?->name }}</td>
+                    <td>{{ $sup_return->product?->unit?->name }}</td>
+                    <td>{{ $sup_return->supplier_return_qty }}</td>
+                    <td>{{ $sup_return->remarks }}</td>
+                    <td>{{ $sup_return->product?->voucher_no }}</td>
+                    <td>
+                        <div class="d-flex justify-content-around">
+                            <a href="{{ route('supplier_returns.edit', ['id' => $sup_return->id]) }}">
+                                <i class="far fa-edit" style="color: rgb(221, 142, 40)"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
                 @endforeach
+
               </tbody>
 
               <tfoot>

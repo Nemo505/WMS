@@ -188,6 +188,8 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('/delete', [CodeController::class ,'destroy'])->name('codes.delete');
             Route::post('/excel', [CodeController::class ,'import'])->name('codes.import');
             Route::get('/sample', [CodeController::class ,'sample'])->name('codes.sample');
+            Route::post('/cancel', [CodeController::class ,'cancel'])->name('codes.cancel');
+
 
             #BarCode
             Route::get('/printBarcode', [CodeController::class ,'printBarcode'])->name('codes.printBarcode');

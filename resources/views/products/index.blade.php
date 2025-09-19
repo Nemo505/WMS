@@ -299,7 +299,6 @@
                   <th>Unit</th>
                   <th>Received Qty</th>
                   <th>Remarks</th>
-                  <th>Transfer No</th>
                   <th>Created By</th>
                   <th>Updated By</th>
                   <th>Action</th>
@@ -328,8 +327,6 @@
                   $commodity = \App\Models\Commodity::find(optional($code)->commodity_id);
 
                   $unit = \App\Models\Unit::find($product->unit_id); 
-                  $transfer = \App\Models\Transfer::find($product->transfer_id); 
-
                   
                   $supplier = \App\Models\Supplier::find($product->supplier_id);
                   $created_by = \App\Models\User::find($product->created_by); 
@@ -351,7 +348,6 @@
                       <td>{{ $product->received_qty }}</td>
                       
                       <td>{{ $product->remarks }}</td>
-                      <td>{{ optional($transfer)->transfer_no }}</td>
                       <td>{{ optional($created_by)->user_name  }}</td>
                       <td>{{ optional($updated_by)->user_name  }}</td>
                       <td>

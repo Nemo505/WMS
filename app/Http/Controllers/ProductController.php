@@ -130,11 +130,11 @@ class ProductController extends Controller
                             $request->from_date || $request->to_date;
             if(!$hasFilters){
                 $query = Product::query();
-                $unsort_products = $query->orderBy('id', 'desc')->get();
+                $unsort_products = $query->orderBy('id', 'desc')->where('type', 'receive')->get();
                 $sort_products = $unsort_products->sort();
                 return $this->export($sort_products);
             }else{
-                $sort_products = $exportQuery->get()->sort();
+                $sort_products = $exportQuery->where('type', 'receive')->get()->sort();
                 return $this->export($sort_products);
             }
             
@@ -766,7 +766,6 @@ class ProductController extends Controller
             $brand = Brand::find(optional($code)->brand_id); 
             $commodity = Commodity::find(optional($code)->commodity_id); 
             $unit = Unit::find($product->unit_id); 
-            $transfer = Transfer::find($product->transfer_id); 
 
             $c_user = User::find($product->created_by); 
             $u_user = User::find($product->updated_by); 
@@ -790,7 +789,6 @@ class ProductController extends Controller
                 "SupplierReturn_Qty" => $product->supplier_return_qty,
                 "Balance_Qty" => $product->balance_qty,
                 "Type" => $product->type,
-                "Transfer_No" => optional($transfer)->transfer_no,
                 "Remarks" => $product->remarks,
                 "Created By"  => optional($c_user)->user_name,
                 "Updated By"  => optional($u_user)->user_name,

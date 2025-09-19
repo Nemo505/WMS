@@ -222,23 +222,28 @@
                                         <td>{{ date('Y-m-d', strtotime($code->created_at)) }}</td>
                                         <td>{{ date('Y-m-d', strtotime($code->updated_at)) }}</td>
                                         <td>
-                                            <div class="d-flex justify-content-around">
+                                            <div class="d-flex justify-content-between">
                                                 @if ($check_edit == true)
                                                     
                                                     <a href="" data-toggle="modal" data-target="#edit-modal"
-                                                        id="{{ $code->id }}" class="edit_class">
+                                                        id="{{ $code->id }}" class="edit_class mx-1" data-toggle="tooltip" title="Edit">
                                                         <i class="far fa-edit" style="color: rgb(221, 142, 40)"></i>
                                                     </a>
                                                 @endif
 
+                                                {{-- Cancel button --}}
+                                                <a href="" data-toggle="modal" data-target="#cancel-modal"
+                                                    id="{{ $code->id }}" class="cancel_class mx-1" data-toggle="tooltip" title="Cancel">
+                                                    <i class="fas fa-ban" style="color: rgb(136, 32, 139);"></i>
+                                                </a>
+                                                
                                                 @if ($check_delete == true)
                                                     <a href="" data-toggle="modal" data-target="#del-modal"
-                                                        id="{{ $code->id }}" class="del_class">
+                                                        id="{{ $code->id }}" class="del_class mx-1" data-toggle="tooltip" title="Delete">
                                                         <i class="fas fa-trash-alt" style="color: rgb(221, 67, 40)"></i>
                                                     </a>
                                                 @endif
                                             </div>
-
                                         </td>
                                     </tr>
                                 @endforeach
@@ -567,6 +572,76 @@
     </div>
     <!-- /.del modal -->
 
+    <!--cancel modal -->
+    <div class="modal fade" id="cancel-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header ">
+                    <h4 class="modal-title w-100 text-center">Are you Sure?
+                        <i class="fas fa-ban" style="color: rgb(136, 32, 139);"></i>
+                    </h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form method="POST" action="{{ route('codes.cancel') }}">
+                    <div class="modal-body">
+                        @csrf
+                        <div class="text-center">
+                            Do you really want to cancel this record?
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="text-center py-2">
+                            <img src="" alt="code" name="cancel_image" height="auto" width="60">
+                        </div>
+
+                        <div class="row mx-4">
+                            <div class="col-6">
+                                <label for="cancel_name">Code :</label>
+                            </div>
+                            <div class="col-6">
+                                <p id="cancel_name"></p>
+                            </div>
+                        </div>
+
+                        <div class="row mx-4">
+                            <div class="col-6">
+                                <label for="cancel_brand_name">Brand Name :</label>
+                            </div>
+                            <div class="col-6">
+                                <p id="cancel_brand_name"></p>
+                            </div>
+                        </div>
+                        <div class="row mx-4">
+                            <div class="col-6">
+                                <label for="cancel_commodity">Commodity :</label>
+                            </div>
+                            <div class="col-6">
+                                <p id="cancel_commodity"></p>
+                            </div>
+                        </div>
+                        <div class="row mx-4">
+                            <div class="col-6">
+                                <label for="cancel_usage">Usage :</label>
+                            </div>
+                            <div class="col-6">
+                                <p id="cancel_usage"></p>
+                            </div>
+                        </div>
+                        <input type="hidden" name="cancel_id">
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Confirm</button>
+                    </div>
+                </form>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <!-- /.del modal -->
+
     <div class="modal fade" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
         <div class="modal-dialog animate-bottom">
               <button type="button" class="close" data-dismiss="modal">
@@ -641,6 +716,21 @@
             $('#del_commodity').text(commodity);
             $('#del_usage').text(usage);
             $('img[name=del_image]').attr('src', img);
+        })
+        $('.cancel_class').click(function() {
+            var id = this.id;
+            var name = $(".name_" + id).html();
+            var brand = $(".brand_" + id).html();
+            var commodity = $(".commodity_" + id).html();
+            var usage = $(".usage_" + id).html();
+            var img = $(".img_" + id).attr('src');
+
+            $('input[name=cancel_id]').val(id);
+            $('#cancel_name').text(name);
+            $('#cancel_brand_name').text(brand);
+            $('#cancel_commodity').text(commodity);
+            $('#cancel_usage').text(usage);
+            $('img[name=cancel_image]').attr('src', img);
         })
     </script>
     

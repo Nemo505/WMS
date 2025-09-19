@@ -1,12 +1,10 @@
 @extends('layouts.master')
-@section('title', 'Code List')
+@section('title', 'CanceledCode List')
 
 @section('css')
-
 @endsection
 
 @section('buttons')
-
 @endsection
 
 @section('content')
@@ -26,7 +24,7 @@
                                             <label for="brand">Brand</label>
 
                                             <select id='brand' name="brand_id" class=" form-control">
-                                                <option value="" disabled selected>Choose Brand</option>
+                                                <option value="" selected>Choose Brand</option>
                                                 @foreach ($brands as $brand)
                                                     @if (isset($_REQUEST['brand_id']))
                                                         @if ($brand->id == $_REQUEST['brand_id'])
@@ -50,7 +48,7 @@
                                             <label for="commodity">Commodity</label>
 
                                             <select id='commodity' name="commodity_id" class=" form-control">
-                                                <option value="" disabled selected>Choose commodity</option>
+                                                <option value="" selected>Choose commodity</option>
                                                 @foreach ($commodities as $commodity)
                                                     @if (isset($_REQUEST['commodity_id']))
                                                         @if ($commodity->id == $_REQUEST['commodity_id'])
@@ -75,7 +73,7 @@
                                             <label for="code">Code</label>
 
                                             <select id='code' name="code_id" class=" form-control">
-                                                <option value="" disabled selected>Choose Code</option>
+                                                <option value="" selected>Choose Code</option>
                                                 @foreach ($code_lists as $code)
                                                     @if (isset($_REQUEST['code_id']))
                                                         @if ($code->id == $_REQUEST['code_id'])
@@ -136,7 +134,7 @@
                             </thead>
                             <tbody>
                                 @php
-                                    $i = $histories->firstItem() - 1;
+                                    $i = $codes->firstItem() - 1;
                                 @endphp
                                 @foreach ($codes as $code)
                                     @php

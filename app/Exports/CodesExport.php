@@ -6,6 +6,7 @@ use App\Models\Code;
 use App\Models\Brand;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -15,7 +16,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithDrawings;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 
-class CodesExport implements WithHeadings, ShouldAutoSize, WithStyles, FromCollection, WithDrawings
+class CodesExport implements WithHeadings, ShouldAutoSize, WithStyles, FromCollection, WithDrawings, WithColumnWidths
 {
     /**
     * @return \Illuminate\Support\Collection
@@ -43,6 +44,7 @@ class CodesExport implements WithHeadings, ShouldAutoSize, WithStyles, FromColle
             "Usage",
             "Created By",
             "Updated By",
+            "Canceled at",
             "Created at",
             "Updated at",
         ];
@@ -95,6 +97,23 @@ class CodesExport implements WithHeadings, ShouldAutoSize, WithStyles, FromColle
         return [
         // Style the first row as bold text.
         1    => ['font' => ['bold' => true]],
+        ];
+    }
+
+    public function columnWidths(): array
+    {
+        return [
+            'A' => 5,   // No
+            'B' => 30,  // ImagePath
+            'C' => 20,  // Name
+            'D' => 20,  // Brand Name
+            'E' => 20,  // Commodity Name
+            'F' => 20,  // Usage
+            'G' => 15,  // Created By
+            'H' => 15,  // Updated By
+            'I' => 20,  // Canceled at
+            'J' => 20,  // Created at
+            'K' => 20,  // Updated at
         ];
     }
 }

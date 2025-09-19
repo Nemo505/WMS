@@ -142,7 +142,12 @@ class SupplierReturnController extends Controller
                 return $query->where('supplier_return_date', '<=',  $to_date);
             }
         })
-        ->orderbydesc('supplier_return_date')
+        ->with([
+            'product',  
+            'product.unit',
+            'supplier'
+        ])
+        ->orderByDesc('supplier_return_date')
         ->get();
 
         $warehouses = Warehouse::get();

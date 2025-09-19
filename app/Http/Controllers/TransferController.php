@@ -256,19 +256,11 @@ class TransferController extends Controller
                                                     ->where('product_id', $product->id)
                                                     ->first();
                         if (!$check_to_product) {
-                           
-                            do {
-                                #random number
-                                $number = mt_rand(100000000, 999999999);
-                                $check_barcode = Product::where('barcode', $number)->first();
-    
-                            } while ($check_barcode);
     
                             $transfer_product = Product::create([
                                 'code_id' => $product->code_id,
                                 'unit_id' => $product->unit_id,
                                 'type' => 'transfer',
-                                'barcode' => $number,
                                 'received_qty' => $request->$qty,
                                 'balance_qty' => $request->$qty,
             
@@ -856,19 +848,11 @@ class TransferController extends Controller
     
                         if (!$check_transfer) {
                             if ($request->shelfnum_id) {
-                                
-                                do {
-                                    #random number
-                                    $number = mt_rand(100000000, 999999999);
-                                    $check_barcode = Product::where('barcode', $number)->first();
-        
-                                } while ($check_barcode);
-    
+
                                 $transfer_product = Product::create([
                                     'code_id' => $check_from_product->code_id,
                                     'unit_id' => $check_from_product->unit_id,
                                     'type' => 'transfer',
-                                    'barcode' => $number,
                                     'received_qty' => $request->$qty,
                                     'balance_qty' => $request->$qty,
             
@@ -915,18 +899,10 @@ class TransferController extends Controller
     
                             }else{
     
-                                do {
-                                    #random number
-                                    $number = mt_rand(100000000, 999999999);
-                                    $check_barcode = Product::where('barcode', $number)->first();
-        
-                                } while ($check_barcode);
-    
                                 $transfer_product = Product::create([
                                     'code_id' => $check_from_product->code_id,
                                     'unit_id' => $check_from_product->unit_id,
                                     'type' => 'transfer',
-                                    'barcode' => $number,
                                     'received_qty' => $request->$qty,
                                     'balance_qty' => $request->$qty,
             

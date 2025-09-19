@@ -25,7 +25,7 @@ class CanceledCodeController extends Controller
 
     public function index(Request $request)
     {
-        // Only fetch canceled codes
+        # Only fetch canceled codes
         $query = Code::withoutGlobalScope('notCanceled')
                     ->whereNotNull('canceled_at');
         if ($request->code_id) {
@@ -40,23 +40,13 @@ class CanceledCodeController extends Controller
             $query->where('commodity_id', $request->commodity_id);
         }
 
-        if ($request->from_date) {
-            $from_date = date('Y-m-d H:i:s', strtotime($request->from_date));
-            $query->where('created_at', '>=', $from_date);
-        }
-
-        if ($request->to_date) {
-            $to_date = date('Y-m-d H:i:s', strtotime($request->to_date));
-            $query->where('created_at', '<=', $to_date);
-        }
-
         $code_lists = Code::withoutGlobalScope('notCanceled')->whereNotNull('canceled_at')->get();
         $brands = Brand::get();
         $commodities = Commodity::get();
 
         // Export
         if ($request->has('export')) {
-            $exportCodes = $query->orderByDesc('id')->get(); 
+            $exportCodes = $query->orderByDesc('id')->get()->sort(); 
             return $this->export($exportCodes);
         }
         $codes = $query->orderByDesc('id')->paginate(10)->appends(request()->query());
@@ -69,13 +59,92 @@ class CanceledCodeController extends Controller
         ]);
     }
 
-
-    // Show details of a single canceled code
-    public function show(Code $code)
+    public function show($id)
     {
-        $code->load(['transfers', 'issues']); // eager load related transactions
+        $code = Code::withoutGlobalScope('notCanceled')
+            ->whereNotNull('canceled_at')
+            ->with([
+                'transfers' => function ($query) {
+                    $query->withoutGlobalScope('activeCode')
+                    ->with([
+                              'product' => function($q) {
+                                  $q->withoutGlobalScope('activeCode');
+                              }]);
+                },
+                'issues' => function ($query) {
+                    $query->withoutGlobalScope('activeCode')
+                    ->with([
+                              'product' => function($q) {
+                                  $q->withoutGlobalScope('activeCode');
+                              }]);
+                },
+                'issueReturns' => function ($query) {
+                    $query->withoutGlobalScope('activeCode')
+                    ->with([
+                              'product' => function($q) {
+                                  $q->withoutGlobalScope('activeCode');
+                              },
+                              'issue' => function($q) {
+                                  $q->withoutGlobalScope('activeCode');
+                              },
+                            ]);
+                },
+                'supplierReturns' => function ($query) {
+                    $query->withoutGlobalScope('activeCode')
+                    ->with([
+                              'product' => function($q) {
+                                  $q->withoutGlobalScope('activeCode');
+                              }]);
+                },
+                'adjustments' => function ($query) {
+                    $query->withoutGlobalScope('activeCode')
+                    ->with([
+                              'product' => function($q) {
+                                  $q->withoutGlobalScope('activeCode');
+                              }]);
+                },
+                'brand',
+                'commodity',
+                'products' => function($query) {
+                    $query->withoutGlobalScope('activeCode')
+                        ->where('type', 'receive');
+                },
 
+            ])
+            ->findOrFail($id);
+       
         return view('canceled.show', compact('code'));
     }
+
+    public function export($sort_codes)
+    {
+
+        for ($i = 0; $i < count($sort_codes); $i++) {
+            # code...
+            $code = $sort_codes[$i];
+            $brand = Brand::find($code->brand_id); 
+            $commodity = Commodity::find($code->commodity_id); 
+            $c_user = User::find($code->created_by); 
+            $u_user = User::find($code->updated_by); 
+                                
+            $sort_codes[$i] = [
+                "No" => count($sort_codes) - $i,
+                "ImagePath" => $code->image ? basename($code->image) : '',
+                'name' => $code->name,
+                'Brand Name' => $brand->name,
+                'Commodity Name' => $commodity->name,
+                'Usage' => $code->usage,
+                "created by" => optional($c_user)->name,
+                "updated by" => optional($u_user)->name,
+                "canceled at" => $code->canceled_at,
+                "created at" => $code->created_at,
+                "updated at" => $code->updated_at,
+            ];
+        }
+        $export = new CodesExport($sort_codes);
+
+        return Excel::download($export,'canceled_codes_'.date("Y-m-d").'.xlsx');
+    }
+
 }
 
