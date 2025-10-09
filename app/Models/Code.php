@@ -21,6 +21,10 @@ class Code extends Model
             $builder->whereNull('canceled_at'); // only show active codes by default
         });
     }
+    public function newCode()
+    {
+        return $this->belongsTo(Code::class, 'new_code_id');
+    }
 
     public function transfers()
     {

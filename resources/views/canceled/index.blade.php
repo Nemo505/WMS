@@ -126,9 +126,9 @@
                                     <th >Usage</th>
                                     <th>Created_By</th>
                                     <th>Updated_By</th>
-                                    <th>Canceled_at</th>
                                     <th>Created_at</th>
-                                    <th>Updated_at</th>
+                                    <th>Canceled_at</th>
+                                    <th>New Code</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -173,9 +173,9 @@
                                         <td class="usage_{{ $code->id }}" >{{ $code->usage }}</td>
                                         <td>{{ optional($c_user)->name }}</td>
                                         <td>{{ optional($u_user)->name }}</td>
-                                        <td>{{ date('Y-m-d', strtotime($code->canceled_at)) }}</td>
                                         <td>{{ date('Y-m-d', strtotime($code->created_at)) }}</td>
-                                        <td>{{ date('Y-m-d', strtotime($code->updated_at)) }}</td>
+                                        <td>{{ date('Y-m-d', strtotime($code->canceled_at)) }}</td>
+                                        <td>{{ $code->newCode ? $code->newCode->name : '-' }}</td>
                                         <td>
                                             <div class="d-flex justify-content-around">
                                                 <a href="{{ route('canceled.show', $code->id) }}" 
@@ -209,7 +209,8 @@
                                     <th>Created_By</th>
                                     <th>Updated_By</th>
                                     <th>Created_at</th>
-                                    <th>Updated_at</th>
+                                    <th>Canceled_at</th>
+                                    <th>New Code</th>
                                     <th>Action</th>
                                 </tr>
                             </tfoot>

@@ -15,6 +15,7 @@ use App\Imports\CodesImport;
 use \Milon\Barcode\DNS1D;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing;
+use Illuminate\Validation\Rule;
 use Redirect;
 use Auth;
 use Validator;
@@ -202,11 +203,23 @@ class CodeController extends Controller
 
     public function cancel(Request $request)
     {
-       $code = Code::findOrFail($request->cancel_id);
+        $request->validate([
+            'cancel_id' => ['required', 'exists:codes,id'],
+            'new_code_id' => [
+                'nullable',
+                'different:cancel_id',
+                Rule::unique('codes', 'new_code_id'),
+            ],
+        ]);
+
+        $code = Code::findOrFail($request->cancel_id);
         if($code){
             $code->canceled_at = now();
+            if ($request->new_code_id) {
+                $code->new_code_id = $request->new_code_id;
+            }
+            $code->updated_by = Auth::user()->id;
             $code->save();
-
             return redirect()->route('codes.index')
                      ->with('success', 'Code has been successfully canceled.');
            

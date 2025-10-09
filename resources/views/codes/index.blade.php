@@ -129,9 +129,6 @@
 
                                         </div>
                                     </div>
-
-                                   
-                                   
                                 </div>
 
                                 <div class="col-2 d-flex justify-content-start">
@@ -628,6 +625,23 @@
                                 <p id="cancel_usage"></p>
                             </div>
                         </div>
+
+                        <!-- New select box for new code -->
+                        <div class="row mx-4 mt-3">
+                            <div class="col-6">
+                                <label for="new_code">Select New Code:</label>
+                            </div>
+                            <div class="col-6">
+                                <select id='new_code' name="new_code_id" class="">
+                                    <option value="" selected>Choose Code</option>
+                                    @foreach ($code_lists as $code)
+                                        <option value="{{ $code->id }}">
+                                            {{ $code->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
                         <input type="hidden" name="cancel_id">
                     </div>
                     <div class="modal-footer justify-content-between">
@@ -640,7 +654,7 @@
         </div>
         <!-- /.modal-dialog -->
     </div>
-    <!-- /.del modal -->
+    <!-- /.cancel modal -->
 
     <div class="modal fade" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
         <div class="modal-dialog animate-bottom">
@@ -679,6 +693,9 @@
             });
             $('#e_commodity').select2({
                 dropdownParent: $('#edit-modal')
+            });
+             $('#new_code').select2({
+                dropdownParent: $('#cancel-modal')
             });
         });
 
@@ -731,6 +748,11 @@
             $('#cancel_commodity').text(commodity);
             $('#cancel_usage').text(usage);
             $('img[name=cancel_image]').attr('src', img);
+
+            var select = $('#new_code');
+            select.val(''); // Reset selection
+            select.find('option').show(); // Show all options
+            select.find('option[value="' + id + '"]').remove(); 
         })
     </script>
     
@@ -742,6 +764,4 @@
                 });     
         });
       </script>
-
-
 @endsection

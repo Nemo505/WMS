@@ -47,6 +47,7 @@ class CodesExport implements WithHeadings, ShouldAutoSize, WithStyles, FromColle
             "Canceled at",
             "Created at",
             "Updated at",
+            "New Code Name",
         ];
     }
 
@@ -114,6 +115,7 @@ class CodesExport implements WithHeadings, ShouldAutoSize, WithStyles, FromColle
             'I' => 20,  // Canceled at
             'J' => 20,  // Created at
             'K' => 20,  // Updated at
+            'K' => 20,  // Name
         ];
     }
 }

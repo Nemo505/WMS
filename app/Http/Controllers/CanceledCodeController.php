@@ -139,6 +139,7 @@ class CanceledCodeController extends Controller
                 "canceled at" => $code->canceled_at,
                 "created at" => $code->created_at,
                 "updated at" => $code->updated_at,
+                "New Code Name" => $code->newCode ? $code->newCode->name : '',
             ];
         }
         $export = new CodesExport($sort_codes);
