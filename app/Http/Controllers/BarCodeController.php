@@ -16,12 +16,11 @@ class BarCodeController extends Controller
    
     public function store(Request $request)
     {
-        $x = substr ($request->barcode,0,-1);
         $product = Product::where('products.shelf_number_id', $request->shelfnum_id)
                         ->join('codes', 'codes.id', '=', 'products.code_id')
                         ->join('brands', 'brands.id', '=', 'codes.brand_id')
                         ->join('commodities', 'commodities.id', '=', 'codes.commodity_id')
-                        ->where('codes.barcode', $x) 
+                        ->where('codes.barcode', $request->barcode) 
                         ->first([
                             'products.id',
                             'products.transfer_id',
@@ -40,47 +39,60 @@ class BarCodeController extends Controller
                          
         return response()->json( ['product' => $product, 'transfer' => $transfer]);
     }
-    
-    public function storeMR(Request $request)
-    {
-        $x = substr($request->barcode, 0, -1);
 
-        $product = Product::join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-            ->join('codes', 'codes.id', '=', 'products.code_id')
+    public function storeProduct(Request $request)
+    {
+        $code = Code::where('codes.barcode', $request->barcode)
             ->join('brands', 'brands.id', '=', 'codes.brand_id')
             ->join('commodities', 'commodities.id', '=', 'codes.commodity_id')
-            ->where('codes.barcode', $x) 
             ->first([
-                'products.id', 
-                'products.shelf_number_id',
-                'shelf_numbers.name as shelfnum_name',
-                'products.transfer_id',
                 'codes.name',
                 'brands.id as brand_id',
                 'brands.name as brand_name',
                 'commodities.id as commodity_id',
                 'commodities.name as commodity_name',
-                'products.voucher_no',
-                'products.balance_qty',
-                'codes.image',
-                'codes.usage',
-                'codes.barcode', 
+                'codes.barcode'
+            ]);
+        return response()->json(['code' => $code]);
+    }
+    
+    public function storeMR(Request $request)
+    {
+        $code = Code::where('codes.barcode', $request->barcode)
+            ->join('brands', 'brands.id', '=', 'codes.brand_id')
+            ->join('commodities', 'commodities.id', '=', 'codes.commodity_id')
+            ->first([
+                'codes.id',
+                'codes.name',
+                'brands.id as brand_id',
+                'brands.name as brand_name',
+                'commodities.id as commodity_id',
+                'commodities.name as commodity_name',
+                'codes.barcode',
+                'codes.image'
             ]);
 
-        $transfer = Transfer::find(optional($product)->transfer_id);
+        $shelf_numbers = Product::where('products.code_id', $code->id)
+                                ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
+                                ->join('shelves', 'shelves.id', '=', 'shelf_numbers.shelf_id')
+                                ->join('warehouses', 'warehouses.id', '=', 'shelf_numbers.warehouse_id') // if needed
+                                ->get([
+                                    'shelf_numbers.id',
+                                    'shelf_numbers.name',
+                                    'shelves.name as shelf_name',
+                                    'warehouses.name as warehouse_name'
+                                ]);
 
-        return response()->json(['product' => $product, 'transfer' => $transfer]);
+        return response()->json(['code' => $code, 'shelf_numbers' => $shelf_numbers]);
     }
 
 
     public function storeMRR(Request $request)
     {
-        $x = substr($request->barcode, 0, -1);
-
         $product = Product::join('codes', 'codes.id', '=', 'products.code_id')
             ->join('brands', 'brands.id', '=', 'codes.brand_id')
             ->join('commodities', 'commodities.id', '=', 'codes.commodity_id')
-            ->where('codes.barcode', $x) 
+            ->where('codes.barcode', $request->barcode) 
             ->where('products.shelf_number_id', $request->shelfnum_id)
             ->whereNotNull('products.mr_qty')
             ->where('products.mr_qty', '>', 0)
@@ -104,13 +116,11 @@ class BarCodeController extends Controller
 
     public function storeSupplier(Request $request)
     {
-        $x = substr($request->barcode, 0, -1);
-
         $product = Product::join('suppliers', 'suppliers.id', '=', 'products.supplier_id')
             ->join('codes', 'codes.id', '=', 'products.code_id')
             ->join('brands', 'brands.id', '=', 'codes.brand_id')
             ->join('commodities', 'commodities.id', '=', 'codes.commodity_id')
-            ->where('codes.barcode', $x)
+            ->where('codes.barcode', $request->barcode)
             ->where('products.shelf_number_id', $request->shelfnum_id)
             ->where('suppliers.name', $request->supplier)
             ->first([
@@ -120,6 +130,7 @@ class BarCodeController extends Controller
                 'brands.name as brand_name',
                 'commodities.name as commodity_name',
                 'products.voucher_no',
+                'products.balance_qty',
                 'codes.image',
                 'codes.usage',
                 'codes.barcode',

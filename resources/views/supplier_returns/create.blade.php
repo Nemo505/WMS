@@ -100,19 +100,17 @@
                   </button>
                 </div>
 
-                <div class="col-5 text-end ">
-                  <button type="button" class="btn float-right text-white useScanner" style="background-color: rgb(121, 77, 163)">
-                    <i class="fas fa-barcode  mx-1"  style="color: #ffffff;"></i>
+                <div class="col-8 text-end">
+                  <button  type="button"  class="btn float-right text-white useScanner" style="background-color: rgb(121, 77, 163);">
+                    <i class="fas fa-barcode mx-1" style="color: #ffffff;"></i>
                     Use Scanner
                   </button>
 
-                  <div class="d-flex">
-                   <button type="button" class="btn btn-outline-primary	submit_barcode" style=" opacity:0 " value="divide" >
-                     Submit
-                   </button>
-                  <input  placeholder="scan..." class="form-control mr-3" 
-                          type="text" tabindex="1" name="scanner" 
-                          id="scanner" autofocus  style="display: none">
+                  <div class="d-flex align-items-center" >
+                    <span class="form-control" id="text_scan" style="border: none; box-shadow: none; display: none; color: #dc3545; font-weight: 500; font-size: 13px">
+                      ⚠️ Please enter Warehouse, Shelf No and Supplier before scanning.
+                    </span>
+                    <input type="text" id="scanner" name="scanner" placeholder="scan..." tabindex="1" autofocus class="form-control mr-3" style="display: none; " >
                   </div>
                 </div>
               </div>
@@ -218,7 +216,7 @@
           <div class="d-flex justify-content-around">
 
             <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
-            <button type="button" class="btn btn-primary changeBtn" onclick="changeButtonType()">Submit</button>
+            <button type="button" class="btn btn-primary changeBtn" onclick="changeButtonType(event)">Submit</button>
           </div>
         </div>
 
@@ -838,7 +836,10 @@
     
   $('#scanner').keyup(function() {
       var value = $('#scanner').val();
-      if(value.length == 10) {
+      if (value.length === 9 || value.length === 10) {
+        if (value.length === 10) {
+            value = value.substring(0, 9);
+        }
           if (isScannerInput === value) {
               $('#scanner').val('');
                
@@ -856,6 +857,8 @@
                             },
                             cache: false,
                             success: function (result) {
+                              console.log(result);
+                              
                               if (result !== null) {
             
                                 $('#scanner').val('');
@@ -984,43 +987,61 @@
 </script>
 
 <script>
-
   $('.useScanner').click(function () {
     $(this).css('display','none');
+    $('#text_scan').css('display','block');
     $('#scanner').css('display','block');
     $('#scanner').focus();
-    $('.submit_barcode').css('display','block');
   })
 </script>
 
 <script>
     function changeButtonType() {
+        if (event) event.preventDefault();
         // start
-         var codetxt=$(`#code_${i}`).val();
-         var brandtxt=$(`#brand_${i}`).val();
-         var commoditytxt=$(`#commodity_${i}`).val();
-         var vr_notxt=$(`#vr_no_${i}`).val();
+        var warehouse_id = $(`#warehouse_id`).val();
+        var shelfnum_id = $(`#shelfnum_id`).val();
+        var sup_no = $(`#sup_no`).val();
+
+        var codetxt=$(`#code_${i}`).val();
+        var brandtxt=$(`#brand_${i}`).val();
+        var commoditytxt=$(`#commodity_${i}`).val();
+        var vr_notxt=$(`#vr_no_${i}`).val();
+        var qtytxt=$(`#qty_${i}`).val();
          
-         var qtytxt=$(`#qty_${i}`).val();
-         
-        if (!codetxt && codetxt==''){
-            alert('please enter code');
+        if (!warehouse_id){
+          alert('please enter Warehouse');
+          return false;
+        }else if (!shelfnum_id){
+          alert('please enter ShelfNumber');
+          return false;
+        }else if (!sup_no){
+          alert('please enter ShelfNumber');
+          return false;
+        }else if (!codetxt && codetxt==''){
+          alert('please enter code');
+          return false;
         }else if(!brandtxt && brandtxt==''){
           alert('please enter bandname'); 
+          return false;
         }else if(!commoditytxt && commoditytxt==''){
           alert('please enter commodity');
+          return false;
         }else if(!vr_notxt && vr_notxt==''){
           alert('please enter Vr No');  
-        }else if(qtytxt == 0){
+          return false;
+        } else if (!qtytxt || qtytxt == 0) {
           alert('please enter qty'); 
-        }else{
-             // end
-            var button = document.querySelector('.changeBtn');
-            button.type = 'submit';
-            // Optionally, trigger the form submission after changing the button type
-            var form = document.getElementById('myForm');
-            form.submit();
+          return false;
         }
+        // end
+      var button = document.querySelector('.changeBtn');
+      button.type = 'submit';
+
+      var form = document.getElementById('myForm');
+      form.submit();
+
+      return true;
     }
 
 </script>

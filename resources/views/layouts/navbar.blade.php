@@ -75,17 +75,12 @@
             <i class="fas fa-sliders-h mr-1" style="color: rgb(136, 32, 139);"></i>Adjustment</a>
         </li>
 
-        @auth
-            @if(auth()->user()->name === 'admin')
-                <li class="nav-item d-none d-sm-inline-block">
-                    <a href="{{ route('canceled.index') }}" class="nav-link">
-                        <i class="fas fa-ban mr-1" style="color: rgb(136, 32, 139);"></i>
-                        Canceled List
-                    </a>
-                </li>
-            @endif
-        @endauth
-
+        <li class="nav-item d-none d-sm-inline-block">
+            <a href="{{ route('canceled.index') }}" class="nav-link">
+                <i class="fas fa-ban mr-1" style="color: rgb(136, 32, 139);"></i>
+                Canceled List
+            </a>
+        </li>
 
         <li class="nav-item dropdown d-none d-sm-inline-block">
             <a class="nav-link d-flex align-items-center " data-toggle="dropdown" href="#" >

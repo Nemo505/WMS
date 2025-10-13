@@ -196,6 +196,7 @@ Route::group(['middleware' => 'auth'], function () {
             #barcode scanner transfer
             Route::get('/barcode-scanner', [BarCodeController::class, 'index'])->name('scanners.index');
             Route::get('/barcode-store', [BarCodeController::class, 'store'])->name('scanners.store');
+            Route::get('/barcode-store-product', [BarCodeController::class, 'storeProduct'])->name('scanners.storeProduct');
             Route::get('/barcode-supplier', [BarCodeController::class, 'storeSupplier'])->name('scanners.storeSupplier');
             #issue
             Route::get('/barcode-store-mr', [BarCodeController::class, 'storeMR'])->name('scanners.storeMR');

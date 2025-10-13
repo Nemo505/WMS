@@ -89,21 +89,20 @@
                   </button>
                 </div>
 
-                <div class="col-5 text-end ">
-                  <button type="button" class="btn float-right text-white useScanner" style="background-color: rgb(121, 77, 163)">
-                    <i class="fas fa-barcode  mx-1"  style="color: #ffffff;"></i>
+                <div class="col-8 text-end">
+                  <button  type="button"  class="btn float-right text-white useScanner" style="background-color: rgb(121, 77, 163);">
+                    <i class="fas fa-barcode mx-1" style="color: #ffffff;"></i>
                     Use Scanner
                   </button>
 
-                 <div class="d-flex">
-                   <button type="button" class="btn btn-outline-primary	submit_barcode" style=" opacity:0 " value="divide" >
-                     Submit
-                   </button>
-                  <input  placeholder="scan..." class="form-control mr-3" 
-                          type="text" tabindex="1" name="scanner" 
-                          id="scanner" autofocus  style="display: none">
+                  <div class="d-flex align-items-center" >
+                    <span class="form-control" id="text_scan" style="border: none; box-shadow: none; display: none; color: #dc3545; font-weight: 500; font-size: 13px">
+                      {{-- ⚠️ Please enter Supplier and Voucher No before scanning. --}}
+                    </span>
+                    <input type="text" id="scanner" name="scanner" placeholder="scan..." tabindex="1" autofocus class="form-control mr-3" style="display: none; " >
                   </div>
                 </div>
+                
               </div>
 
 
@@ -684,58 +683,89 @@
 
   });
 
-    //from to shelfnumber id to codes, brands, commodities
-    $('#shelfnum_{{$i}}').on('change', function() {
-      var shelfnum_id = this.value;
-      $.ajax({
-          url: "{{ route('transfers.getCode') }}",
-          type: "GET",
-          data: {
-              "shelfnum_id": shelfnum_id,
-          },
-          cache: false,
-          success: function(result) {
-              if (result) {
-                  $('#code_{{$i}}').empty();
-                  $('#code_{{$i}}').append(
-                          '<option value="" >Choose Code</option>'
-                      );
-                  $('#brand_{{$i}}').empty();
-                  $('#brand_{{$i}}').append(
-                          '<option value="" >Choose Brand</option>'
-                      );
-                  $('#commodity_{{$i}}').empty();
-                  $('#commodity_{{$i}}').append(
-                          '<option value="" >Choose Commodity</option>'
-                      );
-                  $('#vr_no_{{$i}}').empty();
-                  $('#vr_no_{{$i}}').append(
-                    '<option value="" >Choose Voucher</option>'
-                    );
-                  $("#usage_{{$i}}").html("Detailed Description");
-                  $("#img_{{$i}}").attr("src", "/storage/img/code/no-img.jpg");
+  //from to shelfnumber id to codes, brands, commodities
+  $(document).on('change', '[id^="shelfnum_"]', function() {
+    var shelfnum_id = $(this).val();
+    var index = $(this).attr('id').split('_')[1];
+    $.ajax({
+        url: "{{ route('transfers.getCode') }}",
+        type: "GET",
+        data: {
+            "shelfnum_id": shelfnum_id,
+        },
+        cache: false,
+        success: function(result) {
+            if (result) {
 
+              // If code/brand/commodity are already filled (scanner mode)
+              var code_name = $('#code_' + index).val();
+              var brand_id = $('#brand_' + index).val();
+              var commodity_id = $('#commodity_' + index).val();
+
+              if (code_name && brand_id && commodity_id) {
+                  $.ajax({
+                      url: "{{ route('transfers.getVr') }}",
+                      type: "GET",
+                      data: {
+                        "brand_id": brand_id,
+                        "commodity_id": commodity_id,
+                        "code_name": code_name,
+                        "shelfnum_id": shelfnum_id,
+                      },
+                      cache: false,
+                      success: function(vrResult) {
+                        console.log(vrResult);
+                        
+                        if (vrResult && vrResult.vr_nos) {
+                            $('#vr_no_' + index).empty().append('<option value="">Choose Voucher</option>');
+                            $.each(vrResult.vr_nos, function(key, value) {
+                              let text = value.transfer_no
+                                  ? `${value.voucher_no} (${value.transfer_no})`
+                                  : `${value.voucher_no}`;
+                              $("#vr_no_" + index).append(
+                                  `<option value="${value.id}">${text}</option>`
+                              );
+                            });
+
+                            $(`#vr_no_${index}`).off('change').on('change', function() {
+                                var vr_no = this.value;
+                                $.each(vrResult.vr_nos, function(key, value) {
+                                    if (value.id == vr_no) {
+                                        $(`#qty_${index}`).prop({
+                                            "max": value.balance_qty,
+                                            "value": 0,
+                                        });
+                                        $(`label[for='qty_${index}']`).text(`${value.balance_qty} Qty`);
+                                        $(`#usage_${index}`).text(`${value.usage}`);
+                                        $(`#img_${index}`).attr("src", `{{ URL::asset('${value.image}') }}`);
+                                    }
+                                });
+                            });
+                        }
+                      }
+                  });
+              }else{
+                  $('#code_' + index).empty().append('<option value="">Choose Code</option>');
+                  $('#brand_' + index).empty().append('<option value="">Choose Brand</option>');
+                  $('#commodity_' + index).empty().append('<option value="">Choose Commodity</option>');
+                  $('#vr_no_' + index).empty().append('<option value="">Choose Voucher</option>');
+                  $("#usage_" + index).html("Detailed Description");
+                  $("#img_" + index).attr("src", "/storage/img/code/no-img.jpg");
+
+                  $(`#qty_${index}`).prop({ "max": ``, "value": 0 });
                   $(`.labelQty`).text(`__Qty`);
-                  $(`#qty_{{$i}}`).prop({
-                                      "max" : ` `,
-                                      "value" : 0,
-                                   });
 
                   $.each(result.codes, function(key, value) {
-                          $("#code_{{$i}}").append(
-                            '<option value="' + value.name + '">' + value.name +'</option>'
-                          );
-                    });
-  
-              } else {
-                  $(".getCode").empty();
-                  $(".getBrand").empty();
-                  $(".getVr").empty();
-                  $(".getQty").empty();
+                      $("#code_" + index).append('<option value="' + value.name + '">' + value.name + '</option>');
+                  });
               }
-          }
-      });
+
+            } else {
+                $(".getCode, .getBrand, .getVr, .getQty").empty();
+            }
+        }
     });
+  });
 
    
 </script>
@@ -923,7 +953,10 @@
     
   $('#scanner').keyup(function() {
       var value = $('#scanner').val();
-      if(value.length == 10) {
+      if (value.length === 9 || value.length === 10) {
+        if (value.length === 10) {
+            value = value.substring(0, 9);
+        }
           if (isScannerInput === value) {
               $('#scanner').val('');
                
@@ -941,7 +974,17 @@
                               if (result !== null) {
             
                                 $('#scanner').val('');
-                                var img = result['product'].image;
+                                var img = result['code'].image;
+                                let shelfOptions = '<option value="" disabled selected>Choose Shelf Number</option>';
+
+                                result.shelf_numbers.forEach(function(shelfnum) {
+                                    shelfOptions += `
+                                        <option value="${shelfnum.id}">
+                                            ${shelfnum.name} - ${shelfnum.shelf_name} - ${shelfnum.warehouse_name}
+                                        </option>
+                                    `;
+                                });
+
                                 $( ".moreCols" ).append(
                                   `
                                   <div class="row d-flex justify-content-around deleteRow">
@@ -966,7 +1009,7 @@
                                           <label for="shelfnum">ShelfNumber <span style="color: red">*</span></label>
                                             <div>
                                               <select id='shelfnum_${i}' required name="shelfnum_${i}" class="form-control">
-                                                <option value="${result['product'].shelf_number_id}" > ${result['product'].shelfnum_name} </option>
+                                                   ${shelfOptions}
                                               </select>
                                             </div>
                                         </div>
@@ -977,7 +1020,7 @@
                                         <label for="code">Code<span style="color: red">*</span> </label> 
                                           <div>
                                             <select id='code_${i}' required name="code_${i}" class="form-control">
-                                              <option value="${result['product'].name}" >${result['product'].name}</option>
+                                              <option value="${result['code'].name}" >${result['code'].name}</option>
                                             </select>
                                           </div>
                                       </div>
@@ -988,7 +1031,7 @@
                                         <label for="brand">Brand <span style="color: red">*</span> </label> 
                                         <div> 
                                             <select id='brand_${i}' required name="brand_${i}" class=" form-control getBrand">
-                                              <option value="${result['product'].brand_name}" >${result['product'].brand_name}</option>
+                                              <option value="${result['code'].brand_id}" >${result['code'].brand_name}</option>
                                             </select>
                                         </div>
                                       </div>
@@ -999,7 +1042,7 @@
                                         <label for="commodity">Commodity<span style="color: red">*</span> </label> 
                                         <div>
                                             <select id='commodity_${i}' required name="commodity_${i}" class=" form-control getVr">
-                                              <option value="${result['product'].commodity_name}" >${result['product'].commodity_name}</option>
+                                              <option value="${result['code'].commodity_id}" >${result['code'].commodity_name}</option>
                                             </select>
                                         </div>
                                       </div>
@@ -1010,15 +1053,7 @@
                                         <label for="vr_no">Voucher_No<span style="color: red">*</span> </label> 
                                         <div>
                                             <select id='vr_no_${i}' required name="vr_no_${i}" class=" form-control getQty">
-                
-                                              ${result['transfer'] !== null ?
-                                              
-                                                `<option value="${result['product'].id}" >${result['product'].voucher_no} || ${result['transfer'].transfer_no}</option>`
-                                              :
-                                                `<option value="${result['product'].id}" >${result['product'].voucher_no}</option>`
-                                              
-                                             }
-                                              
+                                               <option value="" >Choose Voucher</option>
                                             </select>
                                         </div>
                                       </div>
@@ -1033,12 +1068,11 @@
                 
                                     <div class="col-1">
                                       <div class="form-group">
-                                        <label for="qty_${i}">${result['product'].balance_qty} Qty </label> 
+                                        <label for="qty_${i}"> Qty </label> 
                                         <input type="number" class="form-control"
                                          required id="qty_${i}" 
                                          name="qty_${i}" step=".01" 
                                          min=0.01 oninput="validity.valid||(value='');" 
-                                         max=${result['product'].balance_qty}
                                          value=0
                                          placeholder="">
                                        
@@ -1052,7 +1086,7 @@
                                             name="usage_${i}" 
                                             style="color: rgb(149, 155, 155)"
                                             class="isUsage"
-                                            >${result['product'].usage}
+                                            >
                                           </p>
                                       </div>
                                     </div>
@@ -1081,12 +1115,11 @@
 </script>
 
 <script>
-
   $('.useScanner').click(function () {
     $(this).css('display','none');
+    $('#text_scan').css('display','block');
     $('#scanner').css('display','block');
     $('#scanner').focus();
-    $('.submit_barcode').css('display','block');
   })
 </script>
 
@@ -1122,5 +1155,6 @@
     }
 
 </script>
+
 
 @endsection

@@ -92,19 +92,17 @@
                   </button>
                 </div>
 
-                <div class="col-5 text-end ">
-                  <button type="button" class="btn float-right text-white useScanner" style="background-color: rgb(121, 77, 163)">
-                    <i class="fas fa-barcode  mx-1"  style="color: #ffffff;"></i>
+                <div class="col-8 text-end">
+                  <button  type="button"  class="btn float-right text-white useScanner" style="background-color: rgb(121, 77, 163);">
+                    <i class="fas fa-barcode mx-1" style="color: #ffffff;"></i>
                     Use Scanner
                   </button>
 
-                  <div class="d-flex">
-                   <button type="button" class="btn btn-outline-primary	submit_barcode" style=" opacity:0 " value="divide" >
-                     Submit
-                   </button>
-                  <input  placeholder="scan..." class="form-control mr-3" 
-                          type="text" tabindex="1" name="scanner" 
-                          id="scanner" autofocus  style="display: none">
+                  <div class="d-flex align-items-center" >
+                    <span class="form-control" id="text_scan" style="border: none; box-shadow: none; display: none; color: #dc3545; font-weight: 500; font-size: 13px">
+                      ⚠️ Please enter  Warehouse and Shelf No before scanning.
+                    </span>
+                    <input type="text" id="scanner" name="scanner" placeholder="scan..." tabindex="1" autofocus class="form-control mr-3" style="display: none; " >
                   </div>
                 </div>
               </div>
@@ -869,175 +867,178 @@
   
   $('#scanner').keyup(function() {
       var value = $('#scanner').val();
-      if(value.length == 10) {
+      if (value.length === 9 || value.length === 10) {
+        if (value.length === 10) {
+            value = value.substring(0, 9);
+        }
            if (isScannerInput === value) {
                 $('#scanner').val('');
-           }else{
-            if ($('#shelfnum_id').val() != null && $('#shelfnum_id').val() != '') {
-              if ($('#scanner').val() != null && $('#scanner').val() != '') {
-                ++i;
-                    $.ajax({
-                        url: "{{ route('scanners.storeMRR') }}",
-                        type: "GET",
-                        data: {
-                          "barcode": $('#scanner').val(),
-                          "shelfnum_id": $("#shelfnum_id").val(),
-                        },
-                        cache: false,
-                        success: function (result) {
-                          if (result !== null) {
-          
-                            $('#scanner').val('');
-                            var img = result['product'].image;
-                            $( ".moreCols" ).append(
-                              `
-                              <div class="row d-flex justify-content-around deleteRow">
-                                <div class="my-auto pl-4 text-center">
-                                  <div class="form-group ">
-                                    <input type="checkbox" class="form-check-input" id="">
+
+            }else{
+              if ($('#shelfnum_id').val() != null && $('#shelfnum_id').val() != '') {
+                if ($('#scanner').val() != null && $('#scanner').val() != '') {
+                  ++i;
+                      $.ajax({
+                          url: "{{ route('scanners.storeMRR') }}",
+                          type: "GET",
+                          data: {
+                            "barcode": $('#scanner').val(),
+                            "shelfnum_id": $("#shelfnum_id").val(),
+                          },
+                          cache: false,
+                          success: function (result) {
+                            if (result !== null) {
+            
+                              $('#scanner').val('');
+                              var img = result['product'].image;
+                              $( ".moreCols" ).append(
+                                `
+                                <div class="row d-flex justify-content-around deleteRow">
+                                  <div class="my-auto pl-4 text-center">
+                                    <div class="form-group ">
+                                      <input type="checkbox" class="form-check-input" id="">
+                                    </div>
                                   </div>
-                                </div>
+                
+                                  <div class="col-1 justify-content-center align-items-center">
+                                    <div class="form-group">
+                                      <img src={{ URL::asset('${img}')}} id="img_${i}"
+                                              class="isImg"
+                                              alt="code" height="100" 
+                                              width="100%" 
+                                              style="object-fit: contain" >
+                
+                                          
+                                    </div>
+                                  </div>
               
-                                <div class="col-1 justify-content-center align-items-center">
-                                  <div class="form-group">
-                                    <img src={{ URL::asset('${img}')}} id="img_${i}"
-                                            class="isImg"
-                                            alt="code" height="100" 
-                                            width="100%" 
-                                            style="object-fit: contain" >
+                                  <div class="col-1">
+                                    <div class="form-group">
+                                      <label for="code">Code<span style="color: red">*</span> </label> 
+                                      <!-- Dropdown --> 
+                                      <select id='code_${i}' required name="code_${i}" class="form-control getCode">
+                                        <option value="${result['product'].name}" >${result['product'].name}</option>
+                                      </select>
+                
+                                    </div>
+                                  </div>
               
+                                  <div class="col-1">
+                                    <div class="form-group">
+                                      <label for="brand">Brand <span style="color: red">*</span> </label> 
+                                      <!-- Dropdown --> 
+                                      <select id='brand_${i}' required name="brand_${i}" class=" form-control getBrand">
+                                        <option value="${result['product'].brand_id}" >${result['product'].brand_name}</option>
                                         
+                                      </select>
+                                    </div>
                                   </div>
-                                </div>
-            
-                                <div class="col-1">
-                                  <div class="form-group">
-                                    <label for="code">Code<span style="color: red">*</span> </label> 
-                                    <!-- Dropdown --> 
-                                    <select id='code_${i}' required name="code_${i}" class="form-control getCode">
-                                      <option value="${result['product'].name}" >${result['product'].name}</option>
-                                    </select>
               
+                                  <div class="col-1">
+                                    <div class="form-group">
+                                      <label for="commodity">Commodity<span style="color: red">*</span> </label> 
+                                      <!-- Dropdown --> 
+                                      <select id='commodity_${i}' required name="commodity_${i}" class=" form-control getVr">
+                                        <option value="${result['product'].commodity_id}" >${result['product'].commodity_name}</option>
+                                        
+                                      </select>
+                                    </div>
                                   </div>
-                                </div>
-            
-                                <div class="col-1">
-                                  <div class="form-group">
-                                    <label for="brand">Brand <span style="color: red">*</span> </label> 
-                                    <!-- Dropdown --> 
-                                    <select id='brand_${i}' required name="brand_${i}" class=" form-control getBrand">
-                                      <option value="${result['product'].brand_id}" >${result['product'].brand_name}</option>
-                                      
-                                    </select>
+              
+                                  <div class="col-2">
+                                    <div class="form-group">
+                                      <label for="vr_no">MR No<span style="color: red">*</span> </label> 
+                                      <!-- Dropdown --> 
+                                      <select id='vr_no_${i}' required name="vr_no_${i}" class=" form-control getQty">
+                                        <option value="" disabled selected>Choose MR No</option>
+                                      </select>
+                                    </div>
                                   </div>
-                                </div>
-            
-                                <div class="col-1">
-                                  <div class="form-group">
-                                    <label for="commodity">Commodity<span style="color: red">*</span> </label> 
-                                    <!-- Dropdown --> 
-                                    <select id='commodity_${i}' required name="commodity_${i}" class=" form-control getVr">
-                                      <option value="${result['product'].commodity_id}" >${result['product'].commodity_name}</option>
-                                      
-                                    </select>
-                                  </div>
-                                </div>
-            
-                                <div class="col-2">
-                                  <div class="form-group">
-                                    <label for="vr_no">MR No<span style="color: red">*</span> </label> 
-                                    <!-- Dropdown --> 
-                                    <select id='vr_no_${i}' required name="vr_no_${i}" class=" form-control getQty">
-                                      <option value="" disabled selected>Choose MR No</option>
-                                    </select>
-                                  </div>
-                                </div>
-            
-                                <div class="col-1">
-                                  <div class="form-group">
-                                    <label for="qty_${i}">__ Qty </label> 
-                                    <input type="number" class="form-control"
-                                     required id="qty_${i}" 
-                                     name="qty_${i}" step=".01" 
-                                     min=0.01 oninput="validity.valid||(value='');" 
-                                     value=0
-                                     placeholder="">
-                                   
-                                  </div>
-                                </div>
-            
-                                <div class="col-2">
-                                  <div class="form-group">
-                                    <label for="usage">Usage</label> 
-                                    <p id="usage_${i}" 
-                                        name="usage_${i}" 
-                                        style="color: rgb(149, 155, 155)"
-                                        class="isUsage"
-                                        >${result['product'].usage}
-                                      </p>
-                                  </div>
-                                </div>
-            
-                                <div class="col-2">
-                                  <div class="form-group">
-                                    <label for="remark">Remark</label> 
-                                    <input type="text" class="form-control" id="remark_${i}" name="remark_${i}" placeholder="">
-                                  </div>
-                                </div>
-            
-                              </div>
-                              `
-                            )
-          
-                            $.each(result['issues'], function(key, value) {
-                                $(`#vr_no_${i}`).append(
-                                    `<option value="${value.id}">${value.mr_no} )</option>`
-                                );
-                              });
-                              $(`#vr_no_${i}`).on('change', function() {
-                                    var vr_no = this.value;
+              
+                                  <div class="col-1">
+                                    <div class="form-group">
+                                      <label for="qty_${i}">__ Qty </label> 
+                                      <input type="number" class="form-control"
+                                      required id="qty_${i}" 
+                                      name="qty_${i}" step=".01" 
+                                      min=0.01 oninput="validity.valid||(value='');" 
+                                      value=0
+                                      placeholder="">
                                     
-                                    $.each(result['issues'], function(mr_key, mr_value) {
+                                    </div>
+                                  </div>
+              
+                                  <div class="col-2">
+                                    <div class="form-group">
+                                      <label for="usage">Usage</label> 
+                                      <p id="usage_${i}" 
+                                          name="usage_${i}" 
+                                          style="color: rgb(149, 155, 155)"
+                                          class="isUsage"
+                                          >${result['product'].usage}
+                                        </p>
+                                    </div>
+                                  </div>
+              
+                                  <div class="col-2">
+                                    <div class="form-group">
+                                      <label for="remark">Remark</label> 
+                                      <input type="text" class="form-control" id="remark_${i}" name="remark_${i}" placeholder="">
+                                    </div>
+                                  </div>
+              
+                                </div>
+                                `
+                              )
+            
+                              $.each(result['issues'], function(key, value) {
+                                  $(`#vr_no_${i}`).append(
+                                      `<option value="${value.id}">${value.mr_no} )</option>`
+                                  );
+                                });
+                                $(`#vr_no_${i}`).on('change', function() {
+                                      var vr_no = this.value;
                                       
-                                      if (mr_value.id == vr_no) {
-                                        var left_mr_qty = mr_value.mr_qty - mr_value.mrr_qty;
-                                        $(`#qty_${i}`).attr({
-                                                    "max" : `${left_mr_qty}`,
-                                                    "value" : 0,
-                                                });
-                                        $(`label[for=qty_${i}]`).text(`${left_mr_qty} Qty`);
-                                      }
-                                      
-                                      });
-                              });
-          
+                                      $.each(result['issues'], function(mr_key, mr_value) {
+                                        
+                                        if (mr_value.id == vr_no) {
+                                          var left_mr_qty = mr_value.mr_qty - mr_value.mrr_qty;
+                                          $(`#qty_${i}`).attr({
+                                                      "max" : `${left_mr_qty}`,
+                                                      "value" : 0,
+                                                  });
+                                          $(`label[for=qty_${i}]`).text(`${left_mr_qty} Qty`);
+                                        }
+                                        
+                                        });
+                                });
+            
+                            }
                           }
-                        }
-                    });
-          
+                      });
+            
+                }else{
+                  $('#scanner').val('');
+                }
               }else{
                 $('#scanner').val('');
               }
-            }else{
-              $('#scanner').val('');
+              isScannerInput = value;
             }
-            isScannerInput = value;
-           }
       }
   });
   
   
   </script>
   
-  <script>
-  
+<script>
   $('.useScanner').click(function () {
     $(this).css('display','none');
+    $('#text_scan').css('display','block');
     $('#scanner').css('display','block');
     $('#scanner').focus();
-    $('.submit_barcode').css('display','block');
   })
-  </script>
+</script>
   
   <script>
     function changeButtonType() {

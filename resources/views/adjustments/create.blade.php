@@ -856,12 +856,14 @@
     
   $('#scanner').keyup(function() {
       var value = $('#scanner').val();
-      if(value.length == 10) {
+      if (value.length === 9 || value.length === 10) {
+        if (value.length === 10) {
+            value = value.substring(0, 9);
+        }
           if (isScannerInput === value) {
               $('#scanner').val('');
                
             }else{
-      
                 if ($('#shelfnum_id').val() != null && $('#shelfnum_id').val() != '') {
                   if ($('#scanner').val() != null && $('#scanner').val() != '') {
                     ++i;

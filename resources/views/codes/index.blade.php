@@ -156,11 +156,7 @@
                                     <th>No</th>
                                     <th>Image</th>
                                     <th>Name</th>
-                                    @auth
-                                        @if(auth()->user()->name === 'admin')
-                                            <th>BarCode</th>
-                                        @endif
-                                    @endauth
+                                    <th>BarCode</th>
                                     <th>Brand</th>
                                     <th>Commodity</th>
                                     <th >Usage</th>
@@ -198,18 +194,18 @@
                                             @endif
                                         </td>
                                         <td class="name_{{ $code->id }}">{{ $code->name}}</td>
-                                        @auth
-                                            @if(auth()->user()->name === 'admin')
-                                            <td class="text-center">
-                                                <a href="{{ route('codes.printBarcode', ['id' => $code->id]) }}" target="_blank">
-                                                    {!! DNS1D::getBarcodeSVG($code->barcode, 'C39+', 1, 55, 'black', false) !!}
-                                                    <div style="color: black; font-size: 12px;">
-                                                        {{ $code->name }}
-                                                    </div>
-                                                </a>
-                                            </td>
-                                            @endif
-                                        @endauth
+                                       
+                                        <td class="text-center">
+                                            <a href="{{ route('codes.printBarcode', ['id' => $code->id]) }}" target="_blank">
+                                                <div style="color: black; font-size: 12px;">
+                                                    {{ $code->barcode }}
+                                                </div>
+                                                {!! DNS1D::getBarcodeSVG($code->barcode, 'C39+', 1, 55, 'black', false) !!}
+                                                <div style="color: black; font-size: 12px;">
+                                                    {{ $code->name }}
+                                                </div>
+                                            </a>
+                                        </td>
                                         <td class="brand_{{ $code->id }}" id="{{ optional($brand_name)->id }}">{{ optional($brand_name)->name }}</td>
                                         <td class="commodity_{{ $code->id }}" id="{{ optional($commodity_name)->id }}">{{ optional($commodity_name)->name }}</td>
                                        
@@ -251,11 +247,7 @@
                                     <th>No</th>
                                     <th>Image</th>
                                     <th>Name</th>
-                                    @auth
-                                        @if(auth()->user()->name === 'admin')
-                                            <th>BarCode</th>
-                                        @endif
-                                    @endauth
+                                    <th>BarCode</th>
                                     <th>Brand</th>
                                     <th>Commodity</th>
                                     <th>Usage</th>

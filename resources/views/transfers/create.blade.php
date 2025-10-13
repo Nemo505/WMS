@@ -122,19 +122,17 @@
                   </button>
                 </div>
 
-                <div class="col-5 text-end ">
-                  <button type="button" class="btn float-right text-white useScanner" style="background-color: rgb(121, 77, 163)">
-                    <i class="fas fa-barcode  mx-1"  style="color: #ffffff;"></i>
+                <div class="col-8 text-end">
+                  <button  type="button"  class="btn float-right text-white useScanner" style="background-color: rgb(121, 77, 163);">
+                    <i class="fas fa-barcode mx-1" style="color: #ffffff;"></i>
                     Use Scanner
                   </button>
 
-                  <div class="d-flex">
-                   <button type="button" class="btn btn-outline-primary	submit_barcode" style=" opacity:0 " value="divide" >
-                     Submit
-                   </button>
-                  <input  placeholder="scan..." class="form-control mr-3" 
-                          type="text" tabindex="1" name="scanner" 
-                          id="scanner" autofocus  style="display: none">
+                  <div class="d-flex align-items-center" >
+                    <span class="form-control" id="text_scan" style="border: none; box-shadow: none; display: none; color: #dc3545; font-weight: 500; font-size: 13px">
+                      ⚠️ Please enter From Warehouse and From ShelfNumber before scanning.
+                    </span>
+                    <input type="text" id="scanner" name="scanner" placeholder="scan..." tabindex="1" autofocus class="form-control mr-3" style="display: none; " >
                   </div>
                 </div>
               </div>
@@ -849,7 +847,10 @@
     
   $('#scanner').keyup(function() {
       var value = $('#scanner').val();
-      if(value.length == 10) {
+      if (value.length === 9 || value.length === 10) {
+        if (value.length === 10) {
+            value = value.substring(0, 9);
+        }
           if (isScannerInput === value) {
               $('#scanner').val('');
                
@@ -994,12 +995,11 @@
 </script>
 
 <script>
-
   $('.useScanner').click(function () {
     $(this).css('display','none');
+    $('#text_scan').css('display','block');
     $('#scanner').css('display','block');
     $('#scanner').focus();
-    $('.submit_barcode').css('display','block');
   })
 </script>
 
