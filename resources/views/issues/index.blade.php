@@ -26,6 +26,7 @@
             {{-- form --}}
             @php
                 $s_issues =  App\Models\Issue::distinct()->get(['mr_no']);
+                $do_issues =  App\Models\Issue::distinct()->get(['do_no']);
                 $job_issues =  App\Models\Issue::where('job_no', '<>', '')
                 ->distinct()->get(['job_no']);
             @endphp
@@ -214,7 +215,7 @@
                 <div class="row d-flex justify-content-around">
 
                   {{-- Department --}}
-                  <div class="col-2">
+                  <div class="col-1">
                     <div class="form-group">
                       <label for="department">Department</label>
                     <div>
@@ -236,6 +237,32 @@
                     </div>
                     </div>
                   </div>
+                  {{-- Do NO --}}
+                  <div class="col-1">
+                    <div class="form-group">
+                      <label for="do_no">Do No</label>
+                      <div>
+
+                        <select id='do_no' name="do_no" class=" form-control">
+                          <option value="" selected>Choose Do No</option>
+                          @foreach ($do_issues as $do_issue)
+                         
+                            @if (isset($_REQUEST['do_no']))
+                                @if ($do_issue->do_no == $_REQUEST['do_no'])
+                                    <option value="{{ $do_issue->do_no }}" selected>{{ $do_issue->do_no }}</option>
+                                @else
+                                    <option value="{{ $do_issue->do_no }}">{{ $do_issue->do_no }}</option>
+                                @endif
+                            @else
+                                <option value="{{$do_issue->do_no }}">{{ $do_issue->do_no }}</option> 
+                            @endif
+                          @endforeach
+                        </select>
+                      </div>
+
+                    </div>
+                  </div>
+
                   {{-- VRNO --}}
                   <div class="col-2">
                     <div class="form-group">
@@ -341,6 +368,7 @@
                   <th>Date</th>
                   <th>MR No</th>
                   <th>Job No</th>
+                  <th>Do No</th>
                   <th>Department</th>
                   <th>Warehouse</th>
                   <th>Shelf No</th>
@@ -387,6 +415,16 @@
                       <td>{{ $issue->issue_date }}</td>
                       <td>{{ $issue->mr_no }}</td>
                       <td>{{ $issue->job_no }}</td>
+                      <td>
+                        <a href="#" 
+                          class="open-print-modal" 
+                          data-toggle="modal" 
+                          data-target="#print-modal"
+                          data-id="{{ $issue->id }}" 
+                          data-do="{{ $issue->do_no }}">
+                          {{ $issue->do_no }}
+                        </a>
+                      </td>
                       <td>{{ optional($department)->name }}</td>
 
                       <td>{{ optional($warehouse)->name }}</td>
@@ -420,6 +458,7 @@
                 <th>Date</th>
                 <th>MR No</th>
                 <th>Job No</th>
+                <th>Do No</th>
                 <th>Department</th>
                 <th>Warehouse</th>
                 <th>Shelf No</th>
@@ -489,6 +528,45 @@
   </div>
   <!-- /.container-fluid -->
 
+  <!--Check Print modal -->
+  <div class="modal fade" id="print-modal">
+      <div class="modal-dialog">
+          <div class="modal-content">
+          <div class="modal-header">
+              <h4 class="modal-title">Print</h4>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+              </button>
+          </div>
+
+          <form method="POST" action="{{ route('issues.print') }}" enctype="multipart/form-data" id="printForm" target="_blank">
+            @csrf
+            <div class="modal-body text-center">
+              <input type="hidden" name="do_no" id="modal_do_no">
+              <input type="hidden" name="issue_id" id="modal_issue_id">
+
+              <div class="d-flex justify-content-around align-items-center mt-3">
+                <label class="radio-inline">
+                  <input type="radio" name="print_type" value="delivery" required> Delivery Print
+                </label>
+
+                <label class="radio-inline">
+                  <input type="radio" name="print_type" value="issue_req" required> Issue Print
+                </label>
+              </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Print</button>
+            </div>
+          </form>
+
+          </div>
+          <!-- /.modal-content -->
+      </div>
+      <!-- /.modal-dialog -->
+  </div>
+
 @endsection
 @section('scripts')
 
@@ -498,6 +576,9 @@
   });
   $( "#mr_no" ).ready(function() {
       $("#mr_no").select2();
+  });
+  $( "#do_no" ).ready(function() {
+      $("#do_no").select2();
   });
   $( "#job_no" ).ready(function() {
       $("#job_no").select2();
@@ -524,5 +605,16 @@
       $("#commodity_id").select2();
   });
 </script>
+
+<script>
+$(document).on('click', '.open-print-modal', function () {
+    const issueId = $(this).data('id');
+    const doNo = $(this).data('do');
+    $('#modal_do_no').val(doNo);
+    $('#modal_issue_id').val(issueId);
+    $('#print-modal .modal-title').text(`Print for DO No: ${doNo}`);
+});
+</script>
+
 
 @endsection

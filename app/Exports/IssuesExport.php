@@ -27,6 +27,7 @@ class IssuesExport implements FromArray, WithHeadings, ShouldAutoSize, WithStyle
             "No",
             "Date" ,
             "MR No" ,
+            "Do No" ,
             "Job No" ,
             'Warehouse',
             "Shelf No" ,

@@ -38,7 +38,7 @@
                   </div>
                 </div>
 
-                <div class="col-3">
+                <div class="col-2">
                   <label for="department_id">Department<span style="color: red">*</span> </label> 
                   <!-- Dropdown --> 
                   <div>
@@ -55,12 +55,21 @@
                   </div>
                 </div>
 
-                <div class="col-3">
+                <div class="col-2">
                   <div class="form-group">
                     <label for="mr_no">MR No<span style="color: red">*</span> </label> 
                     <input type="text" class="form-control" required id="mr_no" name="mr_no" value="{{$issue->mr_no}}">
                   </div>
                 </div>
+
+                <div class="col-2">
+                  <div class="form-group">
+                    <label for="do_no">Do No<span style="color: red">*</span> </label> 
+                    <input type="text" class="form-control" required id="do_no" name="do_no" value="{{$issue->do_no}}">
+
+                  </div>
+                </div>
+
                 <div class="col-3">
                   <div class="form-group">
                     <label for="date">Date<span style="color: red">*</span> </label> 
@@ -318,7 +327,7 @@
           <div class="d-flex justify-content-around">
 
             <a type="" href="{{route('issues.index')}}" class="btn btn-secondary">Cancel</a>
-            <button type="button" class="btn btn-primary changeBtn" onclick="changeButtonType()">Submit</button>
+            <button type="submit" class="btn btn-primary">Submit</button>
           </div>
         </div>
 
@@ -939,6 +948,7 @@
         if (value.mrr_qty != 0) {
             
             $("#mr_no").attr("disabled",true);
+            $("#do_no").attr("disabled",true);
             $("#department_id").attr("disabled",true);
             $("#customer_id").attr("disabled",true);
             }
@@ -1122,39 +1132,5 @@
     $('#scanner').focus();
   })
 </script>
-
-<script>
-    function changeButtonType() {
-        var button = document.querySelector('.changeBtn');
-        // start
-         var codetxt=$(`#code_${i}`).val();
-         var brandtxt=$(`#brand_${i}`).val();
-         var commoditytxt=$(`#commodity_${i}`).val();
-         var vr_notxt=$(`#vr_no_${i}`).val();
-         
-         var qtytxt=$(`#qty_${i}`).val();
-         
-        if (!codetxt && codetxt== ''){
-            alert('please enter code');
-        }else if(!brandtxt && brandtxt== ''){
-          alert('please enter bandname');  
-        }else if(!commoditytxt && commoditytxt== ''){
-          alert('please enter commodity');
-        }else if(!vr_notxt && vr_notxt== ''){
-          alert('please enter Vr No');  
-        }else if(qtytxt == 0 ){
-          alert('please enter qty');  
-        }else{
-             // end
-           button.type = 'submit';
-        // Optionally, trigger the form submission after changing the button type
-          var form = document.getElementById('myForm');
-            form.submit();
-        }
-       
-    }
-
-</script>
-
 
 @endsection

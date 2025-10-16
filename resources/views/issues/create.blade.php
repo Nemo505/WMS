@@ -34,12 +34,11 @@
                   </div>
                 </div>
               
-                <div class="col-3">
+                <div class="col-2">
                   <div class="form-group">
                     <label for="department_id">Department<span style="color: red">*</span> </label> 
 
                     <div>
-
                       <select id='department_id' required name="department_id" class="form-control">
                         <option value="" disabled selected>Choose Department</option>
                           @foreach ($departments as $department)
@@ -52,9 +51,17 @@
                   </div>
                 </div>
 
-                <div class="col-3">
+                <div class="col-2">
                   <div class="form-group">
-                    <label for="vr_no">MR No<span style="color: red">*</span> </label> 
+                    <label for="do_no">Do No<span style="color: red">*</span> </label> 
+                    <input type="text" class="form-control" required id="do_no" name="do_no" placeholder="Enter Do number">
+
+                  </div>
+                </div>
+
+                <div class="col-2">
+                  <div class="form-group">
+                    <label for="mr_no">MR No<span style="color: red">*</span> </label> 
                     <input type="text" class="form-control" required id="mr_no" name="mr_no" placeholder="Enter issue number">
                   </div>
                 </div>
@@ -231,7 +238,7 @@
         <div class="card-footer ">
           <div class="d-flex justify-content-around">
             <a type="" href="{{route('issues.index')}}" class="btn btn-secondary">Cancel</a>
-            <button type="button" class="btn btn-primary changeBtn" onclick="changeButtonType()">Submit</button>
+            <button type="submit" class="btn btn-primary">Submit</button>
           </div>
         </div>
 
@@ -1008,48 +1015,4 @@
   })
 </script>
 
-<script>
-  function changeButtonType(event) {
-      // Prevent default form submission behavior first
-      if (event) event.preventDefault();
-
-      var department_id = $(`#department_id`).val();
-      var customer = $(`#customer`).val();
-
-      var codetxt = $(`#code_${i}`).val();
-      var brandtxt = $(`#brand_${i}`).val();
-      var commoditytxt = $(`#commodity_${i}`).val();
-      var vr_notxt = $(`#vr_no_${i}`).val();
-      var qtytxt = $(`#qty_${i}`).val();
-
-      // Validation
-      if (!codetxt) {
-          alert('Please enter Code');
-          return false;
-      } else if (!department_id) {
-          alert('Please enter Department');
-          return false;
-      } else if (!customer) {
-          alert('Please enter Customer');
-          return false;
-      } else if (!commoditytxt) {
-          alert('Please enter Commodity');
-          return false;
-      } else if (!vr_notxt) {
-          alert('Please enter Voucher No');
-          return false;
-      } else if (!qtytxt || qtytxt == 0) {
-          alert('Please enter Quantity');
-          return false;
-      }
-
-      // ✅ Passed all checks → submit
-      var button = document.querySelector('.changeBtn');
-      button.type = 'submit';
-      document.getElementById('myForm').submit();
-
-      return true;
-  }
-
-</script>
 @endsection

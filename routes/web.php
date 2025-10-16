@@ -121,6 +121,9 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('/edit', [IssueController::class ,'edit'])->name('issues.edit');
             Route::post('/update', [IssueController::class ,'update'])->name('issues.update');
             Route::get('/delete', [IssueController::class ,'destroy'])->name('issues.delete');
+
+            Route::post('/select-print', [IssueController::class ,'print'])->name('issues.print');
+
         });
         
         Route::prefix('issue_returns')->group(function () {
