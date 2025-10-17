@@ -272,7 +272,7 @@
           <div class="d-flex justify-content-around">
 
             <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
-            <button type="button" class="btn btn-primary changeBtn" onclick="changeButtonType()">Submit</button>
+            <button type="submit" class="btn btn-primary">Submit</button>
           </div>
         </div>
 
@@ -984,7 +984,7 @@
               $('#scanner').val('');
                
             }else{
-                if ($('#supplier').val() != null && $('#supplier').val() != '') {
+                if ($('#shelfnum_id').val() && $('#supplier').val()) {
                   if ($('#scanner').val() != null && $('#scanner').val() != '') {
                     ++i;
                         $.ajax({
@@ -1133,58 +1133,6 @@
     $('#scanner').css('display','block');
     $('#scanner').focus();
   })
-</script>
-
-<script>
-    function changeButtonType() {
-        if (event) event.preventDefault();
-        // start
-        var warehouse_id = $(`#warehouse_id`).val();
-        var shelfnum_id = $(`#shelfnum_id`).val();
-        var sup_no = $(`#sup_no`).val();
-
-        var codetxt=$(`#code_${i}`).val();
-        var brandtxt=$(`#brand_${i}`).val();
-        var commoditytxt=$(`#commodity_${i}`).val();
-        var vr_notxt=$(`#vr_no_${i}`).val();
-        var qtytxt=$(`#qty_${i}`).val();
-         
-        if (!warehouse_id){
-          alert('please enter Warehouse');
-          return false;
-        }else if (!shelfnum_id){
-          alert('please enter ShelfNumber');
-          return false;
-        }else if (!sup_no){
-          alert('please enter ShelfNumber');
-          return false;
-        }else if (!codetxt && codetxt==''){
-          alert('please enter code');
-          return false;
-        }else if(!brandtxt && brandtxt==''){
-          alert('please enter bandname'); 
-          return false;
-        }else if(!commoditytxt && commoditytxt==''){
-          alert('please enter commodity');
-          return false;
-        }else if(!vr_notxt && vr_notxt==''){
-          alert('please enter Vr No');  
-          return false;
-        } else if (!qtytxt || qtytxt == 0) {
-          alert('please enter qty'); 
-          return false;
-        }
-        // end
-      var button = document.querySelector('.changeBtn');
-      button.type = 'submit';
-
-      var form = document.getElementById('myForm');
-      form.submit();
-
-      return true;
-    }
-
-
 </script>
 
 @endsection

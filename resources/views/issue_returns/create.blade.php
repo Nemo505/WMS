@@ -204,7 +204,7 @@
           <div class="d-flex justify-content-around">
 
             <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
-            <button type="button" class="btn btn-primary changeBtn" onclick="changeButtonType(event)">Submit</button>
+            <button type="submit" class="btn btn-primary">Submit</button>
           </div>
         </div>
 
@@ -933,46 +933,6 @@
     $('#scanner').css('display','block');
     $('#scanner').focus();
   })
-</script>
-
-<script>
-  function changeButtonType(event) {
-      // Stop default button behavior
-      if (event) event.preventDefault();
-
-      var codetxt = $(`#code_${i}`).val();
-      var brandtxt = $(`#brand_${i}`).val();
-      var commoditytxt = $(`#commodity_${i}`).val();
-      var vr_notxt = $(`#vr_no_${i}`).val();
-      var qtytxt = $(`#qty_${i}`).val();
-
-      // Validation checks
-      if (!codetxt) {
-          alert('Please enter Code');
-          return false;
-      } else if (!brandtxt) {
-          alert('Please enter Brand Name');
-          return false;
-      } else if (!commoditytxt) {
-          alert('Please enter Commodity');
-          return false;
-      } else if (!vr_notxt) {
-          alert('Please enter Voucher No');
-          return false;
-      } else if (!qtytxt || qtytxt == 0) {
-          alert('Please enter Qty');
-          return false;
-      }
-
-      // ✅ Passed all checks → enable submit and submit form
-      var button = document.querySelector('.changeBtn');
-      button.type = 'submit';
-
-      var form = document.getElementById('myForm');
-      form.submit();
-
-      return true;
-  }
 </script>
 
 

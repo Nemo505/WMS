@@ -1003,35 +1003,5 @@
   })
 </script>
 
-<script>
-    function changeButtonType() {
-        // start
-         var codetxt=$(`#code_${i}`).val();
-         var brandtxt=$(`#brand_${i}`).val();
-         var commoditytxt=$(`#commodity_${i}`).val();
-         var vr_notxt=$(`#vr_no_${i}`).val();
-         
-         var qtytxt=$(`#qty_${i}`).val();
-         
-       if (!codetxt && codetxt==''){
-            alert('please enter code');
-        }else if(!brandtxt && brandtxt==''){
-          alert('please enter bandname'); 
-        }else if(!commoditytxt && commoditytxt==''){
-          alert('please enter commodity');
-        }else if(!vr_notxt && vr_notxt==''){
-          alert('please enter Vr No');  
-        }else if(qtytxt == 0){
-          alert('please enter qty'); 
-        }else{
-             // end
-            var button = document.querySelector('.changeBtn');
-            button.type = 'submit';
-            // Optionally, trigger the form submission after changing the button type
-            var form = document.getElementById('myForm');
-            form.submit();
-        }
-    }
 
-</script>
 @endsection
