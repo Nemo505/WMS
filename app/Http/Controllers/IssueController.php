@@ -231,7 +231,6 @@ class IssueController extends Controller
             "department_id" => 'required',
             "date" => 'required',
             "mr_no" => 'required',
-            "do_no" => 'required',
             "customer" => 'required',
         ]); 
             
@@ -244,7 +243,6 @@ class IssueController extends Controller
             $newRequest = $request->except(['_token',
                                         'department_id',
                                         'mr_no',
-                                        'do_no',
                                         'date',
                                         'customer',
                                     ]);
@@ -260,6 +258,7 @@ class IssueController extends Controller
                     $remarks = "remark_".$explode[1];
                     $vr_no = "vr_no_".$explode[1];
                     $job = "job_".$explode[1];
+                    $do = "do_".$explode[1];
     
                     #for new 
                     $product = Product::find($request->$vr_no);
@@ -268,7 +267,6 @@ class IssueController extends Controller
                         # same issue no, product exist?
                         $check_issue = Issue::where('product_id', $product->id)
                                             ->where('mr_no', $request->mr_no)
-                                            ->where('do_no', $request->do_no)
                                             ->where('shelf_number_id', $request->$shelfnum)
                                             ->where('customer_id', $request->customer)
                                             ->first();
@@ -282,7 +280,7 @@ class IssueController extends Controller
                                 ]);
                                 $issue = Issue::create([
                                     'mr_no'=> $request->mr_no,
-                                    'do_no'=> $request->do_no,
+                                    'do_no'=> $request->$do ?? null,
                                     'job_no'=> $request->$job ?? null,
                                     
                                     'mr_qty'=> $request->$qty,
@@ -370,6 +368,7 @@ class IssueController extends Controller
                                             'issues.mr_qty',
                                             'issues.remarks',
                                             'issues.job_no',
+                                            'issues.do_no',
                                             'products.balance_qty',
                                             'products.transfer_id',
                                         ]);
@@ -413,7 +412,6 @@ class IssueController extends Controller
                 $validator = Validator::make($request->all(),[
                     "date" => 'required',
                     "mr_no" => 'required',
-                    "do_no" => 'required',
                     "department_id" => 'required',
                     "customer" => 'required',
                 ]);
@@ -435,7 +433,6 @@ class IssueController extends Controller
                                             'date',
                                             'customer',
                                             'mr_no',
-                                            'do_no',
                                             'old_issue'
                                         ]);
                                         
@@ -517,6 +514,7 @@ class IssueController extends Controller
                     $vr_no = "vr_no_".$explode[1];
                     $remarks = "remark_".$explode[1];
                     $job = "job_".$explode[1];
+                    $do = "do_".$explode[1];
                     $issue_id = "issue_".$explode[1];
     
                     $issue = Issue::find($request->$issue_id);
@@ -541,7 +539,6 @@ class IssueController extends Controller
                     if ($issue && $request->$code ) {
                         $check_issue = Issue::where('product_id', $issue_from_vr->id)
                                         ->where('mr_no', $old_issue->mr_no)
-                                        ->where('do_no', $old_issue->do_no)
                                         ->where('shelf_number_id', $old_issue->shelf_number_id)
                                         ->where('customer_id', $old_issue->customer_id)
                                         ->where('id', '!=',  $request->$issue_id)
@@ -552,7 +549,7 @@ class IssueController extends Controller
     
                                 if ($request->$shelfnum != $issue->shelf_number_id || 
                                     $request->mr_no != $issue->mr_no || 
-                                    $request->do_no != $issue->do_no || 
+                                    $request->$do != $issue->do_no || 
                                     $request->department_id != $issue->department_id || 
                                     $request->date != $issue->issue_date || 
     
@@ -565,7 +562,7 @@ class IssueController extends Controller
                                         'new_mr_no' => $request->mr_no,
 
                                         'do_no' => $issue->do_no,
-                                        'new_do_no' => $request->do_no,
+                                        'new_do_no' => $request->$do,
                 
                                         'mr_qty' => $issue->mr_qty,
                                         'new_mr_qty' => $request->$qty,
@@ -630,7 +627,7 @@ class IssueController extends Controller
                                     'issue_date'=> $request->date,
     
                                     'mr_no'=> $request->mr_no,
-                                    'do_no'=> $request->do_no,
+                                    'do_no'=> $request->$do,
                                     'customer_id'=> $request->customer_id,
                                     
                                     'updated_by' => Auth::user()->id
@@ -778,11 +775,11 @@ class IssueController extends Controller
     
                             $issue->update([
                                 'mr_no'=> $request->mr_no,
-                                'do_no'=> $request->do_no,
                                 'issue_date'=> $request->date,
                                 'customer_id'=>  $request->customer_id,
                                 'department_id'=> $request->department_id,
-
+                                
+                                'do_no'=> $request->$do,
                                 'mr_qty' => $request->$qty,
                                 'remarks' => $request->$remarks,
     
@@ -809,7 +806,7 @@ class IssueController extends Controller
     
                                     $issue = Issue::create([
                                         'mr_no'=> $request->mr_no,
-                                        'do_no'=> $request->do_no,
+                                        'do_no'=> $request->$do,
                                         'job_no' => $request->$job,
                                         'mr_qty'=> $request->$qty,
                                         'shelf_number_id'=> $request->$shelfnum,
@@ -838,7 +835,7 @@ class IssueController extends Controller
                                 
                                 $issue = Issue::create([
                                     'mr_no'=> $old_issue->mr_no,
-                                    'do_no'=> $old_issue->do_no,
+                                    'do_no'=> $request->$do,
                                     'job_no' => $request->$job,
                                     'mr_qty'=> $request->$qty,
                                     'shelf_number_id'=> $issue_from_vr->shelf_number_id,
@@ -934,41 +931,46 @@ class IssueController extends Controller
     }
 
 
-    public function print(Request $request)
+    public function printDo(Request $request)
     {
         $issue = Issue::with(['customer', 'department'])->findOrFail($request->issue_id);
-        $issues = Issue::with(['code', 'product', 'shelfNum'])
-                        ->where('do_no', $request->do_no)
-                        ->get();
+        if ($request->filled('do_no')) {
+            $issues = Issue::with(['code', 'product', 'shelfNum'])
+                            ->where('do_no', $request->do_no)
+                            ->get();
+        }else{
+            return back()->withErrors(['error' => 'No DO or MR number provided.']);
+        }
+
         $nextSerial = null;
 
         DB::transaction(function () use (&$issues, &$nextSerial) {
             $existing = $issues->first(function ($i) {
-                return !is_null($i->serial_no) && $i->serial_no !== '';
+                return !is_null($i->serial_do_no) && $i->serial_do_no !== '';
             });
 
             if ($existing) {
-                $nextSerial = $existing->serial_no;
+                $nextSerial = $existing->serial_do_no;
                 $nullItems = $issues->filter(function ($i) {
-                    return is_null($i->serial_no) || $i->serial_no === '';
+                    return is_null($i->serial_do_no) || $i->serial_do_no === '';
                 });
 
                 foreach ($nullItems as $item) {
-                    $item->serial_no = $nextSerial;
+                    $item->serial_do_no = $nextSerial;
                     $item->save();
                 }
 
             } else {
-                $latestSerial = DB::table('issues')->lockForUpdate()->max('serial_no');
+                $latestSerial = DB::table('issues')->lockForUpdate()->max('serial_do_no');
                 $nextSerial = $latestSerial ? $latestSerial + 1 : 1;
 
                 Issue::where('do_no', $issues->first()->do_no ?? null)
-                    ->whereNull('serial_no')
-                    ->update(['serial_no' => $nextSerial]);
+                    ->whereNull('serial_do_no')
+                    ->update(['serial_do_no' => $nextSerial]);
 
                 foreach ($issues as $item) {
-                    if (is_null($item->serial_no)) {
-                        $item->serial_no = $nextSerial;
+                    if (is_null($item->seriserial_do_noal_no)) {
+                        $item->serial_do_no = $nextSerial;
                     }
                 }
             }
@@ -986,15 +988,22 @@ class IssueController extends Controller
             $location = 'YGN'; 
         }
 
-        if ($request->print_type === 'delivery') {
-            return view('issues.prints.delivery', [
+        if ($request->print_type === 'sale') {
+            return view('issues.prints.sale', [
                 'issue' => $issue,
                 'issues' => $issues,
                 'serial_no' => $nextSerial,
                 'location' => $location
             ]);
-        } elseif ($request->print_type === 'issue_req') {
-            return view('issues.prints.material-request', [
+        } elseif ($request->print_type === 'return') {
+            return view('issues.prints.return', [
+                'issue' => $issue,
+                'issues' => $issues,
+                'serial_no' => $nextSerial,
+                'location' => $location
+            ]);
+        } elseif ($request->print_type === 'repair') {
+            return view('issues.prints.repair', [
                 'issue' => $issue,
                 'issues' => $issues,
                 'serial_no' => $nextSerial,
@@ -1003,6 +1012,58 @@ class IssueController extends Controller
         }
 
         return back()->with('error', 'Invalid print type.');
+    }
+
+
+    public function printMr(Request $request)
+    {
+        $issue = Issue::with(['customer', 'department'])->findOrFail($request->issue_id);
+        if ($request->filled('mr_no')) {
+            $issues = Issue::with(['code', 'product', 'shelfNum'])
+                            ->where('mr_no', $request->mr_no)
+                            ->get();
+        }else{
+            return back()->withErrors(['error' => 'No MR number provided.']);
+        }
+
+        $nextSerial = null;
+
+        DB::transaction(function () use (&$issues, &$nextSerial) {
+            $existing = $issues->first(function ($i) {
+                return !is_null($i->serial_mr_no) && $i->serial_mr_no !== '';
+            });
+
+            if ($existing) {
+                $nextSerial = $existing->serial_mr_no;
+                $nullItems = $issues->filter(function ($i) {
+                    return is_null($i->serial_mr_no) || $i->serial_mr_no === '';
+                });
+
+                foreach ($nullItems as $item) {
+                    $item->serial_mr_no = $nextSerial;
+                    $item->save();
+                }
+
+            } else {
+                $latestSerial = DB::table('issues')->lockForUpdate()->max('serial_mr_no');
+                $nextSerial = $latestSerial ? $latestSerial + 1 : 1;
+
+                Issue::where('mr_no', $issues->first()->mr_no ?? null)
+                    ->whereNull('serial_mr_no')
+                    ->update(['serial_mr_no' => $nextSerial]);
+
+                foreach ($issues as $item) {
+                    if (is_null($item->serial_mr_no)) {
+                        $item->serial_mr_no = $nextSerial;
+                    }
+                }
+            }
+        });
+        return view('issues.prints.material-request', [
+            'issue' => $issue,
+            'issues' => $issues,
+            'serial_no' => $nextSerial,
+        ]);
     }
 
 }

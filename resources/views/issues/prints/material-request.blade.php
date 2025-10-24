@@ -73,8 +73,8 @@
                     <span style="font-weight: bold;">{{ $issue->customer->name ?? '' }}</span>
                 </div>
                 <div style="display: flex; justify-content: flex-start; align-items: center;">
-                    <p style="width: 100px; margin: 5px 0; ">Do No</p>
-                    <span style="font-weight: bold;">{{ $issue->do_no ?? '' }}</span>
+                    <p style="width: 100px; margin: 5px 0; ">Page No</p>
+                    <span style="font-weight: bold;">...............................</span>
                 </div>
             </div>
         </div>

@@ -38,7 +38,7 @@
                   </div>
                 </div>
 
-                <div class="col-2">
+                <div class="col-3">
                   <label for="department_id">Department<span style="color: red">*</span> </label> 
                   <!-- Dropdown --> 
                   <div>
@@ -55,18 +55,10 @@
                   </div>
                 </div>
 
-                <div class="col-2">
+                <div class="col-3">
                   <div class="form-group">
                     <label for="mr_no">MR No<span style="color: red">*</span> </label> 
                     <input type="text" class="form-control" required id="mr_no" name="mr_no" value="{{$issue->mr_no}}">
-                  </div>
-                </div>
-
-                <div class="col-2">
-                  <div class="form-group">
-                    <label for="do_no">Do No<span style="color: red">*</span> </label> 
-                    <input type="text" class="form-control" required id="do_no" name="do_no" value="{{$issue->do_no}}">
-
                   </div>
                 </div>
 
@@ -170,9 +162,9 @@
                       @endif
                     </div>
                     
-                     <div class="col-2">
+                     <div class="col-1">
                           <div class="form-group">
-                              <label for="shelfnum_id">Shelf Number<span style="color: red">*</span> </label> 
+                              <label for="shelfnum_id">ShelfNum<span style="color: red">*</span> </label> 
                               <div>
                                   @if ($choosen_issue->mrr_qty != null && $choosen_issue->mrr_qty != 0)
                                   
@@ -274,6 +266,17 @@
 
                     <div class="col-1">
                         <div class="form-group">
+                        <label for='do_{{$i}}'>Do No</label> 
+                        @if ($choosen_issue->mrr_qty != null && $choosen_issue->mrr_qty != 0)
+                            <input type="text" class="form-control" disabled id='do_{{$i}}' name='do_{{$i}}' placeholder="" value="{{$choosen_issue->do_no}}">
+                        @else
+                            <input type="text" class="form-control" id='do_{{$i}}' name='do_{{$i}}' placeholder="" value="{{$choosen_issue->do_no}}">
+                        @endif
+                        </div>
+                    </div>
+
+                    <div class="col-1">
+                        <div class="form-group">
                           <label for="qty_{{$i}}" class="labelQty"> {{$choosen_issue->balance_qty }} Qty </label> 
                           
                           @if ($choosen_issue->mrr_qty != null && $choosen_issue->mrr_qty != 0)
@@ -325,8 +328,7 @@
 
         <div class="card-footer ">
           <div class="d-flex justify-content-around">
-
-            <a type="" href="{{route('issues.index')}}" class="btn btn-secondary">Cancel</a>
+            <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
             <button type="submit" class="btn btn-primary">Submit</button>
           </div>
         </div>
@@ -339,30 +341,12 @@
 @section('scripts')
 
 <script>
-
-//   $( "#shelfnum_{{$i}}" ).ready(function() {
-//       $("#shelfnum_{{$i}}").select2();
-//   });
   $( "#department_id" ).ready(function() {
       $("#department_id").select2();
   });
   $( "#customer_id" ).ready(function() {
       $("#customer_id").select2();
   });
- 
-//   $( "#code_{{$i}}" ).ready(function() {
-//       $("#code_{{$i}}").select2();
-//   });
-//   $( "#brand_{{$i}}" ).ready(function() {
-//       $("#brand_{{$i}}").select2();
-//   });
-//   $( "#commodity_{{$i}}" ).ready(function() {
-//       $("#commodity_{{$i}}").select2();
-//   });
-//   $( "#vr_no_{{$i}}" ).ready(function() {
-//       $("#vr_no_{{$i}}").select2();
-//   });
-
 </script>
 
 <script>
@@ -394,9 +378,9 @@
                     </div>
                   </div>
                   
-                <div class="col-2">
+                <div class="col-1">
                     <div class="form-group">
-                      <label for="shelfnum">ShelfNumber <span style="color: red">*</span></label>
+                      <label for="shelfnum">ShelfNum<span style="color: red">*</span></label>
                         <div>
                           <select id='shelfnum_${i}' required name="shelfnum_${i}" class="form-control">
                               <option value="" disabled selected>Choose Shelf Number</option>
@@ -461,6 +445,13 @@
                     <div class="form-group">
                       <label for='job_${i}'>Job No</label>
                       <input type="text" class="form-control" id='job_${i}' name='job_${i}' placeholder="">
+                    </div>
+                  </div>
+
+                  <div class="col-1">
+                    <div class="form-group">
+                      <label for='do_${i}'>Do No</label>
+                      <input type="text" class="form-control" id='do_${i}' name='do_${i}' placeholder="">
                     </div>
                   </div>
 
@@ -1014,9 +1005,9 @@
                                       </div>
                                     </div>
                                     
-                                    <div class="col-2">
+                                    <div class="col-1">
                                         <div class="form-group">
-                                          <label for="shelfnum">ShelfNumber <span style="color: red">*</span></label>
+                                          <label for="shelfnum">ShelfNum <span style="color: red">*</span></label>
                                             <div>
                                               <select id='shelfnum_${i}' required name="shelfnum_${i}" class="form-control">
                                                    ${shelfOptions}
@@ -1073,6 +1064,13 @@
                                         <div class="form-group">
                                           <label for='job_${i}'>Job No</label>
                                           <input type="text" class="form-control" id='job_${i}' name='job_${i}' placeholder="">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-1">
+                                        <div class="form-group">
+                                          <label for='do_${i}'>Do No</label>
+                                          <input type="text" class="form-control" id='do_${i}' name='do_${i}' placeholder="">
                                         </div>
                                     </div>
                 

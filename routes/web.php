@@ -122,7 +122,8 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('/update', [IssueController::class ,'update'])->name('issues.update');
             Route::get('/delete', [IssueController::class ,'destroy'])->name('issues.delete');
 
-            Route::post('/select-print', [IssueController::class ,'print'])->name('issues.print');
+            Route::post('/select-print-do', [IssueController::class ,'printDo'])->name('issues.printDo');
+            Route::get('/select-print-mr', [IssueController::class ,'printMr'])->name('issues.printMr');
 
         });
         

@@ -34,7 +34,7 @@
                   </div>
                 </div>
               
-                <div class="col-2">
+                <div class="col-3">
                   <div class="form-group">
                     <label for="department_id">Department<span style="color: red">*</span> </label> 
 
@@ -50,16 +50,8 @@
 
                   </div>
                 </div>
-
-                <div class="col-2">
-                  <div class="form-group">
-                    <label for="do_no">Do No<span style="color: red">*</span> </label> 
-                    <input type="text" class="form-control" required id="do_no" name="do_no" placeholder="Enter Do number">
-
-                  </div>
-                </div>
-
-                <div class="col-2">
+             
+                <div class="col-3">
                   <div class="form-group">
                     <label for="mr_no">MR No<span style="color: red">*</span> </label> 
                     <input type="text" class="form-control" required id="mr_no" name="mr_no" placeholder="Enter issue number">
@@ -129,9 +121,9 @@
                     </div>
                   </div>
                   
-                  <div class="col-2">
+                  <div class="col-1">
                       <div class="form-group">
-                          <label for="shelfnum">ShelfNumber <span style="color: red">*</span></label>
+                          <label for="shelfnum">ShelfNum<span style="color: red">*</span></label>
                             <div>
                               <select id='shelfnum_{{$i}}' required name="shelfnum_{{$i}}" class="form-control">
                                   <option value="" disabled selected>Choose Shelf Number</option>
@@ -200,6 +192,13 @@
                       <input type="text" class="form-control" id="job_{{$i}}" name="job_{{$i}}" placeholder="">
                     </div>
                   </div>
+
+                  <div class="col-1">
+                    <div class="form-group">
+                      <label for="do_{{$i}}">Do No</label>
+                      <input type="text" class="form-control" id="do_{{$i}}" name="do_{{$i}}" placeholder="">
+                    </div>
+                  </div>
       
                   <div class="col-1">
                     <div class="form-group">
@@ -237,7 +236,7 @@
 
         <div class="card-footer ">
           <div class="d-flex justify-content-around">
-            <a type="" href="{{route('issues.index')}}" class="btn btn-secondary">Cancel</a>
+            <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
             <button type="submit" class="btn btn-primary">Submit</button>
           </div>
         </div>
@@ -308,9 +307,9 @@
                     </div>
                   </div>
                   
-                <div class="col-2">
+                <div class="col-1">
                     <div class="form-group">
-                      <label for="shelfnum">ShelfNumber <span style="color: red">*</span></label>
+                      <label for="shelfnum">ShelfNum<span style="color: red">*</span></label>
                         <div>
                           <select id='shelfnum_${i}' required name="shelfnum_${i}" class="form-control">
                               <option value="" disabled selected>Choose Shelf Number</option>
@@ -375,6 +374,13 @@
                     <div class="form-group">
                       <label for='job_${i}'>Job No</label>
                       <input type="text" class="form-control" id='job_${i}' name='job_${i}' placeholder="">
+                    </div>
+                  </div>
+
+                  <div class="col-1">
+                    <div class="form-group">
+                      <label for='do_${i}'>Do No</label>
+                      <input type="text" class="form-control" id='do_${i}' name='do_${i}' placeholder="">
                     </div>
                   </div>
 
@@ -896,9 +902,9 @@
                                       </div>
                                     </div>
                                     
-                                    <div class="col-2">
+                                    <div class="col-1">
                                         <div class="form-group">
-                                          <label for="shelfnum">ShelfNumber <span style="color: red">*</span></label>
+                                          <label for="shelfnum">ShelfNum<span style="color: red">*</span></label>
                                             <div>
                                               <select id='shelfnum_${i}' required name="shelfnum_${i}" class="form-control">
                                                    ${shelfOptions}
@@ -955,6 +961,13 @@
                                         <div class="form-group">
                                           <label for='job_${i}'>Job No</label>
                                           <input type="text" class="form-control" id='job_${i}' name='job_${i}' placeholder="">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-1">
+                                        <div class="form-group">
+                                          <label for='do_${i}'>Do No</label>
+                                          <input type="text" class="form-control" id='do_${i}' name='do_${i}' placeholder="">
                                         </div>
                                     </div>
                 

@@ -413,7 +413,13 @@
                   <tr>
                       <td>{{  $i }}</td>
                       <td>{{ $issue->issue_date }}</td>
-                      <td>{{ $issue->mr_no }}</td>
+                     <td>
+                        <a href="{{ route('issues.printMr', ['issue_id' => $issue->id, 'mr_no' => $issue->mr_no]) }}" 
+                          target="_blank">
+                          {{ $issue->mr_no }}
+                        </a>
+                      </td>
+
                       <td>{{ $issue->job_no }}</td>
                       <td>
                         <a href="#" 
@@ -539,7 +545,7 @@
               </button>
           </div>
 
-          <form method="POST" action="{{ route('issues.print') }}" enctype="multipart/form-data" id="printForm" target="_blank">
+          <form method="POST" action="{{ route('issues.printDo') }}" enctype="multipart/form-data" id="printForm" target="_blank">
             @csrf
             <div class="modal-body text-center">
               <input type="hidden" name="do_no" id="modal_do_no">
@@ -547,11 +553,15 @@
 
               <div class="d-flex justify-content-around align-items-center mt-3">
                 <label class="radio-inline">
-                  <input type="radio" name="print_type" value="delivery" required> Delivery Print
+                  <input type="radio" name="print_type" value="sale" required> Sale
                 </label>
 
                 <label class="radio-inline">
-                  <input type="radio" name="print_type" value="issue_req" required> Issue Print
+                  <input type="radio" name="print_type" value="return" required> Return
+                </label>
+
+                <label class="radio-inline">
+                  <input type="radio" name="print_type" value="repair" required> Repair
                 </label>
               </div>
             </div>
@@ -607,14 +617,20 @@
 </script>
 
 <script>
-$(document).on('click', '.open-print-modal', function () {
-    const issueId = $(this).data('id');
-    const doNo = $(this).data('do');
-    $('#modal_do_no').val(doNo);
-    $('#modal_issue_id').val(issueId);
-    $('#print-modal .modal-title').text(`Print for DO No: ${doNo}`);
-});
+  $(document).on('click', '.open-print-modal', function () {
+      const issueId = $(this).data('id');
+      const doNo = $(this).data('do');
+
+      $('#modal_issue_id').val(issueId);
+
+      if (doNo) {
+          $('#modal_do_no').val(doNo);
+          $('#modal_mr_no').val('');
+          $('#print-modal .modal-title').text(`Print for DO No: ${doNo}`);
+      }
+  });
 </script>
+
 
 
 @endsection
