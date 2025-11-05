@@ -557,10 +557,6 @@
                 </label>
 
                 <label class="radio-inline">
-                  <input type="radio" name="print_type" value="return" required> Return
-                </label>
-
-                <label class="radio-inline">
                   <input type="radio" name="print_type" value="repair" required> Repair
                 </label>
               </div>

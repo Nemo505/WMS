@@ -275,6 +275,7 @@
                   <th>No</th>
                   <th>Date</th>
                   <th>MRR No</th>
+                  <th>Do Return</th>
                   <th>Warehouse</th>
                   <th>Shelf No</th>
                   <th>Customer</th>
@@ -320,6 +321,12 @@
                       <td>{{  $i }}</td>
                       <td>{{ $mrr->issue_return_date }}</td>
                       <td>{{ $mrr->mrr_no }}</td>
+                      <td>
+                        <a href="{{ route('issue_returns.printMrr', ['mrr_id' => $mrr->id, 'do_return' => $mrr->do_return]) }}" 
+                          target="_blank">
+                          {{ $mrr->do_return }}
+                        </a>
+                      </td>
 
                       <td>{{ optional($warehouse)->name }}</td>
                       <td>{{ optional($shelf_no)->name }} ( {{ optional($shelf_no)->shelf_name }})</td>
@@ -350,6 +357,7 @@
                 <th>No</th>
                 <th>Date</th>
                 <th>MRR No</th>
+                <th>Do Return</th>
                 <th>Warehouse</th>
                 <th>Shelf No</th>
                 <th>Customer</th>

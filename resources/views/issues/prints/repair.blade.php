@@ -23,9 +23,14 @@
                 <p style="margin:1px 0;">Tel: (951) 651251, 661030, 650488, 9669508 </p>
                 <p style="margin:1px 0;"> <a href="mailto:sales@hstengineering.com" style="color:#000; text-decoration:none;">sales@hstengineering.com</a></p>
                 <p style="margin:1px 0;"><a href="http://www.hstengineering.com" style="color:#000; text-decoration:none;">www.hstengineering.com</a></p>
-                <p style="margin:1px 0;">Mandalay Office: No 1, Room 8, 26th Street,</p>
-                <p style="margin:1px 0;">Between 78th & 79th Chan Aye Thar Zan, Mandalay.</p>
-                <p style="margin:1px 0;">Tel: 02-4081783, 09-773177773</p>
+                @if ($location === 'MDY') 
+                    <p style="margin:1px 0;">Mandalay Office: No 1, Room 8, 26th Street,</p>
+                    <p style="margin:1px 0;">Between 78th & 79th Chan Aye Thar Zan, Mandalay.</p>
+                    <p style="margin:1px 0;">Tel: 02-4081783, 09-773177773</p>
+                @elseif ($location === 'NPT') 
+                    <p style="margin:1px 0;">Nay Pyi Taw Office: No 61, Thiri Yadanar Shopping Complex</p>
+                    <p style="margin:1px 0;">Tel: 067-3420849, 067-3421012, 09-43034012</p>
+                @endif
             </div>
         </div>
 

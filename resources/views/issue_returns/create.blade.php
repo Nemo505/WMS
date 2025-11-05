@@ -155,7 +155,7 @@
                     </div>
                   </div>
       
-                  <div class="col-2">
+                  <div class="col-1">
                     <div class="form-group">
                       <label for="commodity">MR No<span style="color: red">*</span> </label> 
                       <!-- Dropdown --> 
@@ -163,6 +163,13 @@
                         <option value="" disabled selected>Choose MR No</option>
                         
                       </select>
+                    </div>
+                  </div>
+
+                  <div class="col-1">
+                    <div class="form-group">
+                      <label for="do_return">Do Return</label> 
+                      <input type="text" class="form-control" id="do_return_{{$i}}" name="do_return_{{$i}}" placeholder="">
                     </div>
                   </div>
       
@@ -330,7 +337,7 @@
                     </div>
                   </div>
 
-                  <div class="col-2">
+                  <div class="col-1">
                     <div class="form-group">
                       <label for="vr_no">MR No<span style="color: red">*</span> </label> 
                       <!-- Dropdown --> 
@@ -338,6 +345,13 @@
                         <option value="" disabled selected>Choose MR No</option>
                         
                       </select>
+                    </div>
+                  </div>
+
+                  <div class="col-1">
+                    <div class="form-group">
+                      <label for="do_return">Do Return</label> 
+                      <input type="text" class="form-control" id="do_return_${i}" name="do_return_${i}" placeholder="">
                     </div>
                   </div>
 
@@ -842,7 +856,7 @@
                                     </div>
                                   </div>
               
-                                  <div class="col-2">
+                                  <div class="col-1">
                                     <div class="form-group">
                                       <label for="vr_no">MR No<span style="color: red">*</span> </label> 
                                       <!-- Dropdown --> 
@@ -852,6 +866,13 @@
                                     </div>
                                   </div>
               
+                                  <div class="col-1">
+                                    <div class="form-group">
+                                      <label for="do_return">Do Return</label> 
+                                      <input type="text" class="form-control" id="do_return_${i}" name="do_return_${i}" placeholder="">
+                                    </div>
+                                  </div>
+
                                   <div class="col-1">
                                     <div class="form-group">
                                       <label for="qty_${i}">__ Qty </label> 

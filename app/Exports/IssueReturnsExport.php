@@ -27,6 +27,7 @@ class IssueReturnsExport implements FromArray, WithHeadings, ShouldAutoSize, Wit
             "No",
             "Date" ,
             "MRR No" ,
+            "Do Return" ,
             'Warehouse',
             "Shelf No" ,
             "Customer",

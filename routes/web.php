@@ -135,6 +135,8 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('/edit', [IssueReturnController::class ,'edit'])->name('issue_returns.edit');
             Route::post('/update', [IssueReturnController::class ,'update'])->name('issue_returns.update');
             Route::get('/delete', [IssueReturnController::class ,'destroy'])->name('issue_returns.delete');
+            Route::get('/select-print-mrr', [IssueReturnController::class ,'printMrr'])->name('issue_returns.printMrr');
+
             //just for issues products lists
             Route::get('/code-under-shelfnum', [IssueReturnController::class ,'getCode'])->name('issue_returns.getCode');
             Route::get('/issues-lists', [IssueReturnController::class ,'getVr'])->name('issue_returns.getVr');

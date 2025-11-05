@@ -24,11 +24,17 @@
                 <p style="margin:1px 0;">Tel: (951) 651251, 661030, 650488, 9669508 </p>
                 <p style="margin:1px 0;"> <a href="mailto:sales@hstengineering.com" style="color:#000; text-decoration:none;">sales@hstengineering.com</a></p>
                 <p style="margin:1px 0;"><a href="http://www.hstengineering.com" style="color:#000; text-decoration:none;">www.hstengineering.com</a></p>
-                <p style="margin:1px 0;">Mandalay Office: No 1, Room 8, 26th Street,</p>
-                <p style="margin:1px 0;">Between 78th & 79th Chan Aye Thar Zan, Mandalay.</p>
-                <p style="margin:1px 0;">Tel: 02-4081783, 09-773177773</p>
+                @if ($location === 'MDY') 
+                    <p style="margin:1px 0;">Mandalay Office: No 1, Room 8, 26th Street,</p>
+                    <p style="margin:1px 0;">Between 78th & 79th Chan Aye Thar Zan, Mandalay.</p>
+                    <p style="margin:1px 0;">Tel: 02-4081783, 09-773177773</p>
+                @elseif ($location === 'NPT') 
+                    <p style="margin:1px 0;">Nay Pyi Taw Office: No 61, Thiri Yadanar Shopping Complex</p>
+                    <p style="margin:1px 0;">Tel: 067-3420849, 067-3421012, 09-43034012</p>
+                @endif
             </div>
         </div>
+
 
         <h2 style="text-align:center; margin:0;">
             MATERIAL RETURN NOTE / ကုန်ပစ္စည်းပြန်ပို့မှတ်တမ်း
@@ -72,21 +78,21 @@
                 
                 <div style="display: flex; justify-content: flex-start; align-items: center;">
                     <p style="width: 100px; margin: 0; font-size: 16px;">Return No.</p>
-                    <span style="font-weight: bold;">{{ $issue->mr_no ?? '075' }}</span>
+                    <span style="font-weight: bold;">&nbsp;</span>
                 </div>
 
                 <div style="display: flex; justify-content: flex-start; align-items: center;">
                     <p style="width: 100px; margin: 0; font-size: 16px;">Date.</p>
-                    <span style="font-weight: bold;">{{ \Carbon\Carbon::parse($issue->created_at)->format('d/m/Y') }}</span>
+                    <span style="font-weight: bold;">{{ \Carbon\Carbon::parse($mrr->created_at)->format('d/m/Y') }}</span>
                 </div>
 
                 <div style="display: flex; justify-content: flex-start; align-items: center;">
                     <p style="width: 100px; margin: 0; font-size: 16px;">Job: No.</p>
-                    <span style="font-weight: bold;">{{ $issue->job_no ?? '' }}</span>
+                    <span style="font-weight: bold;">&nbsp;</span>
                 </div>
                 <div style="display: flex; justify-content: flex-start; align-items: center;">
-                    <p style="width: 100px; margin: 0; font-size: 16px;">Do : No.</p>
-                    <span style="font-weight: bold;">{{ $issue->do_no ?? '' }}</span>
+                    <p style="width: 100px; margin: 0; font-size: 16px;">Do : Return.</p>
+                    <span style="font-weight: bold;">{{ $mrr->do_return ?? '' }}</span>
                 </div>
             </div>
 
@@ -104,18 +110,18 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($issues as $i => $item)
+                @foreach($mrrs as $i => $item)
                     <tr>
                         <td style="border:1px solid #333; padding:6px 2px; text-align:center;">{{ $i + 1 }}</td>
                         <td style="border:1px solid #333; padding:6px 6px;">{{ $item->code->name ?? '' }} / {{ $item->code->brand->name ?? ''}} / {{$item->code->commodity->name ?? '' }}</td>
                         <td style="border:1px solid #333; padding:6px 6px; text-align:center;">                            
                             {{$item->product->unit->name}}
                         </td>
-                        <td style="border:1px solid #333; padding:6px 4px; text-align:center;">{{ rtrim(rtrim(number_format($item->mr_qty, 3, '.', ''), '0'), '.') }} </td>
+                        <td style="border:1px solid #333; padding:6px 4px; text-align:center;">{{ rtrim(rtrim(number_format($item->mrr_qty, 3, '.', ''), '0'), '.') }} </td>
                         <td style="border:1px solid #333; padding:6px 6px;">{{ $item->remarks ?? '' }}</td>
                     </tr>
                 @endforeach
-                @for($i = $issues->count(); $i < 15; $i++)
+                @for($i = $mrrs->count(); $i < 15; $i++)
                     <tr>
                         <td style="border:1px solid #333; padding:6px 2px; text-align:center;"></td>
                         <td style="border:1px solid #333; padding:6px 6px;">&nbsp;</td>

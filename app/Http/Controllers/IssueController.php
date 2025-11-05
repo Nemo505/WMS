@@ -711,10 +711,10 @@ class IssueController extends Controller
                                         'mr_qty' => $request->$qty,
                                         'remarks' => $request->$remarks,
                                         'job_no' => $request->$job,
+                                        'do_no'=> $request->$do,
                                         'issue_date'=> $request->date,
     
                                         'mr_no'=> $issue->mr_no,
-                                        'do_no'=> $issue->do_no,
                                         'customer_id'=> $issue->customer_id,
                                         
                                         'updated_by' => Auth::user()->id
@@ -778,8 +778,6 @@ class IssueController extends Controller
                                 'issue_date'=> $request->date,
                                 'customer_id'=>  $request->customer_id,
                                 'department_id'=> $request->department_id,
-                                
-                                'do_no'=> $request->$do,
                                 'mr_qty' => $request->$qty,
                                 'remarks' => $request->$remarks,
     
@@ -976,17 +974,6 @@ class IssueController extends Controller
             }
         });
 
-        $location = null;
-
-        $warehouseName = $issue->shelfnum->warehouse->name ?? '';
-
-        if (in_array($warehouseName, ['Office', '148 Warehouse', 'Main Warehouse'])) {
-            $location = 'YGN';
-        } elseif ($warehouseName === 'Mandalay') {
-            $location = 'MDY';
-        } else {
-            $location = 'YGN'; 
-        }
 
         if ($request->print_type === 'sale') {
             return view('issues.prints.sale', [
@@ -995,14 +982,7 @@ class IssueController extends Controller
                 'serial_no' => $nextSerial,
                 'location' => $location
             ]);
-        } elseif ($request->print_type === 'return') {
-            return view('issues.prints.return', [
-                'issue' => $issue,
-                'issues' => $issues,
-                'serial_no' => $nextSerial,
-                'location' => $location
-            ]);
-        } elseif ($request->print_type === 'repair') {
+        }elseif ($request->print_type === 'repair') {
             return view('issues.prints.repair', [
                 'issue' => $issue,
                 'issues' => $issues,

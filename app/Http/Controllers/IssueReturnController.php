@@ -274,6 +274,7 @@ class IssueReturnController extends Controller
                     $qty = "qty_".$explode[1];
                     $remarks = "remark_".$explode[1];
                     $vr_no = "vr_no_".$explode[1];
+                    $do_return = "do_return_".$explode[1];
     
                     #for new 
                     $issue = Issue::find($request->$vr_no);
@@ -303,6 +304,7 @@ class IssueReturnController extends Controller
                                     'product_id'=> $issue->product_id,
                                     'code_id'=> $issue->code_id,
                                     'remarks' => $request->$remarks,
+                                    'do_return' => $request->$do_return,
                                     'created_by'=> Auth::user()->id,
                                 ]);
     
@@ -389,6 +391,7 @@ class IssueReturnController extends Controller
 
                                             'issue_returns.mrr_qty',
                                             'issue_returns.remarks',
+                                            'issue_returns.do_return',
                                             'products.balance_qty',
                                         ]);
 
@@ -488,6 +491,9 @@ class IssueReturnController extends Controller
                                     'mrr_no' => $mrr->mrr_no,
                                     'new_mrr_no' => $mrr->mrr_no,
             
+                                    'do_return' => $mrr->do_return,
+                                    'new_do_return' => $mrr->do_return,
+
                                     'mrr_qty' => $mrr->mrr_qty,
                                     'new_mrr_qty' => $mrr->mrr_qty,
             
@@ -534,6 +540,7 @@ class IssueReturnController extends Controller
                     $qty = "qty_".$explode[1];
                     $vr_no = "vr_no_".$explode[1];
                     $remarks = "remark_".$explode[1];
+                    $do_return = "do_return_".$explode[1];
                     $mrr_id = "mrr_".$explode[1];
     
     
@@ -567,6 +574,9 @@ class IssueReturnController extends Controller
                                             'mrr_no' => $mrr->mrr_no,
                                             'new_mrr_no' => $request->mrr_no,
                     
+                                            'do_return' => $mrr->do_return,
+                                            'new_do_return' => $request->$do_return,
+
                                             'mrr_qty' => $mrr->mrr_qty,
                                             'new_mrr_qty' => $request->$qty,
                     
@@ -622,6 +632,7 @@ class IssueReturnController extends Controller
                                                 'code_id'=> $new_issue->code_id,
                                                 
                                                 'remarks' => $request->$remarks,
+                                                'do_return' => $request->$do_return,
                                                 'created_by'=> Auth::user()->id,
                                             ]);
                                         }
@@ -657,6 +668,7 @@ class IssueReturnController extends Controller
                                                 'code_id'=> $new_issue->code_id,
                                                 
                                                 'remarks' => $request->$remarks,
+                                                'do_return' => $request->$do_return,
                                                 'created_by'=> Auth::user()->id,
                                             ]);
                                         }
@@ -692,6 +704,7 @@ class IssueReturnController extends Controller
                                     'code_id'=> $new_issue->code_id,
             
                                     'remarks' => $request->$remarks,
+                                    'do_return' => $request->$do_return,
                                     'created_by'=> Auth::user()->id,
                                 ]);
                                 
@@ -747,10 +760,11 @@ class IssueReturnController extends Controller
                   "No" => $i + 1,
                   "Date" => $mrr->issue_return_date,
                   "MRR No" => $mrr->mrr_no,
+                  "Do Return" => $mrr->do_return,
                   'Warehouse' => optional($warehouse)->name,
                   "Shelf No" => optional($shelf_number)->name,
                   "Customer" => optional($customer)->name,
-  
+                  
                   "Code" => optional($code)->name,
                   "Brand" => optional($brand)->name,
                   "Commodity" => optional($commodity)->name,
@@ -771,4 +785,69 @@ class IssueReturnController extends Controller
   
           return Excel::download($export, 'mrrs ' . date("Y-m-d") . '.xlsx');
       }
+
+    public function printMrr(Request $request)
+    {
+        $mrr = IssueReturn::with(['issue'])->findOrFail($request->mrr_id);
+        if ($request->filled('do_return')) {
+            $mrrs = IssueReturn::with(['code', 'product'])
+                            ->where('do_return', $request->do_return)
+                            ->get();
+        }else{
+            return back()->withErrors(['error' => 'No Do Return number provided.']);
+        }
+
+        $nextSerial = null;
+
+        DB::transaction(function () use (&$mrrs, &$nextSerial) {
+            $existing = $mrrs->first(function ($i) {
+                return !is_null($i->serial_do_return) && $i->serial_do_return !== '';
+            });
+
+            if ($existing) {
+                $nextSerial = $existing->serial_do_return;
+                $nullItems = $mrrs->filter(function ($i) {
+                    return is_null($i->serial_do_return) || $i->serial_do_return === '';
+                });
+
+                foreach ($nullItems as $item) {
+                    $item->serial_do_return = $nextSerial;
+                    $item->save();
+                }
+
+            } else {
+                $latestSerial = DB::table('issue_returns')->lockForUpdate()->max('serial_do_return');
+                $nextSerial = $latestSerial ? $latestSerial + 1 : 1;
+
+                IssueReturn::where('do_return', $mrrs->first()->do_return ?? null)
+                    ->whereNull('serial_do_return')
+                    ->update(['serial_do_return' => $nextSerial]);
+
+                foreach ($mrrs as $item) {
+                    if (is_null($item->serial_do_return)) {
+                        $item->serial_do_return = $nextSerial;
+                    }
+                }
+            }
+        });
+
+        $location = null;
+
+        $warehouseName = $mrr->issue->shelfnum->warehouse->name ?? '';
+
+        if (in_array($warehouseName, ['Office', '148 Warehouse', 'Main Warehouse'])) {
+            $location = 'YGN';
+        } elseif ($warehouseName === 'Mandalay') {
+            $location = 'MDY';
+        } else {
+            $location = 'YGN'; 
+        }
+        return view('issue_returns.prints.return', [
+            'mrr' => $mrr,
+            'mrrs' => $mrrs,
+            'location' => $location,
+            'serial_no' => $nextSerial,
+        ]);
+    }
+
 }
