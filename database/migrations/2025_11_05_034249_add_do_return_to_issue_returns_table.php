@@ -16,6 +16,8 @@ return new class extends Migration
         Schema::table('issue_returns', function (Blueprint $table) {
             $table->string('do_return')->nullable()->after('mrr_no');
             $table->unsignedInteger('serial_do_return')->nullable();
+            $table->unsignedInteger('serial_mr_no')->nullable();
+
         });
     }
 
@@ -27,7 +29,7 @@ return new class extends Migration
     public function down()
     {
         Schema::table('issue_returns', function (Blueprint $table) {
-            $table->dropColumn(['do_return','serial_do_return']);
+            $table->dropColumn(['do_return','serial_do_return, serial_mr_no']);
         });
     }
 };

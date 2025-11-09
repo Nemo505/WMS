@@ -66,7 +66,7 @@
 
                 <div style="display: flex; justify-content: flex-start; align-items: center;">
                     <p style="width: 100px; margin: 0; font-size: 16px;">Date.</p>
-                    <span style="font-weight: bold;">{{ \Carbon\Carbon::parse($issue->created_at)->format('d/m/Y') }}</span>
+                    <span style="font-weight: bold;">{{ \Carbon\Carbon::parse($issue->issue_date)->format('d/m/Y') }}</span>
                 </div>
 
                 <div style="display: flex; justify-content: flex-start; align-items: center;">

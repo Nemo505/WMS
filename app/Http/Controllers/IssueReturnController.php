@@ -789,6 +789,70 @@ class IssueReturnController extends Controller
     public function printMrr(Request $request)
     {
         $mrr = IssueReturn::with(['issue'])->findOrFail($request->mrr_id);
+        if ($request->filled('mrr_no')) {
+            $mrrs = IssueReturn::with(['code', 'product'])
+                            ->where('mrr_no', $request->mrr_no)
+                            ->get();
+        }else{
+            return back()->withErrors(['error' => 'No MRR number provided.']);
+        }
+
+        $nextSerial = null;
+
+        DB::transaction(function () use (&$mrrs, &$nextSerial) {
+            $existing = $mrrs->first(function ($i) {
+                return !is_null($i->serial_mrr_no) && $i->serial_mrr_no !== '';
+            });
+
+            if ($existing) {
+                $nextSerial = $existing->serial_mrr_no;
+                $nullItems = $mrrs->filter(function ($i) {
+                    return is_null($i->serial_mrr_no) || $i->serial_mrr_no === '';
+                });
+
+                foreach ($nullItems as $item) {
+                    $item->serial_mrr_no = $nextSerial;
+                    $item->save();
+                }
+
+            } else {
+                $latestSerial = DB::table('issue_returns')->lockForUpdate()->max('serial_mrr_no');
+                $nextSerial = $latestSerial ? $latestSerial + 1 : 1;
+
+                IssueReturn::where('mrr_no', $mrrs->first()->mrr_no ?? null)
+                    ->whereNull('serial_mrr_no')
+                    ->update(['serial_mrr_no' => $nextSerial]);
+
+                foreach ($mrrs as $item) {
+                    if (is_null($item->serial_mrr_no)) {
+                        $item->serial_mrr_no = $nextSerial;
+                    }
+                }
+            }
+        });
+
+        $location = null;
+
+        $warehouseName = $mrr->issue->shelfnum->warehouse->name ?? '';
+
+        if (in_array($warehouseName, ['Office', '148 Warehouse', 'Main Warehouse'])) {
+            $location = 'YGN';
+        } elseif ($warehouseName === 'Mandalay') {
+            $location = 'MDY';
+        } else {
+            $location = 'YGN'; 
+        }
+        return view('issue_returns.prints.mrr', [
+            'mrr' => $mrr,
+            'mrrs' => $mrrs,
+            'location' => $location,
+            'serial_no' => $nextSerial,
+        ]);
+    }
+
+    public function printDoReturn(Request $request)
+    {
+        $mrr = IssueReturn::with(['issue'])->findOrFail($request->mrr_id);
         if ($request->filled('do_return')) {
             $mrrs = IssueReturn::with(['code', 'product'])
                             ->where('do_return', $request->do_return)
@@ -849,5 +913,6 @@ class IssueReturnController extends Controller
             'serial_no' => $nextSerial,
         ]);
     }
+
 
 }

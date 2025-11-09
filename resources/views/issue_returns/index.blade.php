@@ -320,9 +320,14 @@
                   <tr>
                       <td>{{  $i }}</td>
                       <td>{{ $mrr->issue_return_date }}</td>
-                      <td>{{ $mrr->mrr_no }}</td>
                       <td>
-                        <a href="{{ route('issue_returns.printMrr', ['mrr_id' => $mrr->id, 'do_return' => $mrr->do_return]) }}" 
+                        <a href="{{ route('issue_returns.printMrr', ['mrr_id' => $mrr->id, 'mrr_no' => $mrr->mrr_no]) }}" 
+                          target="_blank">
+                          {{ $mrr->mrr_no }}
+                        </a>
+                      </td>
+                      <td>
+                        <a href="{{ route('issue_returns.printDoReturn', ['mrr_id' => $mrr->id, 'do_return' => $mrr->do_return]) }}" 
                           target="_blank">
                           {{ $mrr->do_return }}
                         </a>

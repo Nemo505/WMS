@@ -83,7 +83,7 @@
 
                 <div style="display: flex; justify-content: flex-start; align-items: center;">
                     <p style="width: 100px; margin: 0; font-size: 16px;">Date.</p>
-                    <span style="font-weight: bold;">{{ \Carbon\Carbon::parse($mrr->created_at)->format('d/m/Y') }}</span>
+                    <span style="font-weight: bold;">{{ \Carbon\Carbon::parse($mrr->issue_return_date)->format('d/m/Y') }}</span>
                 </div>
 
                 <div style="display: flex; justify-content: flex-start; align-items: center;">
@@ -138,7 +138,7 @@
 
         <div style="display:flex; justify-content:space-between; text-align: center;">
             <div style="flex:1; padding:0 10px;">
-                <p style="margin:0px; font-weight:bold; font-size: 14px;">Return By</p>
+                <p style="margin:0px; font-weight:bold; font-size: 14px;">Returned By</p>
                 <p style="margin:0px; font-weight:bold; font-size: 14px;">(Customer)</p>
                 <p style="margin:20px 0px 0px 0px; padding-top:5px;">Signed&nbsp;&nbsp;-----------------------</p>
                 <p style="margin: 5px 0px;">Name&nbsp;&nbsp;&nbsp;-----------------------</p>

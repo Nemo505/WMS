@@ -41,7 +41,7 @@
         <!-- Title -->
         <div style="display:flex; justify-content:space-between; margin-top:8px;">
             <p style="margin:2px 0;">တောင်းခံသည့်ဌာန .....&nbsp;{{$issue->department->name}}&nbsp;......</p>
-            <p style="margin:2px 0;">ရက်စွဲ ......&nbsp;{{ \Carbon\Carbon::today()->format('Y-m-d') }}&nbsp;.........</p>
+            <p style="margin:2px 0;">ရက်စွဲ ......&nbsp;{{ \Carbon\Carbon::parse($issue->issue_date)->format('Y-m-d') }}&nbsp;.........</p>
         </div>
 
         <!-- Top Info -->

@@ -974,7 +974,17 @@ class IssueController extends Controller
             }
         });
 
+        $location = null;
 
+        $warehouseName = $mrr->issue->shelfnum->warehouse->name ?? '';
+
+        if (in_array($warehouseName, ['Office', '148 Warehouse', 'Main Warehouse'])) {
+            $location = 'YGN';
+        } elseif ($warehouseName === 'Mandalay') {
+            $location = 'MDY';
+        } else {
+            $location = 'YGN'; 
+        }
         if ($request->print_type === 'sale') {
             return view('issues.prints.sale', [
                 'issue' => $issue,
