@@ -11,23 +11,23 @@
             <form action="" method="GET">
 
                 <div class="row d-flex justify-content-around">
-                    {{-- warehouse --}}
+                    {{-- ShelfNumber --}}
                     <div class="col-2">
                         <div class="form-group">
-                            <label for="warehouse_id">Warehouse</label>
+                            <label for="shelf_num_id">ShelfNumber</label>
                             <div>
 
-                                <div> <select id='warehouse_id' name="warehouse_id" class=" form-control">
-                                    <option value=""  selected>Choose Warehouse</option>
-                                    @foreach ($warehouses as $warehouse)
-                                    @if (isset($_REQUEST['warehouse_id']))
-                                        @if ($warehouse->id == $_REQUEST['warehouse_id'])
-                                            <option value="{{ $warehouse->id }}" selected>{{ $warehouse->name }}</option>
+                                <div> <select id='shelf_num_id' name="shelf_num_id" class=" form-control">
+                                    <option value=""  selected>Choose ShelfNumber</option>
+                                    @foreach ($shelfnums as $shelfnum)
+                                    @if (isset($_REQUEST['shelf_num_id']))
+                                        @if ($shelfnum->id == $_REQUEST['shelf_num_id'])
+                                            <option value="{{ $shelfnum->id }}" selected>{{ $shelfnum->warehouse->name }}-{{ $shelfnum->shelf->name }}-{{ $shelfnum->name }}</option>
                                         @else
-                                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                                            <option value="{{ $shelfnum->id }}">{{ $shelfnum->warehouse->name }}-{{ $shelfnum->shelf->name }}-{{ $shelfnum->name }}</option>
                                         @endif
                                     @else
-                                        <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option> 
+                                        <option value="{{ $shelfnum->id }}">{{ $shelfnum->warehouse->name }}-{{ $shelfnum->shelf->name }}-{{ $shelfnum->name }}</option> 
                                     @endif
                                     @endforeach
                                     </select> 
@@ -203,8 +203,8 @@
                         $code = \App\Models\Code::find($instock->code_id); 
                         $brand = \App\Models\Brand::find(optional($code)->brand_id); 
                         $commodity = \App\Models\Commodity::find(optional($code)->commodity_id);
-                        $warehouse = \App\Models\Warehouse::find($instock->id);
-    
+                        $shelf_num = \App\Models\ShelfNumber::find($instock->shelf_number_id);
+
                         #fromdate to today
                         if (!empty($_REQUEST['from_date']) || !empty($_REQUEST['to_date'])) {
                             // Set 'from_date' or fallback to the first received product's date
@@ -213,7 +213,7 @@
                                             : optional(
                                                 \App\Models\Product::where('products.code_id', $instock->code_id)
                                                     ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                    ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                    ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                     ->orderBy('products.received_date', 'asc')
                                                     ->first()
                                             )->received_date;
@@ -225,47 +225,47 @@
                         
                             $received_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereBetween('products.received_date', [$from_date, $to_date])
                                                 ->where('products.type', 'receive')
                                                 ->sum('products.received_qty');
                                                 
                             $transfer_in = \App\Models\Product::where('products.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereBetween('products.received_date', [$from_date, $to_date])
                                                 ->where('products.type', 'transfer')
                                                 ->sum('products.received_qty');
                         
                             $transfer_out = \App\Models\Transfer::where('transfers.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'transfers.from_shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereBetween('transfers.transfer_date', [$from_date, $to_date])
                                                 ->sum('transfers.transfer_qty');
                                                     
                             $mr_qty = \App\Models\Issue::where('issues.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'issues.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereBetween('issues.issue_date', [$from_date, $to_date])
                                                 ->sum('issues.mr_qty');
                         
                             $mrr_qty = \App\Models\IssueReturn::where('issue_returns.code_id', $instock->code_id)
                                                 ->join('products', 'products.id', '=', 'issue_returns.product_id')
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereBetween('issue_returns.issue_return_date', [$from_date, $to_date])
                                                 ->sum('issue_returns.mrr_qty');
                         
                             $sup_qty = \App\Models\SupplierReturn::where('supplier_returns.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'supplier_returns.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereBetween('supplier_returns.supplier_return_date', [$from_date, $to_date])
                                                 ->sum('supplier_returns.supplier_return_qty');
                         
                             $add_adjust = \App\Models\Adjustment::where('adjustments.code_id', $instock->code_id)
                                                 ->join('products', 'products.id', '=', 'adjustments.product_id')
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereBetween('adjustments.adjustment_date', [$from_date, $to_date])
                                                 ->where('adjustments.type', 'add')
                                                 ->sum('adjustments.qty');
@@ -273,7 +273,7 @@
                             $sub_adjust = \App\Models\Adjustment::where('adjustments.code_id', $instock->code_id)
                                                 ->join('products', 'products.id', '=', 'adjustments.product_id')
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereBetween('adjustments.adjustment_date', [$from_date, $to_date])
                                                 ->where('adjustments.type', 'sub')
                                                 ->sum('adjustments.qty');
@@ -282,47 +282,47 @@
                                                     
                             $opening_received_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
                                                     ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                    ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                    ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                     ->whereDate('products.received_date', '<=', $opening_balance_date)
                                                     ->where('products.type', 'receive')
                                                     ->sum('products.received_qty');
                                                 
                             $opening_transfer_in = \App\Models\Product::where('products.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('products.received_date', '<=', $opening_balance_date)
                                                 ->where('products.type', 'transfer')
                                                 ->sum('products.received_qty');
                         
                             $opening_transfer_out = \App\Models\Transfer::where('transfers.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'transfers.from_shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('transfers.transfer_date', '<=', $opening_balance_date)
                                                 ->sum('transfers.transfer_qty');
                         
                             $opening_mr_qty = \App\Models\Issue::where('issues.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'issues.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('issues.issue_date', '<=', $opening_balance_date)
                                                 ->sum('issues.mr_qty');
                         
                             $opening_mrr_qty = \App\Models\IssueReturn::where('issue_returns.code_id', $instock->code_id)
                                                 ->join('products', 'products.id', '=', 'issue_returns.product_id')
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('issue_returns.issue_return_date', '<=', $opening_balance_date)
                                                 ->sum('issue_returns.mrr_qty');
                         
                             $opening_sup_qty = \App\Models\SupplierReturn::where('supplier_returns.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'supplier_returns.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('supplier_returns.supplier_return_date', '<=', $opening_balance_date)
                                                 ->sum('supplier_returns.supplier_return_qty');
                         
                             $opening_add_adjust = \App\Models\Adjustment::where('adjustments.code_id', $instock->code_id)
                                                 ->join('products', 'products.id', '=', 'adjustments.product_id')
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('adjustments.adjustment_date', '<=', $opening_balance_date)
                                                 ->where('adjustments.type', 'add')
                                                 ->sum('adjustments.qty');
@@ -330,7 +330,7 @@
                             $opening_sub_adjust = \App\Models\Adjustment::where('adjustments.code_id', $instock->code_id)
                                                 ->join('products', 'products.id', '=', 'adjustments.product_id')
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('adjustments.adjustment_date', '<=', $opening_balance_date) 
                                                 ->where('adjustments.type', 'sub')
                                                 ->sum('adjustments.qty');
@@ -341,47 +341,47 @@
                                                 
                             $start_received_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('products.received_date', '<=', $to_date)
                                                 ->where('products.type', 'receive')
                                                 ->sum('products.received_qty');
                                                 
                             $start_transfer_in = \App\Models\Product::where('products.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('products.received_date', '<=', $to_date)
                                                 ->where('products.type', 'transfer')
                                                 ->sum('products.received_qty');
                         
                             $start_transfer_out = \App\Models\Transfer::where('transfers.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'transfers.from_shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('transfers.transfer_date', '<=', $to_date)
                                                 ->sum('transfers.transfer_qty');
                             
                             $start_mr_qty = \App\Models\Issue::where('issues.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'issues.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('issues.issue_date', '<=', $to_date)
                                                 ->sum('issues.mr_qty');
                         
                             $start_mrr_qty = \App\Models\IssueReturn::where('issue_returns.code_id', $instock->code_id)
                                                 ->join('products', 'products.id', '=', 'issue_returns.product_id')
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('issue_returns.issue_return_date', '<=', $to_date)
                                                 ->sum('issue_returns.mrr_qty');
                         
                             $start_sup_qty = \App\Models\SupplierReturn::where('supplier_returns.code_id', $instock->code_id)
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'supplier_returns.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('supplier_returns.supplier_return_date', '<=', $to_date)
                                                 ->sum('supplier_returns.supplier_return_qty');
                         
                             $start_add_adjust = \App\Models\Adjustment::where('adjustments.code_id', $instock->code_id)
                                                 ->join('products', 'products.id', '=', 'adjustments.product_id')
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('adjustments.adjustment_date', '<=', $to_date)
                                                 ->where('adjustments.type', 'add')
                                                 ->sum('adjustments.qty');
@@ -389,7 +389,7 @@
                             $start_sub_adjust = \App\Models\Adjustment::where('adjustments.code_id', $instock->code_id)
                                                 ->join('products', 'products.id', '=', 'adjustments.product_id')
                                                 ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                 ->whereDate('adjustments.adjustment_date', '<=', $to_date) 
                                                 ->where('adjustments.type', 'sub')
                                                 ->sum('adjustments.qty');
@@ -400,57 +400,57 @@
                             // Default case
                             $received_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
                                             ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                            ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                            ->where('shelf_numbers.id', optional($shelf_num)->id)
                                             ->where('products.type', 'receive')
                                             ->sum('products.received_qty');
                                             
                             
                             $from = \App\Models\Product::where('products.code_id', $instock->code_id)
                                                         ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                                        ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                                        ->where('shelf_numbers.id', optional($shelf_num)->id)
                                                         ->orderBy('products.received_date', 'asc')
                                                         ->first();
                             
                         
                             $transfer_in = \App\Models\Product::where('products.code_id', $instock->code_id)
                                             ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                            ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                            ->where('shelf_numbers.id', optional($shelf_num)->id)
                                             ->where('products.type', 'transfer')
                                             ->sum('products.received_qty');
                         
                             $transfer_out = \App\Models\Transfer::where('code_id', $instock->code_id)
                                             ->join('shelf_numbers', 'shelf_numbers.id', '=', 'transfers.from_shelf_number_id')
-                                            ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                            ->where('shelf_numbers.id', optional($shelf_num)->id)
                                             ->sum('transfers.transfer_qty');
                         
                             $balance_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
                                             ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                            ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                            ->where('shelf_numbers.id', optional($shelf_num)->id)
                                             ->sum('products.balance_qty');
                         
                             $mr_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
                                             ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                            ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                            ->where('shelf_numbers.id', optional($shelf_num)->id)
                                             ->sum('products.mr_qty');
                         
                             $mrr_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
                                             ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                            ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                            ->where('shelf_numbers.id', optional($shelf_num)->id)
                                             ->sum('products.mrr_qty');
                         
                             $sup_qty = \App\Models\Product::where('products.code_id', $instock->code_id)
                                             ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                            ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                            ->where('shelf_numbers.id', optional($shelf_num)->id)
                                             ->sum('products.supplier_return_qty');
                         
                             $add_adjust = \App\Models\Product::where('products.code_id', $instock->code_id)
                                             ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                            ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                            ->where('shelf_numbers.id', optional($shelf_num)->id)
                                             ->sum('products.add_adjustment');
                         
                             $sub_adjust = \App\Models\Product::where('products.code_id', $instock->code_id)
                                             ->join('shelf_numbers', 'shelf_numbers.id', '=', 'products.shelf_number_id')
-                                            ->where('shelf_numbers.warehouse_id', optional($warehouse)->id)
+                                            ->where('shelf_numbers.id', optional($shelf_num)->id)
                                             ->sum('products.sub_adjustment');
                             $opening_qty = ($received_qty + $mrr_qty + $add_adjust + $sup_qty + $transfer_in) - ($mr_qty + $sub_adjust+ $transfer_out);
                         }
@@ -458,7 +458,7 @@
                     <tr>
                         <td>{{  $i }}</td>
 
-                        <td>{{ $warehouse->name }}</td>
+                        <td>{{ $shelf_num->warehouse->name }}- {{ $shelf_num->shelf->name }}- {{ $shelf_num->name }}</td>
                         <td>{{ $code->name }}</td>
                         <td>{{ optional($brand)->name }}</td>
                         <td>{{ optional($commodity)->name }}</td>
@@ -573,8 +573,8 @@
   $( "#commodity_id" ).ready(function() {
       $("#commodity_id").select2();
   });
-  $( "#warehouse_id" ).ready(function() {
-      $("#warehouse_id").select2();
+  $( "#shelf_num_id" ).ready(function() {
+      $("#shelf_num_id").select2();
   });
 </script>
 

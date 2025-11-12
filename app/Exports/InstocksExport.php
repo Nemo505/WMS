@@ -24,6 +24,8 @@ class InstocksExport implements FromArray, WithHeadings, ShouldAutoSize, WithSty
         return [
             "No",
             'Warehouse',
+            'Shelf',
+            'ShelfNumber',
 
             "Code",
             "Brand",
