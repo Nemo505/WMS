@@ -851,9 +851,9 @@
     
   $('#scanner').keyup(function() {
       var value = $('#scanner').val();
-      if (value.length === 9 || value.length === 10) {
-        if (value.length === 10) {
-            value = value.substring(0, 9);
+      if (value.length === 8 || value.length === 9) {
+        if (value.length === 9) {
+            value = value.substring(0, 8);
         }
           if (isScannerInput === value) {
               $('#scanner').val('');

@@ -91,7 +91,7 @@ class CodeController extends Controller
         }
 
         do {
-            $number = mt_rand(100000000, 999999999);
+            $number = mt_rand(10000000, 99999999);
         } while (Code::where('barcode', $number)->exists());
 
         $code = Code::Create([
@@ -287,7 +287,7 @@ class CodeController extends Controller
         
                         if(!$code){
                             do {
-                                $number = mt_rand(100000000, 999999999);
+                                $number = mt_rand(10000000, 99999999);
                             } while (Code::where('barcode', $number)->exists());
 
                             Code::create([
