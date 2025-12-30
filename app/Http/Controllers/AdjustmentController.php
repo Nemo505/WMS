@@ -17,6 +17,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AdjustmentsExport;
+use Illuminate\Support\Facades\DB;
 use Redirect;
 use Auth;
 use Validator;
@@ -189,51 +190,70 @@ class AdjustmentController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(),[
-            "warehouse_id" => 'required',
-            "shelfnum_id" => 'required',
-            "date" => 'required',
-            "adjustment_no" => 'required|',
-        ]); 
-        
-        if ($validator->fails())
-        {
-            return Redirect::back()->withInput()
-                            ->with('error', 'Please try again.');
-        }
-
-        $newRequest = $request->except(['_token',
-                                        'warehouse_id',
-                                        'shelfnum_id',
-                                        'adjustment_no',
-                                        'date']);
-
-        foreach ($newRequest as $key => $value){
-            if (str_contains($key, 'code_')) {
-                $explode = explode("_",$key);
-                $code = "code_".$explode[1];
-                $brand = "brand_".$explode[1];
-                $commodity = "commodity_".$explode[1];
-                $qty = "qty_".$explode[1];
-                $remarks = "remark_".$explode[1];
-                $type = "type_".$explode[1];
-                $vr_no = "vr_no_".$explode[1];
-
-                //for new 
-                $product = Product::find($request->$vr_no);
-                
-                if ($product) {
+        DB::transaction(function () use ($request)  {
+            $validator = Validator::make($request->all(),[
+                "warehouse_id" => 'required',
+                "shelfnum_id" => 'required',
+                "date" => 'required',
+                "adjustment_no" => 'required|',
+            ]); 
+            
+            if ($validator->fails())
+            {
+                return Redirect::back()->withInput()
+                                ->with('error', 'Please try again.');
+            }
+    
+            $newRequest = $request->except(['_token',
+                                            'warehouse_id',
+                                            'shelfnum_id',
+                                            'adjustment_no',
+                                            'date']);
+    
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'code_')) {
+                    $explode = explode("_",$key);
+                    $code = "code_".$explode[1];
+                    $brand = "brand_".$explode[1];
+                    $commodity = "commodity_".$explode[1];
+                    $qty = "qty_".$explode[1];
+                    $remarks = "remark_".$explode[1];
+                    $type = "type_".$explode[1];
+                    $vr_no = "vr_no_".$explode[1];
+    
+                    //for new 
+                    $product = Product::find($request->$vr_no);
                     
-                    $check_adjustment = Adjustment::where('product_id', $product->id)
-                                        ->where('adjustment_no', $request->adjustment_no)
-                                        ->first();
-
-                    if (!$check_adjustment) {
-                        if ($request->$type == 'sub') {
-                            if ($product->balance_qty > $request->$qty) {
+                    if ($product) {
+                        
+                        $check_adjustment = Adjustment::where('product_id', $product->id)
+                                            ->where('adjustment_no', $request->adjustment_no)
+                                            ->first();
+    
+                        if (!$check_adjustment) {
+                            if ($request->$type == 'sub') {
+                                if ($product->balance_qty > $request->$qty) {
+                                    $product->update([
+                                        'balance_qty' => $product->balance_qty - $request->$qty,
+                                        'sub_adjustment' => $request->$qty,
+                                    ]);
+                                    $adjustment = Adjustment::create([
+                                        'product_id' => $product->id,
+                                        'code_id' => $product->code_id,
+                                        'qty' => $request->$qty,
+                                        'type' => $request->$type,
+                                        'remarks' => $request->$remarks,
+                                        'adjustment_no'=> $request->adjustment_no,
+                                        'adjustment_date'=> $request->date,
+                                        'created_by'=> Auth::user()->id,
+                    
+                                    ]);
+                                }
+    
+                            }else{
                                 $product->update([
-                                    'balance_qty' => $product->balance_qty - $request->$qty,
-                                    'sub_adjustment' => $request->$qty,
+                                    'balance_qty' => $product->balance_qty + $request->$qty,
+                                    'add_adjustment' => $request->$qty,
                                 ]);
                                 $adjustment = Adjustment::create([
                                     'product_id' => $product->id,
@@ -247,28 +267,11 @@ class AdjustmentController extends Controller
                 
                                 ]);
                             }
-
-                        }else{
-                            $product->update([
-                                'balance_qty' => $product->balance_qty + $request->$qty,
-                                'add_adjustment' => $request->$qty,
-                            ]);
-                            $adjustment = Adjustment::create([
-                                'product_id' => $product->id,
-                                'code_id' => $product->code_id,
-                                'qty' => $request->$qty,
-                                'type' => $request->$type,
-                                'remarks' => $request->$remarks,
-                                'adjustment_no'=> $request->adjustment_no,
-                                'adjustment_date'=> $request->date,
-                                'created_by'=> Auth::user()->id,
-            
-                            ]);
                         }
                     }
                 }
             }
-        }
+        });
         return redirect()->route('adjustments.index')->with('success', 'Adjusment was created successfully');
 
 
@@ -362,141 +365,181 @@ class AdjustmentController extends Controller
     
     public function update(Request $request, Adjustment $adjustment)
     {
-        $validator = Validator::make($request->all(),[
-            "date" => 'required',
-        ]);
-
-        if ($validator->fails())
-        {
-            return Redirect::back()->withInput()
-                            ->with('error', 'Please try again.');
-        }
-
-        $old_adjustment = Adjustment::find($request->old_adjustment);
-
-        $newRequest = $request->except(['_token',
-                                        'warehouse_id',
-                                        'shelfnum_id',
-                                        'date',
-                                        'adjustment_no',
-                                        'old_adjustment'
-                                    ]);
-        foreach ($newRequest as $key => $value){
-            if (str_contains($key, 'adjustment_')) {
-                $explode = explode("_",$key);
-                $qty = "qty_".$explode[1];
-                $adjustment_id = "adjustment_".$explode[1];
-
-                #adjustment_id
-                $adjustment = Adjustment::find($request->$adjustment_id);
-
-                if ($adjustment) {
-
-                    $adjustment_product = Product::find($adjustment->product_id);
-                    if ($adjustment_product){
-
-                        $adjustment_code = Code::find($adjustment_product->code_id);
-                    }
-                }
-                if (!$request->$qty) {
-
-                    $adjustment_history = AdjustmentHistory::create([
-
-                        'shelf_number_id' => $adjustment_product->shelf_number_id,
-                        'new_shelf_number_id' => $adjustment_product->shelf_number_id,
-
-                        'product_id' => $adjustment->product_id,
-                        'new_product_id' => $adjustment->product_id,
-
-                        'code_id' => $adjustment_code->id,
-                        'new_code_id' => $adjustment_code->id,
-
-                        'adjustment_no' => $adjustment->adjustment_no,
-                        'new_adjustment_no' => $adjustment->adjustment_no,
-
-                        'qty' => $adjustment->qty,
-                        'new_qty' => $adjustment->qty,
-
-                        'type' => $adjustment->type,
-                        'new_type' => $adjustment->type,
-                        
-                        'adjustment_date' => $adjustment->adjustment_date,
-                        'new_adjustment_date' => $adjustment->adjustment_date,
-            
-                        'remarks' => $adjustment->remarks,
-                        'new_remarks' => $adjustment->remarks,
-            
-                        'method' => "delete",
-                        'created_by' => Auth::user()->id,
-                    ]);
-
-                    if ($adjustment->type == 'sub') {
-                    # code...
-                        $adjustment_product->update([
-                            'balance_qty' => $adjustment_product->balance_qty + $adjustment->qty,
-                            'sub_adjustment' => $adjustment_product->sub_adjustment - $adjustment->qty,
-                        ]);
-
-                    }else{
-                        $adjustment_product->update([
-                            'balance_qty' => $adjustment_product->balance_qty - $adjustment->qty,
-                            'add_adjustment' =>  $adjustment_product->add_adjustment - $adjustment->qty,
-                        ]);
-                    }
-
-                    $adjustment->delete();
-                }
-                
-            }
-        }
-
-
-        foreach ($newRequest as $key => $value){
-            if (str_contains($key, 'qty_')) {
-                $explode = explode("_",$key);
-                $code = "code_".$explode[1];
-                $brand = "brand_".$explode[1];
-                $commodity = "commodity_".$explode[1];
-                $qty = "qty_".$explode[1];
-                $type = "type_".$explode[1];
-                $remarks = "remark_".$explode[1];
-                $vr_no = "vr_no_".$explode[1];
-                $adjustment_id = "adjustment_".$explode[1];
-
-                #adjustment_id
-                $adjustment = Adjustment::find($request->$adjustment_id);
-                $new_product = Product::find($request->$vr_no);
-
-                if ($adjustment) {
-
-                    $adjustment_product = Product::find($adjustment->product_id);
-                    $adjustment_code = Code::find($adjustment_product->code_id);
-                    
-                    if ($adjustment_product && $new_product){
-                        #check if changed product in existing adjustment 
-                        $check_adjustment = Adjustment::where('adjustment_no', $request->adjustment_no)
-                                            ->where('product_id', $new_product->id)
-                                            ->where('id', '!=' , $adjustment->id)
-                                            ->first();
-                    }
-                }
-
-                #update return product
-                if ($adjustment && $request->$code && !$check_adjustment) {
-                  
-                    if ($request->shelfnum_id) {
-                        # code...
-                        if ($request->shelfnum_id != $adjustment_product->shelf_number_id || 
-                            $request->adjustment_no != $adjustment->adjustment_no || 
-                            $request->date != $adjustment->adjustment_date || 
+        DB::transaction(function () use ($request)  {
+            $validator = Validator::make($request->all(),[
+                "date" => 'required',
+            ]);
     
-                            $request->$vr_no != $adjustment->product_id || 
-                            $request->$qty != $adjustment->qty) {
+            if ($validator->fails())
+            {
+                return Redirect::back()->withInput()
+                                ->with('error', 'Please try again.');
+            }
+    
+            $old_adjustment = Adjustment::find($request->old_adjustment);
+    
+            $newRequest = $request->except(['_token',
+                                            'warehouse_id',
+                                            'shelfnum_id',
+                                            'date',
+                                            'adjustment_no',
+                                            'old_adjustment'
+                                        ]);
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'adjustment_')) {
+                    $explode = explode("_",$key);
+                    $qty = "qty_".$explode[1];
+                    $adjustment_id = "adjustment_".$explode[1];
+    
+                    #adjustment_id
+                    $adjustment = Adjustment::find($request->$adjustment_id);
+    
+                    if ($adjustment) {
+    
+                        $adjustment_product = Product::find($adjustment->product_id);
+                        if ($adjustment_product){
+    
+                            $adjustment_code = Code::find($adjustment_product->code_id);
+                        }
+                    }
+                    if (!$request->$qty) {
+    
+                        $adjustment_history = AdjustmentHistory::create([
+    
+                            'shelf_number_id' => $adjustment_product->shelf_number_id,
+                            'new_shelf_number_id' => $adjustment_product->shelf_number_id,
+    
+                            'product_id' => $adjustment->product_id,
+                            'new_product_id' => $adjustment->product_id,
+    
+                            'code_id' => $adjustment_code->id,
+                            'new_code_id' => $adjustment_code->id,
+    
+                            'adjustment_no' => $adjustment->adjustment_no,
+                            'new_adjustment_no' => $adjustment->adjustment_no,
+    
+                            'qty' => $adjustment->qty,
+                            'new_qty' => $adjustment->qty,
+    
+                            'type' => $adjustment->type,
+                            'new_type' => $adjustment->type,
+                            
+                            'adjustment_date' => $adjustment->adjustment_date,
+                            'new_adjustment_date' => $adjustment->adjustment_date,
+                
+                            'remarks' => $adjustment->remarks,
+                            'new_remarks' => $adjustment->remarks,
+                
+                            'method' => "delete",
+                            'created_by' => Auth::user()->id,
+                        ]);
+    
+                        if ($adjustment->type == 'sub') {
+                        # code...
+                            $adjustment_product->update([
+                                'balance_qty' => $adjustment_product->balance_qty + $adjustment->qty,
+                                'sub_adjustment' => $adjustment_product->sub_adjustment - $adjustment->qty,
+                            ]);
+    
+                        }else{
+                            $adjustment_product->update([
+                                'balance_qty' => $adjustment_product->balance_qty - $adjustment->qty,
+                                'add_adjustment' =>  $adjustment_product->add_adjustment - $adjustment->qty,
+                            ]);
+                        }
+    
+                        $adjustment->delete();
+                    }
+                    
+                }
+            }
+    
+    
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'qty_')) {
+                    $explode = explode("_",$key);
+                    $code = "code_".$explode[1];
+                    $brand = "brand_".$explode[1];
+                    $commodity = "commodity_".$explode[1];
+                    $qty = "qty_".$explode[1];
+                    $type = "type_".$explode[1];
+                    $remarks = "remark_".$explode[1];
+                    $vr_no = "vr_no_".$explode[1];
+                    $adjustment_id = "adjustment_".$explode[1];
+    
+                    #adjustment_id
+                    $adjustment = Adjustment::find($request->$adjustment_id);
+                    $new_product = Product::find($request->$vr_no);
+    
+                    if ($adjustment) {
+    
+                        $adjustment_product = Product::find($adjustment->product_id);
+                        $adjustment_code = Code::find($adjustment_product->code_id);
+                        
+                        if ($adjustment_product && $new_product){
+                            #check if changed product in existing adjustment 
+                            $check_adjustment = Adjustment::where('adjustment_no', $request->adjustment_no)
+                                                ->where('product_id', $new_product->id)
+                                                ->where('id', '!=' , $adjustment->id)
+                                                ->first();
+                        }
+                    }
+    
+                    #update return product
+                    if ($adjustment && $request->$code && !$check_adjustment) {
+                      
+                        if ($request->shelfnum_id) {
+                            # code...
+                            if ($request->shelfnum_id != $adjustment_product->shelf_number_id || 
+                                $request->adjustment_no != $adjustment->adjustment_no || 
+                                $request->date != $adjustment->adjustment_date || 
+        
+                                $request->$vr_no != $adjustment->product_id || 
+                                $request->$qty != $adjustment->qty) {
+        
+                                    $adjustment_history = AdjustmentHistory::create([
+        
+                                        'shelf_number_id' => $adjustment_product->shelf_number_id,
+                                        'new_shelf_number_id' => $request->shelfnum_id,
+                
+                                        'product_id' => $adjustment->product_id,
+                                        'new_product_id' => $request->$vr_no,
+                
+                                        'code_id' => $adjustment_code->id,
+                                        'new_code_id' => $new_product->code_id,
+                
+                                        'adjustment_no' => $adjustment->adjustment_no,
+                                        'new_adjustment_no' => $request->adjustment_no,
+                
+                                        'qty' => $adjustment->qty,
+                                        'new_qty' => $request->$qty,
+        
+                                        'type' => $adjustment->type,
+                                        'new_type' => $request->$type,
+                                
+                
+                                        'adjustment_date' => $adjustment->adjustment_date,
+                                        'new_adjustment_date' => $request->date,
+                            
+                                        'remarks' => $adjustment->remarks,
+                                        'new_remarks' => $request->$remarks,
+                            
+                                        'method' => "update",
+                                        'created_by' => Auth::user()->id,
+                                    ]);
+                                
+                            }
+        
+                        } else {
+    
+                            if ($request->$vr_no != $adjustment->product_id || 
+                                $request->date != $adjustment->adjustment_date || 
+                                $request->$qty != $adjustment->qty) {
     
                                 $adjustment_history = AdjustmentHistory::create([
     
                                     'shelf_number_id' => $adjustment_product->shelf_number_id,
-                                    'new_shelf_number_id' => $request->shelfnum_id,
+                                    'new_shelf_number_id' => $adjustment_product->shelf_number_id,
             
                                     'product_id' => $adjustment->product_id,
                                     'new_product_id' => $request->$vr_no,
@@ -505,13 +548,13 @@ class AdjustmentController extends Controller
                                     'new_code_id' => $new_product->code_id,
             
                                     'adjustment_no' => $adjustment->adjustment_no,
-                                    'new_adjustment_no' => $request->adjustment_no,
+                                    'new_adjustment_no' => $adjustment->adjustment_no,
             
                                     'qty' => $adjustment->qty,
                                     'new_qty' => $request->$qty,
     
                                     'type' => $adjustment->type,
-                                    'new_type' => $request->$type,
+                                    'new_type' => $adjustment->type,
                             
             
                                     'adjustment_date' => $adjustment->adjustment_date,
@@ -524,266 +567,227 @@ class AdjustmentController extends Controller
                                     'created_by' => Auth::user()->id,
                                 ]);
                             
+                            }
                         }
     
-                    } else {
-
-                        if ($request->$vr_no != $adjustment->product_id || 
-                            $request->date != $adjustment->adjustment_date || 
-                            $request->$qty != $adjustment->qty) {
-
-                            $adjustment_history = AdjustmentHistory::create([
-
-                                'shelf_number_id' => $adjustment_product->shelf_number_id,
-                                'new_shelf_number_id' => $adjustment_product->shelf_number_id,
-        
-                                'product_id' => $adjustment->product_id,
-                                'new_product_id' => $request->$vr_no,
-        
-                                'code_id' => $adjustment_code->id,
-                                'new_code_id' => $new_product->code_id,
-        
-                                'adjustment_no' => $adjustment->adjustment_no,
-                                'new_adjustment_no' => $adjustment->adjustment_no,
-        
-                                'qty' => $adjustment->qty,
-                                'new_qty' => $request->$qty,
-
-                                'type' => $adjustment->type,
-                                'new_type' => $adjustment->type,
-                        
-        
-                                'adjustment_date' => $adjustment->adjustment_date,
-                                'new_adjustment_date' => $request->date,
-                    
-                                'remarks' => $adjustment->remarks,
-                                'new_remarks' => $request->$remarks,
-                    
-                                'method' => "update",
-                                'created_by' => Auth::user()->id,
-                            ]);
-                        
-                        }
-                    }
-
-                    if ($adjustment->type == 'sub') {
-                        # code...
-                        $adjustment_product->update([
-                            'balance_qty' => $adjustment_product->balance_qty + $adjustment->qty,
-                            'sub_adjustment' => $adjustment_product->sub_adjustment - $adjustment->qty,
-                        ]);
-
-                    }else{
-                        $adjustment_product->update([
-                            'balance_qty' => $adjustment_product->balance_qty - $adjustment->qty,
-                            'add_adjustment' =>  $adjustment_product->add_adjustment - $adjustment->qty,
-                        ]);
-                    }
-
-                    #if same product id, update OR reduce to old- add to new
-                    if ($adjustment->product_id == $request->$vr_no) {
-
-                        if ($request->$type == 'sub') {
-                            # code...
-                            $adjustment_product->update([
-                                'balance_qty' => $adjustment_product->balance_qty - $request->$qty,
-                                'sub_adjustment' => $adjustment_product->sub_adjustment + $request->$qty,
-                            ]);
-    
-                        }else{
-                            $adjustment_product->update([
-                                'balance_qty' => $adjustment_product->balance_qty + $request->$qty,
-                                'add_adjustment' =>  $adjustment_product->add_adjustment + $request->$qty,
-                            ]);
-                        }
-
-                    }else{
-
-                        if ($request->$type == 'sub') {
-                            # code...
-                            $new_product->update([
-                                'balance_qty' => $new_product->balance_qty - $request->$qty,
-                                'sub_adjustment' => $new_product->sub_adjustment + $request->$qty,
-                            ]);
-    
-                        }else{
-                            $new_product->update([
-                                'balance_qty' => $new_product->balance_qty + $request->$qty,
-                                'add_adjustment' =>  $new_product->add_adjustment + $request->$qty,
-                            ]);
-                        }
-                    }
-
-
-                    if ($request->shelfnum_id) {
-                        $adjustment->update([
-                            'adjustment_no'=> $request->adjustment_no,
-                            'qty'=> $request->$qty,
-                            'adjustment_date'=> $request->date,
-                            'type' => $request->$type,
-                            'remarks' => $request->$remarks,
-                            'product_id' => $new_product->id,
-                            'code_id' => $new_product->code_id,
-                            
-                            'updated_by'=> Auth::user()->id,
-                        ]);
-                    }else{
-                        $adjustment->update([
-                            'qty'=> $request->$qty,
-                            'adjustment_date'=> $request->date,
-                            'remarks' => $request->$remarks,
-                            'product_id' => $new_product->id,
-                            'code_id' => $new_product->code_id,
-                            'type' => $request->$type,
-                            'updated_by'=> Auth::user()->id,
-                        ]);
-                    }
-                         
-                }else if($adjustment && !$request->$code ){
-                    if ( $request->date != $adjustment->adjustment_date || 
-                            $request->$qty != $adjustment->qty) {
-
-                            $adjustment_history = AdjustmentHistory::create([
-
-                                'shelf_number_id' => $adjustment_product->shelf_number_id,
-                                'new_shelf_number_id' => $adjustment_product->shelf_number_id,
-        
-                                'product_id' => $adjustment->product_id,
-                                'new_product_id' => $adjustment->product_id,
-        
-                                'code_id' => $adjustment_code->id,
-                                'new_code_id' => $adjustment_code->id,
-        
-                                'adjustment_no' => $adjustment->adjustment_no,
-                                'new_adjustment_no' => $adjustment->adjustment_no,
-        
-                                'qty' => $adjustment->qty,
-                                'new_qty' => $request->$qty,
-
-                                'type' => $adjustment->type,
-                                'new_type' => $adjustment->type,
-                        
-        
-                                'adjustment_date' => $adjustment->adjustment_date,
-                                'new_adjustment_date' => $request->date,
-                    
-                                'remarks' => $adjustment->remarks,
-                                'new_remarks' => $request->$remarks,
-                    
-                                'method' => "update",
-                                'created_by' => Auth::user()->id,
-                            ]);
-                        
-                        }
-
                         if ($adjustment->type == 'sub') {
+                            # code...
                             $adjustment_product->update([
-                                'balance_qty' => ($adjustment_product->balance_qty + $adjustment->qty) - $request->$qty,
-                                'sub_adjustment' => ($adjustment_product->sub_adjustment - $adjustment->qty) + $request->$qty,
+                                'balance_qty' => $adjustment_product->balance_qty + $adjustment->qty,
+                                'sub_adjustment' => $adjustment_product->sub_adjustment - $adjustment->qty,
                             ]);
     
                         }else{
                             $adjustment_product->update([
-                                'balance_qty' => ($adjustment_product->balance_qty - $adjustment->qty) + $request->$qty,
-                                'add_adjustment' =>  ($adjustment_product->add_adjustment - $adjustment->qty)  + $request->$qty,
+                                'balance_qty' => $adjustment_product->balance_qty - $adjustment->qty,
+                                'add_adjustment' =>  $adjustment_product->add_adjustment - $adjustment->qty,
                             ]);
                         }
-
-                        $adjustment->update([
-                            'qty'=> $request->$qty,
-                            'adjustment_date'=> $request->date,
-                            'remarks' => $request->$remarks,
-                            
-                            'updated_by'=> Auth::user()->id,
-                        ]);
-
-                }else if(!$adjustment && $request->$code){
-
-                    if ($request->shelfnum_id) {
-                        #new return update
-                        if ($new_product) {
-                            # same return no, product exist?
-                            $check_adjustments = Adjustment::where('product_id', $new_product->id)
-                                                ->where('adjustment_no', $request->adjustment_no)
-                                                ->first();
     
-                            if (!$check_adjustments) {
-                              
-                                $adjustment = Adjustment::create([
-                                    'product_id' => $new_product->id,
-                                    'code_id' => $new_product->code_id,
-                                    'qty' => $request->$qty,
-                                    'type' => $request->$type,
-                                    'remarks' => $request->$remarks,
-                                    'adjustment_no'=> $request->adjustment_no,
-                                    'adjustment_date'=> $request->date,
-                                    'created_by'=> Auth::user()->id,
-                
-                                ]);
-                                
-                            
-                                if ($request->$type == 'sub' && $new_product->balance_qty >= $request->$qty) {
+                        #if same product id, update OR reduce to old- add to new
+                        if ($adjustment->product_id == $request->$vr_no) {
+    
+                            if ($request->$type == 'sub') {
                                 # code...
-                                    $new_product->update([
-                                        'balance_qty' => $new_product->balance_qty - $request->$qty,
-                                        'sub_adjustment' => $request->$qty,
-                                    ]);
-    
-                                }else if($request->$type == 'add'){
-                                    $new_product->update([
-                                        'balance_qty' => $new_product->balance_qty + $request->$qty,
-                                        'add_adjustment' => $request->$qty,
-                                    ]);
-                                } 
-                            }
+                                $adjustment_product->update([
+                                    'balance_qty' => $adjustment_product->balance_qty - $request->$qty,
+                                    'sub_adjustment' => $adjustment_product->sub_adjustment + $request->$qty,
+                                ]);
         
+                            }else{
+                                $adjustment_product->update([
+                                    'balance_qty' => $adjustment_product->balance_qty + $request->$qty,
+                                    'add_adjustment' =>  $adjustment_product->add_adjustment + $request->$qty,
+                                ]);
+                            }
+    
+                        }else{
+    
+                            if ($request->$type == 'sub') {
+                                # code...
+                                $new_product->update([
+                                    'balance_qty' => $new_product->balance_qty - $request->$qty,
+                                    'sub_adjustment' => $new_product->sub_adjustment + $request->$qty,
+                                ]);
+        
+                            }else{
+                                $new_product->update([
+                                    'balance_qty' => $new_product->balance_qty + $request->$qty,
+                                    'add_adjustment' =>  $new_product->add_adjustment + $request->$qty,
+                                ]);
+                            }
                         }
+    
+    
+                        if ($request->shelfnum_id) {
+                            $adjustment->update([
+                                'adjustment_no'=> $request->adjustment_no,
+                                'qty'=> $request->$qty,
+                                'adjustment_date'=> $request->date,
+                                'type' => $request->$type,
+                                'remarks' => $request->$remarks,
+                                'product_id' => $new_product->id,
+                                'code_id' => $new_product->code_id,
+                                
+                                'updated_by'=> Auth::user()->id,
+                            ]);
+                        }else{
+                            $adjustment->update([
+                                'qty'=> $request->$qty,
+                                'adjustment_date'=> $request->date,
+                                'remarks' => $request->$remarks,
+                                'product_id' => $new_product->id,
+                                'code_id' => $new_product->code_id,
+                                'type' => $request->$type,
+                                'updated_by'=> Auth::user()->id,
+                            ]);
+                        }
+                             
+                    }else if($adjustment && !$request->$code ){
+                        if ( $request->date != $adjustment->adjustment_date || 
+                                $request->$qty != $adjustment->qty) {
+    
+                                $adjustment_history = AdjustmentHistory::create([
+    
+                                    'shelf_number_id' => $adjustment_product->shelf_number_id,
+                                    'new_shelf_number_id' => $adjustment_product->shelf_number_id,
+            
+                                    'product_id' => $adjustment->product_id,
+                                    'new_product_id' => $adjustment->product_id,
+            
+                                    'code_id' => $adjustment_code->id,
+                                    'new_code_id' => $adjustment_code->id,
+            
+                                    'adjustment_no' => $adjustment->adjustment_no,
+                                    'new_adjustment_no' => $adjustment->adjustment_no,
+            
+                                    'qty' => $adjustment->qty,
+                                    'new_qty' => $request->$qty,
+    
+                                    'type' => $adjustment->type,
+                                    'new_type' => $adjustment->type,
+                            
+            
+                                    'adjustment_date' => $adjustment->adjustment_date,
+                                    'new_adjustment_date' => $request->date,
+                        
+                                    'remarks' => $adjustment->remarks,
+                                    'new_remarks' => $request->$remarks,
+                        
+                                    'method' => "update",
+                                    'created_by' => Auth::user()->id,
+                                ]);
+                            
+                            }
+    
+                            if ($adjustment->type == 'sub') {
+                                $adjustment_product->update([
+                                    'balance_qty' => ($adjustment_product->balance_qty + $adjustment->qty) - $request->$qty,
+                                    'sub_adjustment' => ($adjustment_product->sub_adjustment - $adjustment->qty) + $request->$qty,
+                                ]);
+        
+                            }else{
+                                $adjustment_product->update([
+                                    'balance_qty' => ($adjustment_product->balance_qty - $adjustment->qty) + $request->$qty,
+                                    'add_adjustment' =>  ($adjustment_product->add_adjustment - $adjustment->qty)  + $request->$qty,
+                                ]);
+                            }
+    
+                            $adjustment->update([
+                                'qty'=> $request->$qty,
+                                'adjustment_date'=> $request->date,
+                                'remarks' => $request->$remarks,
+                                
+                                'updated_by'=> Auth::user()->id,
+                            ]);
+    
+                    }else if(!$adjustment && $request->$code){
+    
+                        if ($request->shelfnum_id) {
+                            #new return update
+                            if ($new_product) {
+                                # same return no, product exist?
+                                $check_adjustments = Adjustment::where('product_id', $new_product->id)
+                                                    ->where('adjustment_no', $request->adjustment_no)
+                                                    ->first();
+        
+                                if (!$check_adjustments) {
+                                  
+                                    $adjustment = Adjustment::create([
+                                        'product_id' => $new_product->id,
+                                        'code_id' => $new_product->code_id,
+                                        'qty' => $request->$qty,
+                                        'type' => $request->$type,
+                                        'remarks' => $request->$remarks,
+                                        'adjustment_no'=> $request->adjustment_no,
+                                        'adjustment_date'=> $request->date,
+                                        'created_by'=> Auth::user()->id,
                     
-                    }else{
-                        if ($new_product) {
-                            # same return no, product exist?
-                            $check_adjustments = Adjustment::where('product_id', $new_product->id)
-                                                ->where('adjustment_no', $old_adjustment->adjustment_no)
-                                                ->first();
-    
-                            if (!$check_adjustments) {
-                              
-                                $adjustment = Adjustment::create([
-                                    'product_id' => $new_product->id,
-                                    'code_id' => $new_product->code_id,
-                                    'qty' => $request->$qty,
-                                    'type' => $request->$type,
-                                    'remarks' => $request->$remarks,
-                                    'adjustment_no'=> $old_adjustment->adjustment_no,
-                                    'adjustment_date'=> $request->date,
-                                    'created_by'=> Auth::user()->id,
-                
-                                ]);
+                                    ]);
+                                    
                                 
-                            
-                                if ($request->$type == 'sub' && $new_product->balance_qty >= $request->$qty) {
-                                # code...
-                                    $new_product->update([
-                                        'balance_qty' => $new_product->balance_qty - $request->$qty,
-                                        'sub_adjustment' => $request->$qty,
-                                    ]);
-    
-                                }else if($request->$type == 'add'){
-                                    $new_product->update([
-                                        'balance_qty' => $new_product->balance_qty + $request->$qty,
-                                        'add_adjustment' => $request->$qty,
-                                    ]);
-                                }
-                            }
+                                    if ($request->$type == 'sub' && $new_product->balance_qty >= $request->$qty) {
+                                    # code...
+                                        $new_product->update([
+                                            'balance_qty' => $new_product->balance_qty - $request->$qty,
+                                            'sub_adjustment' => $request->$qty,
+                                        ]);
         
+                                    }else if($request->$type == 'add'){
+                                        $new_product->update([
+                                            'balance_qty' => $new_product->balance_qty + $request->$qty,
+                                            'add_adjustment' => $request->$qty,
+                                        ]);
+                                    } 
+                                }
+            
+                            }
+                        
+                        }else{
+                            if ($new_product) {
+                                # same return no, product exist?
+                                $check_adjustments = Adjustment::where('product_id', $new_product->id)
+                                                    ->where('adjustment_no', $old_adjustment->adjustment_no)
+                                                    ->first();
+        
+                                if (!$check_adjustments) {
+                                  
+                                    $adjustment = Adjustment::create([
+                                        'product_id' => $new_product->id,
+                                        'code_id' => $new_product->code_id,
+                                        'qty' => $request->$qty,
+                                        'type' => $request->$type,
+                                        'remarks' => $request->$remarks,
+                                        'adjustment_no'=> $old_adjustment->adjustment_no,
+                                        'adjustment_date'=> $request->date,
+                                        'created_by'=> Auth::user()->id,
+                    
+                                    ]);
+                                    
+                                
+                                    if ($request->$type == 'sub' && $new_product->balance_qty >= $request->$qty) {
+                                    # code...
+                                        $new_product->update([
+                                            'balance_qty' => $new_product->balance_qty - $request->$qty,
+                                            'sub_adjustment' => $request->$qty,
+                                        ]);
+        
+                                    }else if($request->$type == 'add'){
+                                        $new_product->update([
+                                            'balance_qty' => $new_product->balance_qty + $request->$qty,
+                                            'add_adjustment' => $request->$qty,
+                                        ]);
+                                    }
+                                }
+            
+                            }
                         }
+                         
                     }
-                     
-                }
-                
-        }};
+                    
+            }};
 
-
+        });
         return redirect()->route('adjustments.index')->with('success', 'Adjustment was successfully updated');
     }
 

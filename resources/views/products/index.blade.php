@@ -6,6 +6,12 @@
 @endsection
 
 @section('buttons')
+
+    <a href="{{ route("products.backup")}}" type="button" class="btn btn-secondary" >
+      <i class="fas fa-cloud-download-alt"></i>
+      BackUp
+    </a> 
+
     <a href="{{ route("products.history")}}" type="button" class="btn btn-primary" >
       <i class="fas fa-history"></i>
       History
@@ -26,9 +32,6 @@
         Import
       </a>
     @endif
-
-   
-
 @endsection
 
 @section('content')
@@ -50,7 +53,7 @@
                       <label for="vr_no">VR No</label>
 
                          <div> <select id='vr_no' name="vr_no" class=" form-control">
-                          <option value="" disabled selected>Choose VR No</option>
+                          <option value="" selected>Choose VR No</option>
                           @foreach ($s_products as $s_product)
                             @if (isset($_REQUEST['vr_no']))
                                 @if ($s_product->voucher_no == $_REQUEST['vr_no'])
@@ -73,7 +76,7 @@
                       <label for="warehouse_id">Warehouse</label>
 
                        <div> <select id='warehouse_id' name="warehouse_id" class=" form-control">
-                        <option value="" disabled selected>Choose Warehouse</option>
+                        <option value="" selected>Choose Warehouse</option>
                         @foreach ($warehouses as $warehouse)
                           @if (isset($_REQUEST['warehouse_id']))
                               @if ($warehouse->id == $_REQUEST['warehouse_id'])
@@ -95,7 +98,7 @@
                       <label for="shelf_num_id">Shelf Number</label>
 
                        <div> <select id='shelf_num_id' name="shelf_num_id" class=" form-control">
-                        <option value="" disabled selected>Choose Shelf No</option>
+                        <option value="" selected>Choose Shelf No</option>
 
                         @foreach ($shelfnums as $shelfnum)
                         @php
@@ -123,7 +126,7 @@
                       <div>
 
                          <div> <select id='code_id' name="code_id" class=" form-control">
-                          <option value="" disabled selected>Choose Code</option>
+                          <option value="" selected>Choose Code</option>
                           @foreach ($codes as $code)
                             @if (isset($_REQUEST['code_id']))
                                 @if ($code->name == $_REQUEST['code_id'])
@@ -148,7 +151,7 @@
 
                       <div>
                          <div> <select id='brand_id' name="brand_id" class=" form-control">
-                          <option value="" disabled selected>Choose Brand</option>
+                          <option value="" selected>Choose Brand</option>
                           @foreach ($brands as $brand)
                             @if (isset($_REQUEST['brand_id']))
                                 @if ($brand->id == $_REQUEST['brand_id'])
@@ -173,7 +176,7 @@
                       <div>
 
                          <div> <select id='commodity_id' name="commodity_id" class=" form-control">
-                          <option value="" disabled selected>Choose Commodity</option>
+                          <option value="" selected>Choose Commodity</option>
                           @foreach ($commodities as $commodity)
                             @if (isset($_REQUEST['commodity_id']))
                                 @if ($commodity->id == $_REQUEST['commodity_id'])
@@ -202,7 +205,7 @@
                       <label for="supplier">Supplier</label>
 
                        <div> <select id='supplier_id' name="supplier_id" class=" form-control">
-                        <option value="" disabled selected>Choose Supplier</option>
+                        <option value="" selected>Choose Supplier</option>
                         @foreach ($suppliers as $supplier)
                           @if (isset($_REQUEST['supplier_id']))
                               @if ($supplier->id == $_REQUEST['supplier_id'])
@@ -278,13 +281,12 @@
           </div>
           <!-- /.card-header -->
           <div class="card-body" style="overflow-x: scroll;">
-            <table id="example2" class="table table-bordered table-hover" >
+            <table class="table table-bordered table-hover">
               <thead>
                 <tr>
                   <th>No</th>
                   <th>Date</th>
                   <th>VR No</th>
-                  <th>BarCode</th>
                   <th>Warehouse</th>
                   <th>Shelf No</th>
                   <th>Supplier</th>
@@ -293,19 +295,15 @@
                   <th>Commodity</th>
                   <th>Unit</th>
                   <th>Received Qty</th>
-                  <th>Transfer Qty</th>
-                  <th>MR Qty</th>
-                  <th>MRR Qty</th>
-                  <th>SupplierReturn Qty</th>
-                  <th>Balance</th>
                   <th>Remarks</th>
-                  <th>Transfer No</th>
+                  <th>Created By</th>
+                  <th>Updated By</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 @php
-                    $i = 0;
+                    $i = $products->firstItem() - 1;;
                 @endphp
                 @foreach ($products as $product)
                 @php
@@ -326,21 +324,16 @@
                   $commodity = \App\Models\Commodity::find(optional($code)->commodity_id);
 
                   $unit = \App\Models\Unit::find($product->unit_id); 
-                  $transfer = \App\Models\Transfer::find($product->transfer_id); 
-
                   
                   $supplier = \App\Models\Supplier::find($product->supplier_id);
+                  $created_by = \App\Models\User::find($product->created_by); 
+                  $updated_by = \App\Models\User::find($product->updated_by); 
                 @endphp
                   <tr>
                       <td>{{  $i }}</td>
                       <td>{{ $product->received_date }}</td>
                       <td>{{ $product->voucher_no }}</td>
-                      <td class="text-center">
-                        <a href="{{ route('products.printBarcode', ['id' => $product->id]) }}"
-                            target="_blank">
-                            {!!DNS1D::getBarcodeSVG($product->barcode, 'C39+',1,55,'black', true) !!}
-                        </a>
-                    </td>
+                     
                       <td>{{ optional($warehouse)->name }}</td>
                       <td>{{ optional($shelf_no)->name }} ( {{ optional($shelf_no)->shelf_name }})</td>
                       <td>{{ optional($supplier)->name }}</td>
@@ -350,15 +343,10 @@
                       <td>{{ optional($commodity)->name }}</td>
                       <td>{{ optional($unit)->name }}</td>
                       <td>{{ $product->received_qty }}</td>
-                      <td>{{ $product->transfer_qty }}</td>
-
-                      <td>{{ $product->mr_qty }}</td>
-                      <td>{{ $product->mrr_qty }}</td>
-                      <td>{{ $product->supplier_return_qty }}</td>
-                      <td>{{ $product->balance_qty }}</td>
-
+                      
                       <td>{{ $product->remarks }}</td>
-                      <td>{{ optional($transfer)->transfer_no }}</td>
+                      <td>{{ optional($created_by)->user_name  }}</td>
+                      <td>{{ optional($updated_by)->user_name  }}</td>
                       <td>
                           <div class="d-flex justify-content-around"> 
                             @if (!$product->transfer_id)
@@ -377,10 +365,9 @@
 
               <tfoot>
               <tr>
-                <th>No</th>
+                  <th>No</th>
                   <th>Date</th>
                   <th>VR No</th>
-                  <th>BarCode</th>
                   <th>Warehouse</th>
                   <th>Shelf No</th>
                   <th>Supplier</th>
@@ -389,19 +376,56 @@
                   <th>Commodity</th>
                   <th>Unit</th>
                   <th>Received Qty</th>
-                  <th>Transfer Qty</th>
-                  <th>MR Qty</th>
-                  <th>MRR Qty</th>
-                  <th>SupplierReturn Qty</th>
-                  <th>Balance</th>
                   <th>Remarks</th>
                   <th>Transfer No</th>
+                  <th>Created By</th>
+                  <th>Updated By</th>
                   <th>Action</th>
               </tr>
               </tfoot>
             </table>
           </div>
           <!-- /.card-body -->
+            <div class="card-footer clearfix">
+                    <ul class="pagination pagination-sm m-0 float-right">
+                    <li class="page-item {{ $products->onFirstPage() ? 'disabled' : '' }}">
+                        <a class="page-link" href="{{ $products->previousPageUrl() }}">&laquo;</a>
+                    </li>
+                    @php
+                        $numAdjacent = 2; // Number of adjacent page links to display
+                        $start = max(1, $products->currentPage() - $numAdjacent);
+                        $end = min($start + $numAdjacent * 2, $products->lastPage());
+                    @endphp
+                    @if($start > 1)
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $products->url(1) }}">1</a>
+                        </li>
+                        @if($start > 2)
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        @endif
+                    @endif
+                    @for ($i = $start; $i <= $end; $i++)
+                        <li class="page-item {{ $i === $products->currentPage() ? 'active' : '' }}">
+                            <a class="page-link" href="{{ $products->url($i) }}">{{ $i }}</a>
+                        </li>
+                    @endfor
+                    @if($end < $products->lastPage())
+                        @if($end < $products->lastPage() - 1)
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        @endif
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $products->url($products->lastPage()) }}">{{ $products->lastPage() }}</a>
+                        </li>
+                    @endif
+                    <li class="page-item {{ $products->currentPage() === $products->lastPage() ? 'disabled' : '' }}">
+                        <a class="page-link" href="{{ $products->nextPageUrl() }}">&raquo;</a>
+                    </li>
+                </ul>
+            </div>
         </div>
         <!-- /.card -->
 

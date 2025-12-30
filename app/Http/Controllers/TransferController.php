@@ -16,7 +16,8 @@ use App\Models\ShelfNumber;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\transfersExport;
+use App\Exports\TransfersExport;
+use Illuminate\Support\Facades\DB;
 use Redirect;
 use Auth;
 use Validator;
@@ -34,7 +35,7 @@ class TransferController extends Controller
             return redirect()->back()->with('error','You do not have permission to access this page.');
         }
 
-        $transfers = Transfer::where(function($query) use ($request){
+        $exportQuery = Transfer::where(function($query) use ($request){
             if($request->transfer_id){
                 return $query->where('id', $request->transfer_id);
             }
@@ -44,34 +45,22 @@ class TransferController extends Controller
                 return $query->where('transfer_no', $request->transfer_no);
             }
         })
-        ->where(function ($query) use ($request){
-            if($request->vr_no){
-                $voucher_nos = Product::where('voucher_no',$request->vr_no)
-                                                ->get();
-                foreach($voucher_nos as $voucher_no){
-                    return $query->where('product_id', $voucher_no->id);
-                }
-                
+        ->where(function ($query) use ($request) {
+            if ($request->vr_no) {
+                $product_ids = Product::where('voucher_no', $request->vr_no)->pluck('id');
+                $query->whereIn('product_id', $product_ids);
             }
         })
-        ->where(function ($query) use ($request){
-            if($request->from_warehouse_id){
-                $shelf_nos = ShelfNumber::where('warehouse_id',$request->from_warehouse_id)
-                                                ->get();
-                foreach($shelf_nos as $shelf_no){
-                    return $query->where('from_shelf_number_id', $shelf_no->id);
-                }
-                
+        ->where(function ($query) use ($request) {
+            if ($request->from_warehouse_id) {
+                $shelf_nos = ShelfNumber::where('warehouse_id', $request->from_warehouse_id)->pluck('id');
+                $query->whereIn('from_shelf_number_id', $shelf_nos);
             }
         })
-        ->where(function ($query) use ($request){
-            if($request->to_warehouse_id){
-                $shelf_nos = ShelfNumber::where('warehouse_id',$request->to_warehouse_id)
-                                                ->get();
-                foreach($shelf_nos as $shelf_no){
-                    return $query->where('to_shelf_number_id', $shelf_no->id);
-                }
-                
+        ->where(function ($query) use ($request) {
+            if ($request->to_warehouse_id) {
+                $shelf_nos = ShelfNumber::where('warehouse_id', $request->to_warehouse_id)->pluck('id');
+                $query->whereIn('to_shelf_number_id', $shelf_nos);
             }
         })
         ->where(function ($query) use ($request){
@@ -127,9 +116,7 @@ class TransferController extends Controller
                 return $query->where('transfer_date', '<=',  $to_date);
             }
         })
-        ->orderbydesc('transfer_date')
-        ->get();
-        
+        ->orderbydesc('transfer_date');
 
         $warehouses = Warehouse::get();
         $codes = Code::get();
@@ -140,8 +127,10 @@ class TransferController extends Controller
         $vr_nos = Product::distinct()->get(['voucher_no']);
 
         if ($request->has('export')) {
-            return $this->export($transfers);
+            $exportTransfer = $exportQuery->get();
+            return $this->export($exportTransfer);
         }
+        $transfers = $exportQuery->paginate(10)->appends(request()->query());
 
         return view('transfers/index', ['warehouses' => $warehouses,
                                         'vr_nos' => $vr_nos,
@@ -219,116 +208,110 @@ class TransferController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(),[
-            "from_warehouse_id" => 'required',
-            "from_shelfnum_id" => 'required',
-            "date" => 'required',
-            "to_warehouse_id" => 'required',
-            "to_shelfnum_id" => 'required',
-            "transfer_no" => 'required|unique:transfers,transfer_no',
-        ]); 
-        
-        if ($validator->fails())
-        {
-            return redirect()->route('transfers.index')->with('error', 'Please try again.');
-        }
-       
-        $newRequest = $request->except(['_token',
-                                    'from_warehouse_id',
-                                    'from_shelfnum_id',
-                                    'to_warehouse_id',
-                                    'to_shelfnum_id',
-                                    'transfer_no',
-                                    'date']);
-
-        foreach ($newRequest as $key => $value){
-            if (str_contains($key, 'code_')) {
-                $explode = explode("_",$key);
-                $code = "code_".$explode[1];
-                $brand = "brand_".$explode[1];
-                $commodity = "commodity_".$explode[1];
-                $qty = "qty_".$explode[1];
-                $remarks = "remark_".$explode[1];
-                $vr_no = "vr_no_".$explode[1];
-
-                //for new 
-                $product = Product::find($request->$vr_no);
-                
-                if ($product) {
-                    #find code id
-                    $code_id = Code::where('name', $request->$code) 
-                                    ->where('brand_id', $request->$brand)
-                                    ->where('commodity_id', $request->$commodity)
-                                    ->first();
-
-                    $check_to_product = Transfer::where('code_id', $code_id->id)
-                                                ->where('transfer_no', $request->transfer_no)
-                                                ->where('product_id', $product->id)
-                                                ->first();
-                    if (!$check_to_product) {
-                       
-                        do {
-                            #random number
-                            $number = mt_rand(100000000, 999999999);
-                            $check_barcode = Product::where('barcode', $number)->first();
-
-                        } while ($check_barcode);
-
-                        $transfer_product = Product::create([
-                            'code_id' => $product->code_id,
-                            'unit_id' => $product->unit_id,
-                            'type' => 'transfer',
-                            'barcode' => $number,
-                            'received_qty' => $request->$qty,
-                            'balance_qty' => $request->$qty,
-        
-                            'remarks' => $request->$remarks,
-                            'shelf_number_id'=> $request->to_shelfnum_id,
-                            'received_date'=> $request->date,
-                            'voucher_no'=> $product->voucher_no,
-        
-                            'supplier_id'=> $product->supplier_id,
-                            'created_by'=> Auth::user()->id,
-        
-                        ]);
-        
-                        $transfer = Transfer::create([
-                            'code_id' => $product->code_id,
-                            'transfer_qty' => $request->$qty,
-                            'remarks' => $request->$remarks,
-                            'product_id' => $product->id,
-        
-                            'transfer_date'=> $request->date,
-                            'transfer_no'=> $request->transfer_no,
-        
-                            'from_shelf_number_id'=> $request->from_shelfnum_id,
-                            'to_shelf_number_id'=> $request->to_shelfnum_id,
-                            'created_by'=> Auth::user()->id,
-        
-                        ]);
-                        
-                        if ($product->balance_qty >= $request->$qty) {
-                            # code...
-                            $product->update([
-                                'balance_qty' => $product->balance_qty - $request->$qty,
-                                'transfer_qty' => $request->$qty,
-                            ]);
-        
-                            $transfer_product->update([
-                                'transfer_id' => $transfer->id,
-                            ]);
-        
-                        }else{
-                            return redirect()->route('transfers.index')->with('error', 'Please Try again');
-                        }
-                    } else {
-                        return Redirect::back()->withInput()
-                                    ->with('error', "$code_id->name is already in Warehouse.");
-                    }
+        DB::transaction(function () use ($request)  {
+            $validator = Validator::make($request->all(),[
+                "from_warehouse_id" => 'required',
+                "from_shelfnum_id" => 'required',
+                "date" => 'required',
+                "to_warehouse_id" => 'required',
+                "to_shelfnum_id" => 'required',
+                "transfer_no" => 'required|unique:transfers,transfer_no',
+            ]); 
+            
+            if ($validator->fails())
+            {
+                return redirect()->route('transfers.index')->with('error', 'Please try again.');
+            }
+           
+            $newRequest = $request->except(['_token',
+                                        'from_warehouse_id',
+                                        'from_shelfnum_id',
+                                        'to_warehouse_id',
+                                        'to_shelfnum_id',
+                                        'transfer_no',
+                                        'date']);
+    
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'code_')) {
+                    $explode = explode("_",$key);
+                    $code = "code_".$explode[1];
+                    $brand = "brand_".$explode[1];
+                    $commodity = "commodity_".$explode[1];
+                    $qty = "qty_".$explode[1];
+                    $remarks = "remark_".$explode[1];
+                    $vr_no = "vr_no_".$explode[1];
+    
+                    //for new 
+                    $product = Product::find($request->$vr_no);
                     
+                    if ($product) {
+                        #find code id
+                        $code_id = Code::where('name', $request->$code) 
+                                        ->where('brand_id', $request->$brand)
+                                        ->where('commodity_id', $request->$commodity)
+                                        ->first();
+    
+                        $check_to_product = Transfer::where('code_id', $code_id->id)
+                                                    ->where('transfer_no', $request->transfer_no)
+                                                    ->where('product_id', $product->id)
+                                                    ->first();
+                        if (!$check_to_product) {
+    
+                            $transfer_product = Product::create([
+                                'code_id' => $product->code_id,
+                                'unit_id' => $product->unit_id,
+                                'type' => 'transfer',
+                                'received_qty' => $request->$qty,
+                                'balance_qty' => $request->$qty,
+            
+                                'remarks' => $request->$remarks,
+                                'shelf_number_id'=> $request->to_shelfnum_id,
+                                'received_date'=> $request->date,
+                                'voucher_no'=> $product->voucher_no,
+            
+                                'supplier_id'=> $product->supplier_id,
+                                'created_by'=> Auth::user()->id,
+            
+                            ]);
+            
+                            $transfer = Transfer::create([
+                                'code_id' => $product->code_id,
+                                'transfer_qty' => $request->$qty,
+                                'remarks' => $request->$remarks,
+                                'product_id' => $product->id,
+            
+                                'transfer_date'=> $request->date,
+                                'transfer_no'=> $request->transfer_no,
+            
+                                'from_shelf_number_id'=> $request->from_shelfnum_id,
+                                'to_shelf_number_id'=> $request->to_shelfnum_id,
+                                'created_by'=> Auth::user()->id,
+            
+                            ]);
+                            
+                            if ($product->balance_qty >= $request->$qty) {
+                                # code...
+                                $product->update([
+                                    'balance_qty' => $product->balance_qty - $request->$qty,
+                                    'transfer_qty' => $request->$qty,
+                                ]);
+            
+                                $transfer_product->update([
+                                    'transfer_id' => $transfer->id,
+                                ]);
+            
+                            }else{
+                                return redirect()->route('transfers.index')->with('error', 'Please Try again');
+                            }
+                        } else {
+                            return Redirect::back()->withInput()
+                                        ->with('error', "$code_id->name is already in Warehouse.");
+                        }
+                        
+                    }
                 }
             }
-        }
+        });
         return redirect()->route('transfers.index')->with('success', 'transfer was created successfully');
 
     }
@@ -446,373 +429,191 @@ class TransferController extends Controller
   
     public function update(Request $request, transfer $transfer)
     {
-        if ($request->from_warehouse_id) {
-            $validator = Validator::make($request->all(),[
-                "from_warehouse_id" => 'required',
-                "from_shelfnum_id" => 'required',
-                "date" => 'required',
-                "to_warehouse_id" => 'required',
-                "to_shelfnum_id" => 'required',
-                "transfer_no" => 'required',
-            ]);
-        }else{
-            $validator = Validator::make($request->all(),[
-                "date" => 'required',
-            ]);
-        }
-
-        if ($validator->fails())
-        {
-            return Redirect::back()->withInput()
-                            ->with('error', 'Please try again.');
-        }
-
-        $old_transfer = Transfer::find($request->old_transfer);
-
-        $newRequest = $request->except(['_token',
-                                        'from_warehouse_id',
-                                        'from_shelfnum_id',
-                                        'to_warehouse_id',
-                                        'to_shelfnum_id',
-                                        'date',
-                                        'transfer_no'
-                                    ]);
-                                    
-        foreach ($newRequest as $key => $value){
-            
-            if (str_contains($key, 'transfer_')) {
-                $explode = explode("_",$key);
-                $transfer_id = "transfer_".$explode[1];
-                $qty = "qty_".$explode[1];
-
-                $transfer = Transfer::find($request->$transfer_id);
-                if ($transfer) {
-                    #from 
-                    $from_transfer_product = Product::find($transfer->product_id);
-                    #find to transferred product
-                    $to_transfer_product = Product::where('transfer_id', $request->$transfer_id)
-                                                ->first();;
-                }
-
-                if (!$request->$qty) {
-                    $from_transfer_product->update([
-                        'transfer_qty' =>  $from_transfer_product->transfer_qty - $transfer->transfer_qty,
-                        'balance_qty' => $from_transfer_product->balance_qty + $transfer->transfer_qty,
-                    ]);
-                    
-                    $t_history = TransferHistory::create([
-                        'from_shelf_number_id' => $transfer->from_shelf_number_id,
-                        'new_from_shelf_number_id' => $transfer->from_shelf_number_id,
-                        'to_shelf_number_id' => $transfer->to_shelf_number_id,
-                        'new_to_shelf_number_id' => $transfer->to_shelf_number_id,
-
-                        'transfer_date' => $transfer->transfer_date,
-                        'new_transfer_date' => $transfer->transfer_date,
-
-                        'transfer_no' => $transfer->transfer_no,
-                        'new_transfer_no' => $transfer->transfer_no,
-            
-                        'method' => "delete",
-                        'created_by' => Auth::user()->id,
-                        
-                        'code_id' => $transfer->code_id,
-                        'new_code_id' => $transfer->code_id,
-                        
-                        #unclear
-                        'product_id' => $to_transfer_product->id,
-                        'new_product_id' => $to_transfer_product->id,
-
-                        'transfer_qty' => $transfer->transfer_qty,
-                        'new_transfer_qty' => $transfer->transfer_qty,
-            
-                        'remarks' => $transfer->remarks,
-                        'new_remarks' => $transfer->remarks,
-            
-                        'method' => "delete",
-                        'created_by' => Auth::user()->id,
-                    ]);
-
-                    $to_transfer_product->delete();
-                    $transfer->delete();
-                }
-
-        }}
-
-        foreach ($newRequest as $key => $value){
-            if (str_contains($key, 'qty_')) {
-                $explode = explode("_",$key);
-                $code = "code_".$explode[1];
-                $brand = "brand_".$explode[1];
-                $commodity = "commodity_".$explode[1];
-                $qty = "qty_".$explode[1];
-                $vr_no = "vr_no_".$explode[1];
-                $remarks = "remark_".$explode[1];
-                $transfer_id = "transfer_".$explode[1];
-
-                $transfer = Transfer::find($request->$transfer_id);
-                if ($transfer) {
-                    #from 
-                    $from_transfer_product = Product::find($transfer->product_id);
-                }
-
-                
-                # find to transferred product
-                $to_transfer_product = Product::where('transfer_id', $request->$transfer_id)
-                                        ->first();
-
-                #if from trasnferred product id is new or same?
-                $check_from_product = Product::find($request->$vr_no);
-
-                if ($check_from_product && $check_from_product->transfer_id != null ){
-                    #product throught transfer.product_id
-                    $new_from_transfer_product = Product::where('products.id', $request->$vr_no)
-                                                ->join('transfers', 'transfers.id', '=' , 'products.transfer_id')
-                                                ->first(['transfers.product_id as id', 
-                                                        'products.transfer_qty',
-                                                        'products.balance_qty',
-                                                        'products.voucher_no',
-                                                        'products.supplier_id',
-                                                    ]);
-                }else{
-                    $new_from_transfer_product = Product::where('products.id', $request->$vr_no)
-                                            ->first();
-                }
-
-                #find code id
-                $code_id = Code::where('name', $request->$code) 
-                                ->where('brand_id', $request->$brand)
-                                ->where('commodity_id', $request->$commodity)
-                                ->first();
-                
-                if ($check_from_product && $code_id && $transfer ) {
-                    #if to transferred product is already exist?
-                    $check_to_product = Transfer::where('code_id', $code_id->id)
-                                                ->where('transfer_no', $transfer->transfer_no)
-                                                ->where('id', '!=', $transfer->id)
-                                                ->where('product_id', $transfer->product_id)
-                                                ->first();
-                    if ($check_to_product) {
-                        return Redirect::back()->withInput()
-                                    ->with('error', "$code_id->name ($check_to_product->transfer_no) is already in Warehouse.");
-                    }
-                }
-                
-                #update no transfer product
-                if ($transfer && $request->$code ) {
-
-                    if ($request->from_shelfnum_id) {
-                        if ($request->from_shelfnum_id != $transfer->from_shelf_number_id || 
-                            $request->to_shelfnum_id != $transfer->to_shelf_number_id || 
-                            $request->transfer_no != $transfer->transfer_no || 
-                            $request->date != $transfer->transfer_date || 
-
-                            $request->$vr_no != $to_transfer_product->id || 
-                            $request->$code != $code_id->name || 
-                            $request->$qty != $transfer->transfer_qty) {
-
-                            $t_history = TransferHistory::create([
-
-                                'from_shelf_number_id' => $transfer->from_shelf_number_id,
-                                'new_from_shelf_number_id' => $request->from_shelfnum_id,
-                                'to_shelf_number_id' => $transfer->to_shelf_number_id,
-                                'new_to_shelf_number_id' => $request->to_shelfnum_id,
-
-                                'transfer_date' => $transfer->transfer_date,
-                                'new_transfer_date' => $request->date,
-
-                                'transfer_no' => $transfer->transfer_no,
-                                'new_transfer_no' => $request->transfer_no,
-                                
-                                'code_id' => $transfer->code_id,
-                                'new_code_id' => $code_id->id,
-                                
-                                #unclear
-                                'product_id' => $to_transfer_product->id,
-                                'new_product_id' => $request->$vr_no,
-
-                                'transfer_qty' => $transfer->transfer_qty,
-                                'new_transfer_qty' => $request->$qty,
-                    
-                                'remarks' => $transfer->remarks,
-                                'new_remarks' => $request->$remarks,
-                    
-                                'method' => "update",
-                                'created_by' => Auth::user()->id,
-                            ]);
-                        }
-
-                        #if same product id, update OR reduce to old- add to new
-                        if ($new_from_transfer_product->id && 
-                            $new_from_transfer_product->id == $from_transfer_product->id) {
-                            
-                            $from_transfer_product->update([
-                                'transfer_qty' =>  ($from_transfer_product->transfer_qty- $transfer->transfer_qty) + $request->$qty,
-                                'balance_qty' => ($from_transfer_product->balance_qty+ $transfer->transfer_qty)- $request->$qty,
-                            ]);
-                                
-                                
-                        } else {
-                            $from_transfer_product->update([
-                                'transfer_qty' =>  $from_transfer_product->transfer_qty - $transfer->transfer_qty,
-                                'balance_qty' => $from_transfer_product->balance_qty+ $transfer->transfer_qty,
-                            ]);
-                            // dd($new_from_transfer_product->transfer_qty + $request->$qty);
-                            $new_from_transfer_product->update([
-                                'transfer_qty' =>  $new_from_transfer_product->transfer_qty + $request->$qty,
-                                'balance_qty' => $new_from_transfer_product->balance_qty - $request->$qty,
-                            ]);
-                        }
-
-                        $to_transfer_product->update([
-                                'shelf_number_id'=> $request->to_shelfnum_id,
-                                'code_id' => $code_id->id,
-
-                                'received_qty' => $request->$qty,
-                                'balance_qty' => $request->$qty,
-                                'remarks' => $request->$remarks,
-                                'received_date'=> $request->date,
-
-                                'voucher_no'=> $new_from_transfer_product->voucher_no,
-                                'supplier_id'=> $new_from_transfer_product->supplier_id,
-                                
-                                'updated_by' => Auth::user()->id
-                            ]);
-
-                            $transfer->update([
-                                'from_shelf_number_id'=> $request->from_shelfnum_id,
-                                'to_shelf_number_id'=> $request->to_shelfnum_id,
-
-                                'code_id' => $code_id->id,
-                                'product_id' => $new_from_transfer_product->id,
-                                
-                                'transfer_qty' => $request->$qty,
-                                'remarks' => $request->$remarks,
-                                'transfer_date'=> $request->date,
-
-                                'transfer_no'=> $request->transfer_no,
-                                'updated_by' => Auth::user()->id
-                            ]);
-
-                            
-                    }else{
-
-                        if ($request->date != $transfer->transfer_date || 
-
-                            $request->$vr_no != $to_transfer_product->id || 
-                            $request->$code != $code_id->name || 
-                            $request->$qty != $transfer->transfer_qty) {
-
-                            $t_history = TransferHistory::create([
-
-                                'from_shelf_number_id' => $transfer->from_shelf_number_id,
-                                'new_from_shelf_number_id' => $transfer->new_from_shelf_number_id,
-                                'to_shelf_number_id' => $transfer->to_shelf_number_id,
-                                'new_to_shelf_number_id' => $transfer->new_to_shelf_number_id,
-
-                                'transfer_date' => $transfer->transfer_date,
-                                'new_transfer_date' => $request->date,
-
-                                'transfer_no' => $transfer->transfer_no,
-                                'new_transfer_no' => $transfer->transfer_no,
-                                
-                                'code_id' => $transfer->code_id,
-                                'new_code_id' => $code_id->id,
-                                
-                                #unclear
-                                'product_id' => $to_transfer_product->id,
-                                'new_product_id' => $request->$vr_no,
-
-                                'transfer_qty' => $transfer->transfer_qty,
-                                'new_transfer_qty' => $request->$qty,
-                    
-                                'remarks' => $transfer->remarks,
-                                'new_remarks' => $request->$remarks,
-                    
-                                'method' => "update",
-                                'created_by' => Auth::user()->id,
-                            ]);
-                        }
-
-                        
-                        #if same product id, update OR reduce to old- add to new
-                        if ($new_from_transfer_product->id && 
-                            $new_from_transfer_product->id == $from_transfer_product->id) {
-                            
-                            $from_transfer_product->update([
-                                'transfer_qty' =>  ($from_transfer_product->transfer_qty- $transfer->transfer_qty) + $request->$qty,
-                                'balance_qty' => ($from_transfer_product->balance_qty+ $transfer->transfer_qty)- $request->$qty,
-                            ]);
-                                
-                                
-                        } else {
-                            $from_transfer_product->update([
-                                'transfer_qty' =>  $from_transfer_product->transfer_qty - $transfer->transfer_qty,
-                                'balance_qty' => $from_transfer_product->balance_qty+ $transfer->transfer_qty,
-                            ]);
-                            // dd($new_from_transfer_product->transfer_qty + $request->$qty);
-                            $new_from_transfer_product->update([
-                                'transfer_qty' =>  $new_from_transfer_product->transfer_qty + $request->$qty,
-                                'balance_qty' => $new_from_transfer_product->balance_qty - $request->$qty,
-                            ]);
-                        }
-
-
-                        $to_transfer_product->update([
-                            'code_id' => $code_id->id,
-
-                            'received_qty' => $request->$qty,
-                            'balance_qty' => $request->$qty,
-                            'remarks' => $request->$remarks,
-                            'received_date'=> $request->date,
-
-                            'voucher_no'=> $new_from_transfer_product->voucher_no,
-                            'supplier_id'=> $new_from_transfer_product->supplier_id,
-                            
-                            'updated_by' => Auth::user()->id
-                        ]);
-
-                        $transfer->update([
-                            'code_id' => $code_id->id,
-                            'product_id' => $new_from_transfer_product->id,
-                            
-                            'transfer_qty' => $request->$qty,
-                            'remarks' => $request->$remarks,
-                            'transfer_date'=> $request->date,
-
-                            'updated_by' => Auth::user()->id
-                        ]);
-                    }
-                
-                }elseif ($transfer &&  $request->$qty && !$request->$code) {
-                    //update disabled transfers(no code_id)
-                    $sum = $to_transfer_product->transfer_qty + 
-                            $to_transfer_product->mr_qty + 
-                            $to_transfer_product->supplier_return_qty;
-
-                        if ($sum <= $request->$qty) {
-
-                            if ($request->$qty != $transfer->transfer_qty || 
-                            $request->date != $transfer->transfer_date ) {
+        DB::transaction(function () use ($request)  {
+            if ($request->from_warehouse_id) {
+                $validator = Validator::make($request->all(),[
+                    "from_warehouse_id" => 'required',
+                    "from_shelfnum_id" => 'required',
+                    "date" => 'required',
+                    "to_warehouse_id" => 'required',
+                    "to_shelfnum_id" => 'required',
+                    "transfer_no" => 'required',
+                ]);
+            }else{
+                $validator = Validator::make($request->all(),[
+                    "date" => 'required',
+                ]);
+            }
     
-                            $t_history = TransferHistory::create([
+            if ($validator->fails())
+            {
+                return Redirect::back()->withInput()
+                                ->with('error', 'Please try again.');
+            }
+    
+            $old_transfer = Transfer::find($request->old_transfer);
+    
+            $newRequest = $request->except(['_token',
+                                            'from_warehouse_id',
+                                            'from_shelfnum_id',
+                                            'to_warehouse_id',
+                                            'to_shelfnum_id',
+                                            'date',
+                                            'transfer_no'
+                                        ]);
+                                        
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'transfer_')) {
+                    $explode = explode("_",$key);
+                    $transfer_id = "transfer_".$explode[1];
+                    $qty = "qty_".$explode[1];
+    
+                    $transfer = Transfer::find($request->$transfer_id);
+                    if ($transfer) {
+                        #from 
+                        $from_transfer_product = Product::find($transfer->product_id);
+                        #find to transferred product
+                        $to_transfer_product = Product::where('transfer_id', $request->$transfer_id)
+                                                    ->first();;
+                    }
+    
+                    if (!$request->$qty) {
+    
+                        $from_transfer_product->update([
+                            'transfer_qty' =>  $from_transfer_product->transfer_qty - $transfer->transfer_qty,
+                            'balance_qty' => $from_transfer_product->balance_qty + $transfer->transfer_qty,
+                        ]);
+                        
+    
+                        $t_history = TransferHistory::create([
+                            'from_shelf_number_id' => $transfer->from_shelf_number_id,
+                            'new_from_shelf_number_id' => $transfer->from_shelf_number_id,
+                            'to_shelf_number_id' => $transfer->to_shelf_number_id,
+                            'new_to_shelf_number_id' => $transfer->to_shelf_number_id,
+    
+                            'transfer_date' => $transfer->transfer_date,
+                            'new_transfer_date' => $transfer->transfer_date,
+    
+                            'transfer_no' => $transfer->transfer_no,
+                            'new_transfer_no' => $transfer->transfer_no,
+                
+                            'method' => "delete",
+                            'created_by' => Auth::user()->id,
+                            
+                            'code_id' => $transfer->code_id,
+                            'new_code_id' => $transfer->code_id,
+                            
+                            #unclear
+                            'product_id' => $to_transfer_product->id,
+                            'new_product_id' => $to_transfer_product->id,
+    
+                            'transfer_qty' => $transfer->transfer_qty,
+                            'new_transfer_qty' => $transfer->transfer_qty,
+                
+                            'remarks' => $transfer->remarks,
+                            'new_remarks' => $transfer->remarks,
+                
+                            'method' => "delete",
+                            'created_by' => Auth::user()->id,
+                        ]);
+    
+                        $to_transfer_product->delete();
+                        $transfer->delete();
+                    }
+    
+            }}
+    
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'qty_')) {
+                    $explode = explode("_",$key);
+                    $code = "code_".$explode[1];
+                    $brand = "brand_".$explode[1];
+                    $commodity = "commodity_".$explode[1];
+                    $qty = "qty_".$explode[1];
+                    $vr_no = "vr_no_".$explode[1];
+                    $remarks = "remark_".$explode[1];
+                    $transfer_id = "transfer_".$explode[1];
+    
+                    $transfer = Transfer::find($request->$transfer_id);
+                    if ($transfer) {
+                        #from 
+                        $from_transfer_product = Product::find($transfer->product_id);
+                    }
+    
+                    
+                    # find to transferred product
+                    $to_transfer_product = Product::where('transfer_id', $request->$transfer_id)
+                                            ->first();
+    
+                    #if from trasnferred product id is new or same?
+                    $check_from_product = Product::find($request->$vr_no);
+    
+                    if ($check_from_product && $check_from_product->transfer_id != null ){
+                        #product throught transfer.product_id
+                        $new_from_transfer_product = Product::where('products.id', $request->$vr_no)
+                                                    ->join('transfers', 'transfers.id', '=' , 'products.transfer_id')
+                                                    ->first(['transfers.product_id as id', 
+                                                            'products.transfer_qty',
+                                                            'products.balance_qty',
+                                                            'products.voucher_no',
+                                                            'products.supplier_id',
+                                                        ]);
+                    }else{
+                        $new_from_transfer_product = Product::where('products.id', $request->$vr_no)
+                                                ->first();
+                    }
+    
+                    #find code id
+                    $code_id = Code::where('name', $request->$code) 
+                                    ->where('brand_id', $request->$brand)
+                                    ->where('commodity_id', $request->$commodity)
+                                    ->first();
+                    
+                    if ($check_from_product && $code_id && $transfer ) {
+                        #if to transferred product is already exist?
+                        $check_to_product = Transfer::where('code_id', $code_id->id)
+                                                    ->where('transfer_no', $transfer->transfer_no)
+                                                    ->where('id', '!=', $transfer->id)
+                                                    ->where('product_id', $transfer->product_id)
+                                                    ->first();
+                        if ($check_to_product) {
+                            return Redirect::back()->withInput()
+                                        ->with('error', "$code_id->name ($check_to_product->transfer_no) is already in Warehouse.");
+                        }
+                    }
+                    
+                    #update no transfer product
+                    if ($transfer && $request->$code ) {
+    
+                        if ($request->from_shelfnum_id) {
+                            if ($request->from_shelfnum_id != $transfer->from_shelf_number_id || 
+                                $request->to_shelfnum_id != $transfer->to_shelf_number_id || 
+                                $request->transfer_no != $transfer->transfer_no || 
+                                $request->date != $transfer->transfer_date || 
+    
+                                $request->$vr_no != $to_transfer_product->id || 
+                                $request->$code != $code_id->name || 
+                                $request->$qty != $transfer->transfer_qty) {
+    
+                                $t_history = TransferHistory::create([
     
                                     'from_shelf_number_id' => $transfer->from_shelf_number_id,
-                                    'new_from_shelf_number_id' => $transfer->from_shelf_number_id,
+                                    'new_from_shelf_number_id' => $request->from_shelfnum_id,
                                     'to_shelf_number_id' => $transfer->to_shelf_number_id,
-                                    'new_to_shelf_number_id' => $transfer->to_shelf_number_id,
+                                    'new_to_shelf_number_id' => $request->to_shelfnum_id,
     
                                     'transfer_date' => $transfer->transfer_date,
                                     'new_transfer_date' => $request->date,
     
                                     'transfer_no' => $transfer->transfer_no,
-                                    'new_transfer_no' => $transfer->transfer_no,
+                                    'new_transfer_no' => $request->transfer_no,
                                     
                                     'code_id' => $transfer->code_id,
-                                    'new_code_id' => $transfer->code_id,
+                                    'new_code_id' => $code_id->id,
                                     
                                     #unclear
                                     'product_id' => $to_transfer_product->id,
-                                    'new_product_id' => $to_transfer_product->id,
+                                    'new_product_id' => $request->$vr_no,
     
                                     'transfer_qty' => $transfer->transfer_qty,
                                     'new_transfer_qty' => $request->$qty,
@@ -823,77 +624,51 @@ class TransferController extends Controller
                                     'method' => "update",
                                     'created_by' => Auth::user()->id,
                                 ]);
-                        }
-                          
-                            $from_transfer_product->update([
-                                'transfer_qty' =>  ($from_transfer_product->transfer_qty- $transfer->transfer_qty) + $request->$qty,
-                                'balance_qty' => ($from_transfer_product->balance_qty+ $transfer->transfer_qty)- $request->$qty,
-                            ]);
+                            }
+    
+                            #if same product id, update OR reduce to old- add to new
+                            if ($new_from_transfer_product->id && 
+                                $new_from_transfer_product->id == $from_transfer_product->id) {
+                                
+                                $from_transfer_product->update([
+                                    'transfer_qty' =>  ($from_transfer_product->transfer_qty- $transfer->transfer_qty) + $request->$qty,
+                                    'balance_qty' => ($from_transfer_product->balance_qty+ $transfer->transfer_qty)- $request->$qty,
+                                ]);
+                                    
+                                    
+                            } else {
+                                $from_transfer_product->update([
+                                    'transfer_qty' =>  $from_transfer_product->transfer_qty - $transfer->transfer_qty,
+                                    'balance_qty' => $from_transfer_product->balance_qty+ $transfer->transfer_qty,
+                                ]);
+                                // dd($new_from_transfer_product->transfer_qty + $request->$qty);
+                                $new_from_transfer_product->update([
+                                    'transfer_qty' =>  $new_from_transfer_product->transfer_qty + $request->$qty,
+                                    'balance_qty' => $new_from_transfer_product->balance_qty - $request->$qty,
+                                ]);
+                            }
     
                             $to_transfer_product->update([
-                                'received_qty' => $request->$qty,
-                                'balance_qty' => $request->$qty,
-                                'remarks' => $request->$remarks,
-                                'received_date'=> $request->date,
+                                    'shelf_number_id'=> $request->to_shelfnum_id,
+                                    'code_id' => $code_id->id,
     
-                                'voucher_no'=> $from_transfer_product->voucher_no,
-                                'supplier_id'=> $from_transfer_product->supplier_id,
-                                
-                                'updated_by' => Auth::user()->id
-                            ]);
+                                    'received_qty' => $request->$qty,
+                                    'balance_qty' => $request->$qty,
+                                    'remarks' => $request->$remarks,
+                                    'received_date'=> $request->date,
     
-                            $transfer->update([
-                                'transfer_qty' => $request->$qty,
-                                'remarks' => $request->$remarks,
-                                'transfer_date'=> $request->date,
+                                    'voucher_no'=> $new_from_transfer_product->voucher_no,
+                                    'supplier_id'=> $new_from_transfer_product->supplier_id,
+                                    
+                                    'updated_by' => Auth::user()->id
+                                ]);
     
-                                'updated_by' => Auth::user()->id
-                            ]);
-                        }
-
-
-                    
-                }else{
-                    #no transfer product and new product
-                    $check_transfer = Transfer::where('code_id', $code_id->id)
-                                            ->where('transfer_no', $old_transfer->transfer_no)
-                                            ->where('product_id', $check_from_product->id)
-                                            ->first();
-
-
-                    if (!$check_transfer) {
-                        if ($request->shelfnum_id) {
-                            
-                            do {
-                                #random number
-                                $number = mt_rand(100000000, 999999999);
-                                $check_barcode = Product::where('barcode', $number)->first();
-    
-                            } while ($check_barcode);
-
-                            $transfer_product = Product::create([
-                                'code_id' => $check_from_product->code_id,
-                                'unit_id' => $check_from_product->unit_id,
-                                'type' => 'transfer',
-                                'barcode' => $number,
-                                'received_qty' => $request->$qty,
-                                'balance_qty' => $request->$qty,
-        
-                                'remarks' => $request->$remarks,
-                                'shelf_number_id'=> $request->to_shelfnum_id,
-                                'received_date'=> $request->date,
-                                'voucher_no'=> $check_from_product->voucher_no,
-        
-                                'supplier_id'=> $check_from_product->supplier_id,
-                                'created_by'=> Auth::user()->id,
-            
-                            ]);
-                            $new_transfer = Transfer::create([
+                                $transfer->update([
                                     'from_shelf_number_id'=> $request->from_shelfnum_id,
                                     'to_shelf_number_id'=> $request->to_shelfnum_id,
     
                                     'code_id' => $code_id->id,
-                                    'product_id' => $request->$vr_no,
+                                    'product_id' => $new_from_transfer_product->id,
                                     
                                     'transfer_qty' => $request->$qty,
                                     'remarks' => $request->$remarks,
@@ -901,87 +676,282 @@ class TransferController extends Controller
     
                                     'transfer_no'=> $request->transfer_no,
                                     'updated_by' => Auth::user()->id
-            
-                            ]);
-                                
-                            if ($check_from_product->balance_qty >= $request->$qty) {
-                                # code...
-                                $check_from_product->update([
-                                    'balance_qty' => $check_from_product->balance_qty - $request->$qty,
-                                    'transfer_qty' => $request->$qty,
                                 ]);
-        
-                                $transfer_product->update([
-                                    'transfer_id' => $transfer->id,
-                                ]);
-        
-                            }else{
-                                return Redirect::back()->withInput()
-                                    ->with('error', "$code_name->name'balance($check_from_product->balance_qty) is lower than Request Qty.");
-                            }
-
-                        }else{
-
-                            do {
-                                #random number
-                                $number = mt_rand(100000000, 999999999);
-                                $check_barcode = Product::where('barcode', $number)->first();
     
-                            } while ($check_barcode);
-
-                            $transfer_product = Product::create([
-                                'code_id' => $check_from_product->code_id,
-                                'unit_id' => $check_from_product->unit_id,
-                                'type' => 'transfer',
-                                'barcode' => $number,
+                                
+                        }else{
+    
+                            if ($request->date != $transfer->transfer_date || 
+    
+                                $request->$vr_no != $to_transfer_product->id || 
+                                $request->$code != $code_id->name || 
+                                $request->$qty != $transfer->transfer_qty) {
+    
+                                $t_history = TransferHistory::create([
+    
+                                    'from_shelf_number_id' => $transfer->from_shelf_number_id,
+                                    'new_from_shelf_number_id' => $transfer->new_from_shelf_number_id,
+                                    'to_shelf_number_id' => $transfer->to_shelf_number_id,
+                                    'new_to_shelf_number_id' => $transfer->new_to_shelf_number_id,
+    
+                                    'transfer_date' => $transfer->transfer_date,
+                                    'new_transfer_date' => $request->date,
+    
+                                    'transfer_no' => $transfer->transfer_no,
+                                    'new_transfer_no' => $transfer->transfer_no,
+                                    
+                                    'code_id' => $transfer->code_id,
+                                    'new_code_id' => $code_id->id,
+                                    
+                                    #unclear
+                                    'product_id' => $to_transfer_product->id,
+                                    'new_product_id' => $request->$vr_no,
+    
+                                    'transfer_qty' => $transfer->transfer_qty,
+                                    'new_transfer_qty' => $request->$qty,
+                        
+                                    'remarks' => $transfer->remarks,
+                                    'new_remarks' => $request->$remarks,
+                        
+                                    'method' => "update",
+                                    'created_by' => Auth::user()->id,
+                                ]);
+                            }
+    
+                            
+                            #if same product id, update OR reduce to old- add to new
+                            if ($new_from_transfer_product->id && 
+                                $new_from_transfer_product->id == $from_transfer_product->id) {
+                                
+                                $from_transfer_product->update([
+                                    'transfer_qty' =>  ($from_transfer_product->transfer_qty- $transfer->transfer_qty) + $request->$qty,
+                                    'balance_qty' => ($from_transfer_product->balance_qty+ $transfer->transfer_qty)- $request->$qty,
+                                ]);
+                                    
+                                    
+                            } else {
+                                $from_transfer_product->update([
+                                    'transfer_qty' =>  $from_transfer_product->transfer_qty - $transfer->transfer_qty,
+                                    'balance_qty' => $from_transfer_product->balance_qty+ $transfer->transfer_qty,
+                                ]);
+                                // dd($new_from_transfer_product->transfer_qty + $request->$qty);
+                                $new_from_transfer_product->update([
+                                    'transfer_qty' =>  $new_from_transfer_product->transfer_qty + $request->$qty,
+                                    'balance_qty' => $new_from_transfer_product->balance_qty - $request->$qty,
+                                ]);
+                            }
+    
+    
+                            $to_transfer_product->update([
+                                'code_id' => $code_id->id,
+    
                                 'received_qty' => $request->$qty,
                                 'balance_qty' => $request->$qty,
-        
                                 'remarks' => $request->$remarks,
-                                'shelf_number_id'=> $old_transfer->to_shelf_number_id,
                                 'received_date'=> $request->date,
-                                'voucher_no'=> $check_from_product->voucher_no,
-        
-                                'supplier_id'=> $check_from_product->supplier_id,
-                                'created_by'=> Auth::user()->id,
-            
-                            ]);
-                            $new_transfer = Transfer::create([
     
-                                    'code_id' => $code_id->id,
-                                    'product_id' => $request->$vr_no,
+                                'voucher_no'=> $new_from_transfer_product->voucher_no,
+                                'supplier_id'=> $new_from_transfer_product->supplier_id,
+                                
+                                'updated_by' => Auth::user()->id
+                            ]);
+    
+                            $transfer->update([
+                                'code_id' => $code_id->id,
+                                'product_id' => $new_from_transfer_product->id,
+                                
+                                'transfer_qty' => $request->$qty,
+                                'remarks' => $request->$remarks,
+                                'transfer_date'=> $request->date,
+    
+                                'updated_by' => Auth::user()->id
+                            ]);
+                        }
+                    
+                    }elseif ($transfer &&  $request->$qty && !$request->$code) {
+                        //update disabled transfers(no code_id)
+                        $sum = $to_transfer_product->transfer_qty + 
+                                $to_transfer_product->mr_qty + 
+                                $to_transfer_product->supplier_return_qty;
+    
+                            if ($sum <= $request->$qty) {
+    
+                                if ($request->$qty != $transfer->transfer_qty || 
+                                $request->date != $transfer->transfer_date ) {
+        
+                                $t_history = TransferHistory::create([
+        
+                                        'from_shelf_number_id' => $transfer->from_shelf_number_id,
+                                        'new_from_shelf_number_id' => $transfer->from_shelf_number_id,
+                                        'to_shelf_number_id' => $transfer->to_shelf_number_id,
+                                        'new_to_shelf_number_id' => $transfer->to_shelf_number_id,
+        
+                                        'transfer_date' => $transfer->transfer_date,
+                                        'new_transfer_date' => $request->date,
+        
+                                        'transfer_no' => $transfer->transfer_no,
+                                        'new_transfer_no' => $transfer->transfer_no,
+                                        
+                                        'code_id' => $transfer->code_id,
+                                        'new_code_id' => $transfer->code_id,
+                                        
+                                        #unclear
+                                        'product_id' => $to_transfer_product->id,
+                                        'new_product_id' => $to_transfer_product->id,
+        
+                                        'transfer_qty' => $transfer->transfer_qty,
+                                        'new_transfer_qty' => $request->$qty,
+                            
+                                        'remarks' => $transfer->remarks,
+                                        'new_remarks' => $request->$remarks,
+                            
+                                        'method' => "update",
+                                        'created_by' => Auth::user()->id,
+                                    ]);
+                            }
+                              
+                                $from_transfer_product->update([
+                                    'transfer_qty' =>  ($from_transfer_product->transfer_qty- $transfer->transfer_qty) + $request->$qty,
+                                    'balance_qty' => ($from_transfer_product->balance_qty+ $transfer->transfer_qty)- $request->$qty,
+                                ]);
+        
+                                $to_transfer_product->update([
+                                    'received_qty' => $request->$qty,
+                                    'balance_qty' => $request->$qty,
+                                    'remarks' => $request->$remarks,
+                                    'received_date'=> $request->date,
+        
+                                    'voucher_no'=> $from_transfer_product->voucher_no,
+                                    'supplier_id'=> $from_transfer_product->supplier_id,
                                     
+                                    'updated_by' => Auth::user()->id
+                                ]);
+        
+                                $transfer->update([
                                     'transfer_qty' => $request->$qty,
                                     'remarks' => $request->$remarks,
                                     'transfer_date'=> $request->date,
-                                    'from_shelf_number_id'=> $old_transfer->from_shelf_number_id,
-                                    'to_shelf_number_id'=> $old_transfer->to_shelf_number_id,
-    
-                                    'transfer_no'=> $request->transfer_no,
-                                    'created_by' => Auth::user()->id
-            
-                            ]);
-                                
-                            if ($check_from_product->balance_qty >= $request->$qty) {
-                                $check_from_product->update([
-                                    'balance_qty' => $check_from_product->balance_qty - $request->$qty,
-                                    'transfer_qty' => $request->$qty,
-                                ]);
         
-                                $transfer_product->update([
-                                    'transfer_id' => $new_transfer->id,
+                                    'updated_by' => Auth::user()->id
                                 ]);
-        
-                            }else{
-                                return Redirect::back()->withInput()
-                                    ->with('error', "$code_id->name'balance($check_from_product->balance_qty) is lower than Request Qty.");
                             }
+    
+    
+                        
+                    }else{
+                        #no transfer product and new product
+                        $check_transfer = Transfer::where('code_id', $code_id->id)
+                                                ->where('transfer_no', $old_transfer->transfer_no)
+                                                ->where('product_id', $check_from_product->id)
+                                                ->first();
+    
+    
+                        if (!$check_transfer) {
+                            if ($request->shelfnum_id) {
+
+                                $transfer_product = Product::create([
+                                    'code_id' => $check_from_product->code_id,
+                                    'unit_id' => $check_from_product->unit_id,
+                                    'type' => 'transfer',
+                                    'received_qty' => $request->$qty,
+                                    'balance_qty' => $request->$qty,
+            
+                                    'remarks' => $request->$remarks,
+                                    'shelf_number_id'=> $request->to_shelfnum_id,
+                                    'received_date'=> $request->date,
+                                    'voucher_no'=> $check_from_product->voucher_no,
+            
+                                    'supplier_id'=> $check_from_product->supplier_id,
+                                    'created_by'=> Auth::user()->id,
+                
+                                ]);
+                                $new_transfer = Transfer::create([
+                                        'from_shelf_number_id'=> $request->from_shelfnum_id,
+                                        'to_shelf_number_id'=> $request->to_shelfnum_id,
+        
+                                        'code_id' => $code_id->id,
+                                        'product_id' => $request->$vr_no,
+                                        
+                                        'transfer_qty' => $request->$qty,
+                                        'remarks' => $request->$remarks,
+                                        'transfer_date'=> $request->date,
+        
+                                        'transfer_no'=> $request->transfer_no,
+                                        'updated_by' => Auth::user()->id
+                
+                                ]);
+                                    
+                                if ($check_from_product->balance_qty >= $request->$qty) {
+                                    # code...
+                                    $check_from_product->update([
+                                        'balance_qty' => $check_from_product->balance_qty - $request->$qty,
+                                        'transfer_qty' => $request->$qty,
+                                    ]);
+            
+                                    $transfer_product->update([
+                                        'transfer_id' => $transfer->id,
+                                    ]);
+            
+                                }else{
+                                    return Redirect::back()->withInput()
+                                        ->with('error', "$code_name->name'balance($check_from_product->balance_qty) is lower than Request Qty.");
+                                }
+    
+                            }else{
+    
+                                $transfer_product = Product::create([
+                                    'code_id' => $check_from_product->code_id,
+                                    'unit_id' => $check_from_product->unit_id,
+                                    'type' => 'transfer',
+                                    'received_qty' => $request->$qty,
+                                    'balance_qty' => $request->$qty,
+            
+                                    'remarks' => $request->$remarks,
+                                    'shelf_number_id'=> $old_transfer->to_shelf_number_id,
+                                    'received_date'=> $request->date,
+                                    'voucher_no'=> $check_from_product->voucher_no,
+            
+                                    'supplier_id'=> $check_from_product->supplier_id,
+                                    'created_by'=> Auth::user()->id,
+                
+                                ]);
+                                $new_transfer = Transfer::create([
+        
+                                        'code_id' => $code_id->id,
+                                        'product_id' => $request->$vr_no,
+                                        
+                                        'transfer_qty' => $request->$qty,
+                                        'remarks' => $request->$remarks,
+                                        'transfer_date'=> $request->date,
+                                        'from_shelf_number_id'=> $old_transfer->from_shelf_number_id,
+                                        'to_shelf_number_id'=> $old_transfer->to_shelf_number_id,
+        
+                                        'transfer_no'=> $request->transfer_no,
+                                        'created_by' => Auth::user()->id
+                
+                                ]);
+                                    
+                                if ($check_from_product->balance_qty >= $request->$qty) {
+                                    $check_from_product->update([
+                                        'balance_qty' => $check_from_product->balance_qty - $request->$qty,
+                                        'transfer_qty' => $request->$qty,
+                                    ]);
+            
+                                    $transfer_product->update([
+                                        'transfer_id' => $new_transfer->id,
+                                    ]);
+            
+                                }else{
+                                    return Redirect::back()->withInput()
+                                        ->with('error', "$code_id->name'balance($check_from_product->balance_qty) is lower than Request Qty.");
+                                }
+                            }
+    
                         }
-
+    
                     }
-
-                }
-        }};
+            }};
+        });
 
         return redirect()->route('transfers.index')->with('success', 'Transfer was successfully updated');
     }
@@ -1021,10 +991,13 @@ class TransferController extends Controller
             $code = Code::find($transfer->code_id); 
             $brand = Brand::find(optional($code)->brand_id); 
             $commodity = Commodity::find(optional($code)->commodity_id); 
+            
+            $created_by = User::find($transfer->created_by); 
+            $updated_by = User::find($transfer->updated_by); 
                                 
             $transfers[$i] = [
                 "No" => $i + 1,
-                "Date" => $transfer->received_date,
+                "Date" => $transfer->transfer_date,
                 "Transfer_No" => $transfer->transfer_no,
                 "Warehouse From"  => optional($from_warehouse)->name,
                 "Warehouse To"  => optional($to_warehouse)->name,
@@ -1036,6 +1009,8 @@ class TransferController extends Controller
                 "Transfer Qty" => $transfer->transfer_qty,
                 "Transfer No"  => $transfer->transfer_no,
                 "Remarks" => $transfer->remarks,
+                "Created By"  => optional($created_by)->user_name,
+                "Updated By"  => optional($updated_by)->user_name,
                 
             ];
         }

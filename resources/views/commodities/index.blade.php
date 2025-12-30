@@ -39,10 +39,10 @@
             <form action="" method="GET">
 
               <div class="row d-flex justify-content-between">
-                  <div class="col-4">
+                <div class="col-4">
                     <div class="form-group">
                       <label for="commodity">Commodity</label>
-
+                     <div >
                       <select id='commodity' name="commodity_id" class=" form-control">
                         <option value="" disabled selected>Choose Commodity</option>
                         @foreach ($s_commodities as $s_commodity)
@@ -60,6 +60,9 @@
 
                     </div>
                   </div>
+
+                
+                </div>
 
                 <div class="col-6 d-flex justify-content-end">
                     <div class="col-2">

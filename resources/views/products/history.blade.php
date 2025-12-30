@@ -18,12 +18,72 @@
     <div class="row">
       <div class="col-12">
         <div class="card">
+
+           <div class="card-header">
+            {{-- form --}}
+           
+            <form action="" method="GET">
+
+              <div class="row d-flex justify-content-around">
+                 
+                  {{-- From Date --}}
+                  <div class="col-2">
+                    <div class="form-group">
+                      <label for="from_date">From Date</label>
+
+                      <div style="width: 80%">
+                          @if(isset($_REQUEST['from_date']) && !empty($_REQUEST['from_date']))
+                            @php
+                                $new_from_date = date('Y-m-d', strtotime($_REQUEST['from_date']));
+                            @endphp
+                            <input type="date" value={{$new_from_date}} name="from_date" class="form-control"  id="from_date">
+                          @else
+                            <input type="date" name="from_date" class="form-control"  id="from_date">
+                          @endif
+                      </div>
+
+                    </div>
+                  </div>
+                  {{-- To date --}}
+                  <div class="col-2">
+                    <div class="form-group">
+                      <label for="to_date">To Date</label>
+
+                      <div style="width: 80%">
+                        @if(isset($_REQUEST['to_date']) && !empty($_REQUEST['to_date']))
+                          @php
+                              $new_to_date = date('Y-m-d', strtotime($_REQUEST['to_date']));
+                          @endphp
+                          <input type="date" value={{$new_to_date}} name="to_date" class="form-control"  id="to_date">
+                        @else
+                          <input type="date" name="to_date" class="form-control"  id="to_date">
+                        @endif
+                      </div>
+
+                    </div>
+                  </div>
+
+                  <div class="col-1">
+                      <div class="form-group mt-4">
+                        <button class="btn btn-primary" type="submit" name="search">Search</button>
+                      </div>
+                  </div>
+                  
+                  <div class="col"></div>
+
+              </div>
+            </form>
+
+          </div>
+
           <!-- /.card-header -->
           <div class="card-body" style="overflow-x: scroll;">
-            <table id="example2" class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover">
               <thead>
                 <tr>
                   <th>No</th>
+                  <th>Action</th>
+                  
                   <th>Date</th>
                   <th>New Date</th>
 
@@ -54,12 +114,15 @@
 
                   <th>Remark</th>
                   <th>New Remark</th>
-                  <th>Action</th>
+
+                  <th>Created By</th>
+                  <th>Updated By</th>
+                  
                 </tr>
               </thead>
               <tbody>
                 @php
-                    $i = 0;
+                    $i = $histories->firstItem() - 1;
                 @endphp
                 @foreach ($histories as $history)
                 @php
@@ -95,9 +158,19 @@
 
                   $supplier = \App\Models\Supplier::find($history->supplier_id);
                   $new_supplier = \App\Models\Supplier::find($history->new_supplier_id);
+
+                  $created_by = \App\Models\User::find($history->created_by); 
+                  $updated_by = \App\Models\User::find($history->updated_by); 
                 @endphp
                   <tr>
                       <td>{{  $i }}</td>
+                      <td >
+                            @if ($history->method == 'update')
+                                <span class="badge badge-pill fs-6 " style="background-color: rgb(127, 255, 180)">{{ $history->method }}</span>
+                            @else
+                                <span class="badge badge-pill fs-6" style="background-color: rgb(250, 171, 171)" >{{ $history->method }}</span>
+                            @endif 
+                      </td>
                       <td>{{ $history->received_date }}</td>
                       <td>{{ $history->new_received_date }}</td>
                       <td>{{ optional($shelf_no)->name }} ( {{ optional($shelf_no)->shelf_name }})</td>
@@ -125,55 +198,94 @@
 
                       <td>{{ $history->remarks }}</td>
                       <td>{{ $history->new_remark }}</td>
-                      <td >
-                            @if ($history->method == 'update')
-                                <span class="badge badge-pill fs-6 " style="background-color: rgb(127, 255, 180)">{{ $history->method }}</span>
-                            @else
-                                <span class="badge badge-pill fs-6" style="background-color: rgb(250, 171, 171)" >{{ $history->method }}</span>
-                            @endif 
-                      </td>
+                      <td>{{ optional($created_by)->user_name  }}</td>
+                      <td>{{ optional($updated_by)->user_name  }}</td>
                   </tr>
                 @endforeach
               </tbody>
 
               <tfoot>
-              <tr>
-                <th>No</th>
-                <th>Date</th>
-                <th>New Date</th>
-                <th>Shelf Number</th>
-                <th>New Shelf Number</th>
+                <tr>
+                  <th>No</th>
+                  <th>Action</th>
+                  
+                  <th>Date</th>
+                  <th>New Date</th>
+                  <th>Shelf Number</th>
+                  <th>New Shelf Number</th>
 
-                <th>Code</th>
-                <th>New Code</th>
+                  <th>Code</th>
+                  <th>New Code</th>
 
-                <th>Unit</th>
-                <th>New Unit</th>
+                  <th>Unit</th>
+                  <th>New Unit</th>
 
-                <th>Received Qty</th>
-                <th>New Received Qty</th>
+                  <th>Received Qty</th>
+                  <th>New Received Qty</th>
 
-                <th>Balance</th>
-                <th>Transfer Qty</th>
-                <th>MR Qty</th>
-                <th>MRR Qty</th>
-                <th>SupplierReturn Qty</th>
+                  <th>Balance</th>
+                  <th>Transfer Qty</th>
+                  <th>MR Qty</th>
+                  <th>MRR Qty</th>
+                  <th>SupplierReturn Qty</th>
 
-                <th>Sub Adjustment</th>
-                <th>Add Adjustment</th>
-                <th>Transfer No</th>
+                  <th>Sub Adjustment</th>
+                  <th>Add Adjustment</th>
+                  <th>Transfer No</th>
 
-                <th>Supplier</th>
-                <th>New Supplier</th>
+                  <th>Supplier</th>
+                  <th>New Supplier</th>
 
-                <th>Remark</th>
-                <th>New Remark</th>
-                <th>Action</th>
-              </tr>
+                  <th>Remark</th>
+                  <th>New Remark</th>
+                  
+                  <th>Created By</th>
+                  <th>Updated By</th>
+                </tr>
               </tfoot>
             </table>
           </div>
           <!-- /.card-body -->
+              <div class="card-footer clearfix">
+                  <ul class="pagination pagination-sm m-0 float-right">
+                      <li class="page-item {{ $histories->onFirstPage() ? 'disabled' : '' }}">
+                          <a class="page-link" href="{{ $histories->previousPageUrl() }}">&laquo;</a>
+                      </li>
+                      @php
+                          $numAdjacent = 2; // Number of adjacent page links to display
+                          $start = max(1, $histories->currentPage() - $numAdjacent);
+                          $end = min($start + $numAdjacent * 2, $histories->lastPage());
+                      @endphp
+                      @if($start > 1)
+                          <li class="page-item">
+                              <a class="page-link" href="{{ $histories->url(1) }}">1</a>
+                          </li>
+                          @if($start > 2)
+                              <li class="page-item disabled">
+                                  <span class="page-link">...</span>
+                              </li>
+                          @endif
+                      @endif
+                      @for ($i = $start; $i <= $end; $i++)
+                          <li class="page-item {{ $i === $histories->currentPage() ? 'active' : '' }}">
+                              <a class="page-link" href="{{ $histories->url($i) }}">{{ $i }}</a>
+                          </li>
+                      @endfor
+                      @if($end < $histories->lastPage())
+                          @if($end < $histories->lastPage() - 1)
+                              <li class="page-item disabled">
+                                  <span class="page-link">...</span>
+                              </li>
+                          @endif
+                          <li class="page-item">
+                              <a class="page-link" href="{{ $histories->url($histories->lastPage()) }}">{{ $histories->lastPage() }}</a>
+                          </li>
+                      @endif
+                      <li class="page-item {{ $histories->currentPage() === $histories->lastPage() ? 'disabled' : '' }}">
+                          <a class="page-link" href="{{ $histories->nextPageUrl() }}">&raquo;</a>
+                      </li>
+                  </ul>
+              </div>
         </div>
         <!-- /.card -->
 

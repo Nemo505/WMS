@@ -53,8 +53,8 @@
                     <label for="password">Password update:  <span style="color: rgb(19, 124, 89)">(Choose or Keep blank.)</span></label> 
                     <input type="password" name="password" class="form-control" 
                            id="password" 
-                           pattern=".{8}" 
-                           title="8 characters">
+                          pattern=".{6,8}" 
+                          title="6 to 8 characters">
                   </div>
                 </div>              
                 <div class="col-6">
@@ -71,8 +71,8 @@
               <div class="row">
                 <div class="col-6">
                   <div class="form-group">
-                    <label for="emergency">Emergency<span style="color: red">*</span> </label> 
-                    <input type="text" name="emergency" required class="form-control" 
+                    <label for="emergency">Emergency</label> 
+                    <input type="text" name="emergency" class="form-control" 
                           id="emergency"
                           value="{{ $user->emergency }}"
                           >
@@ -81,7 +81,7 @@
                 <div class="col-6">
                     <div class="form-group">
                         <label for="address">Address<span style="color: red">*</span> </label> 
-                        <textarea name="address" required class="form-control"  rows="4"></textarea>
+                        <textarea name="address" required class="form-control"  rows="4">{{ $user->address }}</textarea>
                     </div>
                 </div>
             </div>
@@ -93,7 +93,7 @@
           <div class="card-footer ">
             <div class="d-flex justify-content-around">
 
-              <a type="" class="btn btn-secondary">Cancel</a>
+              <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
               <button type="submit" class="btn btn-primary">Submit</button>
             </div>
           </div>

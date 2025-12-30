@@ -16,6 +16,10 @@
             Add New
         </a>
     @endif
+    <a href="" type="button" class="btn btn-success" data-toggle="modal" data-target="#import-modal" >
+        <i class="fas fa-upload" style="color: #ffffff;"></i>
+        Import
+     </a>
 
 @endsection
 
@@ -340,6 +344,48 @@
         <!-- /.modal-dialog -->
     </div>
     <!-- /.del modal -->
+    
+    <!--import modal -->
+    <div class="modal fade" id="import-modal">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title">Add Shelf Lists!</h4>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <form method="POST" action="{{ route('shelves.import') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    @csrf
+                    <div class="row">
+                      <div class="col-8">
+                          <div class="form-group ">
+                              <label class="form-label" >Excel</label>
+                              <input type="file"required class="form-control" name="shelves" required>
+                          </div>
+                      </div>
+                      <div class="col-4">
+                          <div class="form-group ">
+                              <label class="form-label">Sample File</label>
+                                <a href="{{ route("shelves.sample")}}" type="button"class="btn btn-success">
+                                    <i class="fas fa-file-download mr-1"></i>Download
+                                </a>
+                          </div>
+                      </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+          </div>
+          <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+     </div>
+  <!-- /.Import modal -->
 
 
 @endsection

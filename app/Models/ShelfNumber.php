@@ -12,4 +12,8 @@ class ShelfNumber extends Model
     use HasFactory, SoftDeletes;
     protected $table = "shelf_numbers";
     protected $guarded = [];
+
+    public function warehouse() { return $this->belongsTo(Warehouse::class); }
+    public function shelf() { return $this->belongsTo(Shelf::class); }
+
 }

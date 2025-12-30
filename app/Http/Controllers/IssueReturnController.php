@@ -21,6 +21,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\IssueReturnsExport;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\DB;
 use Redirect;
 use Auth;
 use Validator;
@@ -38,7 +39,7 @@ class IssueReturnController extends Controller
             return redirect()->back()->with('error','You do not have permission to access this page.');
         }
 
-        $mrrs = IssueReturn::where(function($query) use ($request){
+        $exportQuery = IssueReturn::where(function($query) use ($request){
             if($request->mrr_id){
                 return $query->where('id', $request->mrr_id);
             }
@@ -152,8 +153,7 @@ class IssueReturnController extends Controller
                 return $query->where('issue_return_date', '<=',  $to_date);
             }
         })
-        ->orderbydesc('issue_return_date')
-        ->get();
+        ->orderbydesc('issue_return_date');
 
         $warehouses = Warehouse::get();
         $customers = Customer::get();
@@ -167,9 +167,11 @@ class IssueReturnController extends Controller
                         ->get(['products.voucher_no']);
 
         if ($request->has('export')) {
-            $sort_mrrs = $mrrs->sort();
+            $sort_mrrs = $exportQuery->orderByDesc('issue_return_date')->get();
             return $this->export($sort_mrrs);
         }
+
+        $mrrs = $exportQuery->paginate(10)->appends(request()->query());
 
         return view('issue_returns/index', ['warehouses' => $warehouses,
                                         'customers' => $customers,
@@ -242,84 +244,86 @@ class IssueReturnController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(),[
-            "warehouse_id" => 'required',
-            "shelfnum_id" => 'required',
-            "date" => 'required',
-            "mrr_no" => 'required|unique:issue_returns,mrr_no',
-        ]); 
-        
-        if ($validator->fails())
-        {
-            return Redirect::back()->withInput()
-                                    ->with('error', 'Please try again.');
-        }
-       
-        $newRequest = $request->except(['_token',
-                                    'warehouse_id',
-                                    'shelfnum_id',
-                                    'mrr_no',
-                                    'date'
-                                ]);
-
-        foreach ($newRequest as $key => $value){
-            if (str_contains($key, 'code_')) {
-                $explode = explode("_",$key);
-                $code = "code_".$explode[1];
-                $brand = "brand_".$explode[1];
-                $commodity = "commodity_".$explode[1];
-                $qty = "qty_".$explode[1];
-                $remarks = "remark_".$explode[1];
-                $vr_no = "vr_no_".$explode[1];
-
-                #for new 
-                $issue = Issue::find($request->$vr_no);
-                $code_id = Code::where('name', $request->$code)
-                                    ->where('brand_id', $request->$brand)
-                                    ->where('commodity_id', $request->$commodity)
-                                    ->first();
-                
-                if ($issue) {
-                    # same issue_return no, product exist?
-                    $check_mrr = IssueReturn::where('mrr_no', $request->mrr_no)
-                                        ->where('issue_id', $issue->id)
+        DB::transaction(function () use ($request)  {
+            $validator = Validator::make($request->all(),[
+                "warehouse_id" => 'required',
+                "shelfnum_id" => 'required',
+                "date" => 'required',
+                "mrr_no" => 'required|unique:issue_returns,mrr_no',
+            ]); 
+            
+            if ($validator->fails())
+            {
+                return Redirect::back()->withInput()
+                                        ->with('error', 'Please try again.');
+            }
+           
+            $newRequest = $request->except(['_token',
+                                        'warehouse_id',
+                                        'shelfnum_id',
+                                        'mrr_no',
+                                        'date'
+                                    ]);
+    
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'code_')) {
+                    $explode = explode("_",$key);
+                    $code = "code_".$explode[1];
+                    $brand = "brand_".$explode[1];
+                    $commodity = "commodity_".$explode[1];
+                    $qty = "qty_".$explode[1];
+                    $remarks = "remark_".$explode[1];
+                    $vr_no = "vr_no_".$explode[1];
+                    $do_return = "do_return_".$explode[1];
+    
+                    #for new 
+                    $issue = Issue::find($request->$vr_no);
+                    $code_id = Code::where('name', $request->$code)
+                                        ->where('brand_id', $request->$brand)
+                                        ->where('commodity_id', $request->$commodity)
                                         ->first();
 
-                    if (!$check_mrr) {
-                        
-                        $product = Product::find($issue->product_id);
-                        
-                       
-    
-                        $check_mr_balance = $issue->mr_qty - $issue->mrr_qty;
-                       
-                        
-                        if ($check_mr_balance >= $request->$qty) {
+                    if ($issue) {
+                        # same issue_return no, product exist?
+                        $check_mrr = IssueReturn::where('mrr_no', $request->mrr_no)
+                                            ->where('issue_id', $issue->id)
+                                            ->first();
 
-                            $mrr = IssueReturn::create([
-                                'mrr_no'=> $request->mrr_no,
-                                'mrr_qty'=> $request->$qty,
-                                'issue_return_date'=> $request->date,
-                                'issue_id'=> $issue->id,
-                                'product_id'=> $issue->product_id,
-                                'code_id'=> $issue->code_id,
-                                'remarks' => $request->$remarks,
-                                'created_by'=> Auth::user()->id,
-                            ]);
-
-                            $issue->update([
-                                'mrr_qty'=> $issue->mrr_qty + $request->$qty,
-                            ]);
-                            $product->update([
-                                'mrr_qty'=> $product->mrr_qty + $request->$qty,
-                            ]);
+                        if (!$check_mrr) {
+                            
+                            $product = Product::find($issue->product_id);
+        
+                            $check_mr_balance = $issue->mr_qty - $issue->mrr_qty;
+                           
+                            if ($check_mr_balance >= $request->$qty) {
+                                $mrr = IssueReturn::create([
+                                    'mrr_no'=> $request->mrr_no,
+                                    'mrr_qty'=> $request->$qty,
+                                    'issue_return_date'=> $request->date,
+                                    'issue_id'=> $issue->id,
+                                    'product_id'=> $issue->product_id,
+                                    'code_id'=> $issue->code_id,
+                                    'remarks' => $request->$remarks,
+                                    'do_return' => $request->$do_return,
+                                    'created_by'=> Auth::user()->id,
+                                ]);
     
+                                $issue->update([
+                                    'mrr_qty'=> $issue->mrr_qty + $request->$qty,
+                                ]);
+                                $product->update([
+                                    'mrr_qty'=> $product->mrr_qty + $request->$qty,
+                                    'balance_qty'=> $product->balance_qty + $request->$qty,
+                                ]);
+        
+                            }
                         }
+    
                     }
-
                 }
             }
-        }
+            
+        });
         return redirect()->route('issue_returns.index')->with('success', 'New Issue Return was created successfully');
 
     }
@@ -387,6 +391,7 @@ class IssueReturnController extends Controller
 
                                             'issue_returns.mrr_qty',
                                             'issue_returns.remarks',
+                                            'issue_returns.do_return',
                                             'products.balance_qty',
                                         ]);
 
@@ -432,233 +437,284 @@ class IssueReturnController extends Controller
      */
     public function update(Request $request, Issue $issue)
     {
-        if ($request->from_warehouse_id) {
-            $validator = Validator::make($request->all(),[
-                "warehouse_id" => 'required',
-                "shelfnum_id" => 'required',
-                "date" => 'required',
-                "mrr_no" => 'required',
-            ]);
-        }else{
-            $validator = Validator::make($request->all(),[
-                "date" => 'required',
-            ]);
-        }
-
-        if ($validator->fails())
-        {
-            return Redirect::back()->withInput()
-                            ->with('error', 'Please try again.');
-        }
-
-        $old_mrr = IssueReturn::find($request->old_mrr);
-
-        $newRequest = $request->except(['_token',
-                                        'warehouse_id',
-                                        'shelfnum_id',
-                                        'date',
-                                        'mrr_no',
-                                        'old_mrr'
-                                    ]);
-                                    
-        foreach ($newRequest as $key => $value){
-            if (str_contains($key, 'mrr_')) {
-                $explode = explode("_",$key);
-                $mrr_id = "mrr_".$explode[1];
-                $qty = "qty_".$explode[1];
-
-                $mrr = IssueReturn::find($request->$mrr_id);
-                if ($mrr) {
-                    $issue = Issue::find($mrr->issue_id);
-                    $mrr_product = Product::find($issue->product_id);
-
-                    if ($mrr_product){
-
-                        $mrr_code = Code::find($mrr_product->code_id);
+         DB::transaction(function () use ($request)  {
+            if ($request->from_warehouse_id) {
+                $validator = Validator::make($request->all(),[
+                    "warehouse_id" => 'required',
+                    "shelfnum_id" => 'required',
+                    "date" => 'required',
+                    "mrr_no" => 'required',
+                ]);
+            }else{
+                $validator = Validator::make($request->all(),[
+                    "date" => 'required',
+                ]);
+            }
+    
+            if ($validator->fails())
+            {
+                return Redirect::back()->withInput()
+                                ->with('error', 'Please try again.');
+            }
+    
+            $old_mrr = IssueReturn::find($request->old_mrr);
+    
+            $newRequest = $request->except(['_token',
+                                            'warehouse_id',
+                                            'shelfnum_id',
+                                            'date',
+                                            'mrr_no',
+                                            'old_mrr'
+                                        ]);
+                                        
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'mrr_')) {
+                    $explode = explode("_",$key);
+                    $mrr_id = "mrr_".$explode[1];
+                    $qty = "qty_".$explode[1];
+    
+                    $mrr = IssueReturn::find($request->$mrr_id);
+                    if ($mrr) {
+                        $issue = Issue::find($mrr->issue_id);
+                        $mrr_product = Product::find($issue->product_id);
+    
+                        if ($mrr_product){
+    
+                            $mrr_code = Code::find($mrr_product->code_id);
+                        }
                     }
-                }
-
-                if (!$request->$qty) {
-
-                    $mrr_history = IssueReturnHistory::create([
-                        'mrr_no' => $mrr->mrr_no,
-                        'new_mrr_no' => $mrr->mrr_no,
-
-                        'mrr_qty' => $mrr->mrr_qty,
-                        'new_mrr_qty' => $mrr->mrr_qty,
-
-                        'shelf_number_id' => $issue->shelf_number_id,
-                        'new_shelf_number_id' => $issue->shelf_number_id,
-
-                        'issue_id' => $mrr->issue_id,
-                        'new_issue_id' => $mrr->issue_id,
-
-                        'issue_return_date' => $mrr->issue_return_date,
-                        'new_issue_return_date' => $mrr->issue_return_date,
-
-                        'customer_id' => $issue->customer_id,
-                        'new_customer_id' => $issue->customer_id,
+    
+                    if (!$request->$qty) {
+                        
+                        if ( $mrr_product->balance_qty > $mrr->mrr_qty) {
+                                $mrr_history = IssueReturnHistory::create([
+                                    'mrr_no' => $mrr->mrr_no,
+                                    'new_mrr_no' => $mrr->mrr_no,
             
-                        'remarks' => $mrr->remarks,
-                        'new_remarks' => $mrr->remarks,
+                                    'do_return' => $mrr->do_return,
+                                    'new_do_return' => $mrr->do_return,
+
+                                    'mrr_qty' => $mrr->mrr_qty,
+                                    'new_mrr_qty' => $mrr->mrr_qty,
             
-                        'method' => "delete",
-                        'created_by' => Auth::user()->id,
-                    ]);
-
-                    $issue->update([
-                        'mrr_qty' =>  $issue->mrr_qty - $mrr->mrr_qty,
-                    ]);
-                    $mrr_product->update([
-                        'mrr_qty' =>   $mrr_product->mrr_qty - $mrr->mrr_qty,
-                    ]);
-
-                    $mrr->delete();
-                }
-
-        }}
-
-        foreach ($newRequest as $key => $value){
-            if (str_contains($key, 'qty_')) {
-                $explode = explode("_",$key);
-                $code = "code_".$explode[1];
-                $brand = "brand_".$explode[1];
-                $commodity = "commodity_".$explode[1];
-                $qty = "qty_".$explode[1];
-                $vr_no = "vr_no_".$explode[1];
-                $remarks = "remark_".$explode[1];
-                $mrr_id = "mrr_".$explode[1];
-
-
-                $mrr = IssueReturn::find($request->$mrr_id);
-                $new_issue = Issue::find($request->$vr_no);
-                $new_mrr_product = Product::find($new_issue->product_id);
-
-
-                #update no mrr product
-                if ($mrr && $request->$code ) {
-                    $issue = Issue::find($mrr->issue_id);
-                    $mrr_product = Product::find($issue->product_id);
-
-                    if ($mrr_product){
-                        $mrr_code = Code::find($mrr_product->code_id);
-                        $check_mrr = IssueReturn::where('mrr_no', $request->mrr_no)
-                                            ->where('issue_id', $new_issue->id)
-                                            ->where('id', '!=' , $mrr->id)
-                                            ->first();
-                                            
-                        if (!$check_mrr) {
-                            
-
-                            if ($request->shelfnum_id != $issue->shelf_number_id || 
-                                $request->mrr_no != $mrr->mrr_no || 
-                                $request->date != $mrr->issue_return_date || 
-        
-                                $request->$vr_no != $mrr->issue_id || 
-                                $request->$code != $mrr_code->name || 
-                                $request->$qty != $mrr->mrr_qty) {
-        
-                                    $mrr_history = IssueReturnHistory::create([
-                                        'mrr_no' => $mrr->mrr_no,
-                                        'new_mrr_no' => $request->mrr_no,
-                
-                                        'mrr_qty' => $mrr->mrr_qty,
-                                        'new_mrr_qty' => $request->$qty,
-                
-                                        'shelf_number_id' => $issue->shelf_number_id,
-                                        'new_shelf_number_id' => $request->shelfnum_id,
-                
-                                        'issue_id' => $mrr->issue_id,
-                                        'new_issue_id' => $new_issue->id,
-                
-                                        'issue_return_date' => $mrr->issue_return_date,
-                                        'new_issue_return_date' => $request->date,
-                
-                                        'customer_id' => $issue->customer_id,
-                                        'new_customer_id' => $issue->customer_id,
-                            
-                                        'remarks' => $mrr->remarks,
-                                        'new_remarks' => $request->$remarks,
-                            
-                                        'method' => "update",
-                                        'created_by' => Auth::user()->id,
-                                    ]);
-                                
-                            }
-        
-                            $mrr_product->update([
-                                'mrr_qty' =>  $mrr_product->mrr_qty - $mrr->mrr_qty,
-                            ]);
-                            $issue->update([
-                                'mrr_qty' =>  $issue->mrr_qty - $mrr->mrr_qty,
-                            ]);
-        
-                            #if same product id, update OR reduce to old- add to new
-                            if ($issue->id == $request->$vr_no) {
-                                $mrr_product->update([
-                                    'mrr_qty' =>  $mrr_product->mrr_qty + $request->$qty,
+                                    'shelf_number_id' => $issue->shelf_number_id,
+                                    'new_shelf_number_id' => $issue->shelf_number_id,
+            
+                                    'issue_id' => $mrr->issue_id,
+                                    'new_issue_id' => $mrr->issue_id,
+            
+                                    'issue_return_date' => $mrr->issue_return_date,
+                                    'new_issue_return_date' => $mrr->issue_return_date,
+            
+                                    'customer_id' => $issue->customer_id,
+                                    'new_customer_id' => $issue->customer_id,
+                        
+                                    'remarks' => $mrr->remarks,
+                                    'new_remarks' => $mrr->remarks,
+                        
+                                    'method' => "delete",
+                                    'created_by' => Auth::user()->id,
                                 ]);
+            
                                 $issue->update([
-                                    'mrr_qty' =>  $issue->mrr_qty + $request->$qty,
+                                    'mrr_qty' =>  $issue->mrr_qty - $mrr->mrr_qty,
                                 ]);
-                            }else{
+                          
+                                $mrr_product->update([
+                                    'mrr_qty' =>   $mrr_product->mrr_qty - $mrr->mrr_qty,
+                                    'balance_qty'=> $mrr_product->balance_qty - $mrr->mrr_qty,
+                                ]);
+            
+                                $mrr->delete();
+                        }
+                    }
+    
+            }}
+    
+            foreach ($newRequest as $key => $value){
+                if (str_contains($key, 'qty_')) {
+                    $explode = explode("_",$key);
+                    $code = "code_".$explode[1];
+                    $brand = "brand_".$explode[1];
+                    $commodity = "commodity_".$explode[1];
+                    $qty = "qty_".$explode[1];
+                    $vr_no = "vr_no_".$explode[1];
+                    $remarks = "remark_".$explode[1];
+                    $do_return = "do_return_".$explode[1];
+                    $mrr_id = "mrr_".$explode[1];
+    
+    
+                    $mrr = IssueReturn::find($request->$mrr_id);
+                    $new_issue = Issue::find($request->$vr_no);
+                    $new_mrr_product = Product::find($new_issue->product_id);
+    
+                    #update no mrr product
+                    if ($mrr && $request->$code ) {
+                        $issue = Issue::find($mrr->issue_id);
+                        $mrr_product = Product::find($issue->product_id);
+    
+                        if ($mrr_product){
+                            $mrr_code = Code::find($mrr_product->code_id);
+                            $check_mrr = IssueReturn::where('mrr_no', $request->mrr_no)
+                                                ->where('issue_id', $new_issue->id)
+                                                ->where('id', '!=' , $mrr->id)
+                                                ->first();
+                    
+                            if (!$check_mrr) {
+
+                                if ($request->shelfnum_id != $issue->shelf_number_id || 
+                                    $request->mrr_no != $mrr->mrr_no || 
+                                    $request->date != $mrr->issue_return_date || 
+            
+                                    $request->$vr_no != $mrr->issue_id || 
+                                    $request->$code != $mrr_code->name || 
+                                    $request->$qty != $mrr->mrr_qty) {
+            
+                                        $mrr_history = IssueReturnHistory::create([
+                                            'mrr_no' => $mrr->mrr_no,
+                                            'new_mrr_no' => $request->mrr_no,
+                    
+                                            'do_return' => $mrr->do_return,
+                                            'new_do_return' => $request->$do_return,
+
+                                            'mrr_qty' => $mrr->mrr_qty,
+                                            'new_mrr_qty' => $request->$qty,
+                    
+                                            'shelf_number_id' => $issue->shelf_number_id,
+                                            'new_shelf_number_id' => $request->shelfnum_id,
+                    
+                                            'issue_id' => $mrr->issue_id,
+                                            'new_issue_id' => $new_issue->id,
+                    
+                                            'issue_return_date' => $mrr->issue_return_date,
+                                            'new_issue_return_date' => $request->date,
+                    
+                                            'customer_id' => $issue->customer_id,
+                                            'new_customer_id' => $issue->customer_id,
+                                
+                                            'remarks' => $mrr->remarks,
+                                            'new_remarks' => $request->$remarks,
+                                
+                                            'method' => "update",
+                                            'created_by' => Auth::user()->id,
+                                        ]);
+                                    
+                                }
+                
+                                    #if same product id, update OR reduce to old- add to new
+                                    if ($issue->id == $request->$vr_no) {
+                                        
+                                        if ($mrr_product->balance_qty > $request->$qty) {
+    
+                                            $mrr_product->update([
+                                                'mrr_qty' =>  $mrr_product->mrr_qty - $mrr->mrr_qty,
+                                                'balance_qty' => $mrr_product->balance_qty - $mrr->mrr_qty,
+                                            ]);
+                                            $issue->update([
+                                                'mrr_qty' =>  $issue->mrr_qty - $mrr->mrr_qty,
+                                            ]);
+                                            
+                                            $mrr_product->update([
+                                                'mrr_qty' =>  $mrr_product->mrr_qty + $request->$qty,
+                                                'balance_qty' => $mrr_product->balance_qty + $request->$qty,
+                                            ]);
+                                            $issue->update([
+                                                'mrr_qty' =>  $issue->mrr_qty + $request->$qty,
+                                            ]);
+        
+                                            $mrr->update([
+                                                'mrr_no'=> $request->mrr_no,
+                                                'mrr_qty'=> $request->$qty,
+                                                'issue_return_date'=> $request->date,
+                        
+                                                'issue_id'=> $new_issue->id,
+                                                'product_id'=> $new_issue->product_id,
+                                                'code_id'=> $new_issue->code_id,
+                                                
+                                                'remarks' => $request->$remarks,
+                                                'do_return' => $request->$do_return,
+                                                'created_by'=> Auth::user()->id,
+                                            ]);
+                                        }
+                                        
+    
+                                    }else{
+                                        #enough balace in old product for changing mrr qty
+                                        if ($mrr_product->balance_qty > $mrr->mrr_qty) {
+    
+                                            $mrr_product->update([
+                                                'mrr_qty' =>  $mrr_product->mrr_qty - $mrr->mrr_qty,
+                                                'balance_qty' => $mrr_product->balance_qty - $mrr->mrr_qty,
+                                            ]);
+                                            $issue->update([
+                                                'mrr_qty' =>  $issue->mrr_qty - $mrr->mrr_qty,
+                                            ]);
+    
+                                            $new_mrr_product->update([
+                                                'mrr_qty' =>  $new_mrr_product->mrr_qty + $request->$qty,
+                                                'balance_qty' => $new_mrr_product->balance_qty + $request->$qty,
+                                            ]);
+                                            $new_issue->update([
+                                                'mrr_qty' =>  $new_issue->mrr_qty + $request->$qty,
+                                            ]);
+        
+                                            $mrr->update([
+                                                'mrr_no'=> $request->mrr_no,
+                                                'mrr_qty'=> $request->$qty,
+                                                'issue_return_date'=> $request->date,
+                        
+                                                'issue_id'=> $new_issue->id,
+                                                'product_id'=> $new_issue->product_id,
+                                                'code_id'=> $new_issue->code_id,
+                                                
+                                                'remarks' => $request->$remarks,
+                                                'do_return' => $request->$do_return,
+                                                'created_by'=> Auth::user()->id,
+                                            ]);
+                                        }
+                                    }
+                                
+                                 
+                            }
+                        }
+                    
+                    }else{
+    
+                        $check_mrr = IssueReturn::where('mrr_no', $request->mrr_no)
+                                                ->where('issue_id', $new_issue->id)
+                                                ->first();
+                        if (!$check_mrr) {
+                             #new issue return update
+                            if ($new_mrr_product->mr_qty >= $request->$qty) {
                                 $new_mrr_product->update([
                                     'mrr_qty' =>  $new_mrr_product->mrr_qty + $request->$qty,
+                                    'balance_qty' => $new_mrr_product->balance_qty + $request->$qty,
                                 ]);
                                 $new_issue->update([
                                     'mrr_qty' =>  $new_issue->mrr_qty + $request->$qty,
                                 ]);
-                            }
-                            $mrr->update([
-                                'mrr_no'=> $request->mrr_no,
-                                'mrr_qty'=> $request->$qty,
-                                'issue_return_date'=> $request->date,
         
-                                'issue_id'=> $new_issue->id,
-                                'product_id'=> $new_issue->product_id,
-                                'code_id'=> $new_issue->code_id,
+                                $mrr = IssueReturn::create([
+                                    'mrr_no'=> $request->mrr_no,
+                                    'mrr_qty'=> $request->$qty,
+                                    'issue_return_date'=> $request->date,
+            
+                                    'issue_id'=> $new_issue->id,
+                                    'product_id'=> $new_issue->product_id,
+                                    'code_id'=> $new_issue->code_id,
+            
+                                    'remarks' => $request->$remarks,
+                                    'do_return' => $request->$do_return,
+                                    'created_by'=> Auth::user()->id,
+                                ]);
                                 
-                                'remarks' => $request->$remarks,
-                                'created_by'=> Auth::user()->id,
-                            ]);
+                            }
                         }
+                         
                     }
-                
-                }else{
-
-                    $check_mrr = IssueReturn::where('mrr_no', $request->mrr_no)
-                                            ->where('issue_id', $new_issue->id)
-                                            ->first();
-                    if (!$check_mrr) {
-                         #new issue return update
-                        if ($new_mrr_product->mr_qty >= $request->$qty) {
-                            $new_mrr_product->update([
-                                'mrr_qty' =>  $new_mrr_product->mrr_qty + $request->$qty,
-                            ]);
-                            $new_issue->update([
-                                'mrr_qty' =>  $new_issue->mrr_qty + $request->$qty,
-                            ]);
-    
-                            $mrr = IssueReturn::create([
-                                'mrr_no'=> $request->mrr_no,
-                                'mrr_qty'=> $request->$qty,
-                                'issue_return_date'=> $request->date,
-        
-                                'issue_id'=> $new_issue->id,
-                                'product_id'=> $new_issue->product_id,
-                                'code_id'=> $new_issue->code_id,
-        
-                                'remarks' => $request->$remarks,
-                                'created_by'=> Auth::user()->id,
-                            ]);
-                            
-                        }
-                    }
-                     
-                }
-                
-        }};
-
+                    
+            }};
+         });
         return redirect()->route('issue_returns.index')->with('success', 'Issue Return was successfully updated');
     }
 
@@ -701,13 +757,14 @@ class IssueReturnController extends Controller
               $u_user = User::find($mrr->updated_by); 
   
               $sort_mrrs[$i] = [
-                  "No" =>  count($sort_mrrs) - $i,
+                  "No" => $i + 1,
                   "Date" => $mrr->issue_return_date,
                   "MRR No" => $mrr->mrr_no,
+                  "Do Return" => $mrr->do_return,
                   'Warehouse' => optional($warehouse)->name,
                   "Shelf No" => optional($shelf_number)->name,
                   "Customer" => optional($customer)->name,
-  
+                  
                   "Code" => optional($code)->name,
                   "Brand" => optional($brand)->name,
                   "Commodity" => optional($commodity)->name,
@@ -728,4 +785,134 @@ class IssueReturnController extends Controller
   
           return Excel::download($export, 'mrrs ' . date("Y-m-d") . '.xlsx');
       }
+
+    public function printMrr(Request $request)
+    {
+        $mrr = IssueReturn::with(['issue'])->findOrFail($request->mrr_id);
+        if ($request->filled('mrr_no')) {
+            $mrrs = IssueReturn::with(['code', 'product'])
+                            ->where('mrr_no', $request->mrr_no)
+                            ->get();
+        }else{
+            return back()->withErrors(['error' => 'No MRR number provided.']);
+        }
+
+        $nextSerial = null;
+
+        DB::transaction(function () use (&$mrrs, &$nextSerial) {
+            $existing = $mrrs->first(function ($i) {
+                return !is_null($i->serial_mrr_no) && $i->serial_mrr_no !== '';
+            });
+
+            if ($existing) {
+                $nextSerial = $existing->serial_mrr_no;
+                $nullItems = $mrrs->filter(function ($i) {
+                    return is_null($i->serial_mrr_no) || $i->serial_mrr_no === '';
+                });
+
+                foreach ($nullItems as $item) {
+                    $item->serial_mrr_no = $nextSerial;
+                    $item->save();
+                }
+
+            } else {
+                $latestSerial = DB::table('issue_returns')->lockForUpdate()->max('serial_mrr_no');
+                $nextSerial = $latestSerial ? $latestSerial + 1 : 1;
+
+                IssueReturn::where('mrr_no', $mrrs->first()->mrr_no ?? null)
+                    ->whereNull('serial_mrr_no')
+                    ->update(['serial_mrr_no' => $nextSerial]);
+
+                foreach ($mrrs as $item) {
+                    if (is_null($item->serial_mrr_no)) {
+                        $item->serial_mrr_no = $nextSerial;
+                    }
+                }
+            }
+        });
+
+        $location = null;
+
+        $warehouseName = $mrr->issue->shelfnum->warehouse->name ?? '';
+
+        if (in_array($warehouseName, ['Office', '148 Warehouse', 'Main Warehouse'])) {
+            $location = 'YGN';
+        } elseif ($warehouseName === 'Mandalay') {
+            $location = 'MDY';
+        } else {
+            $location = 'YGN'; 
+        }
+        return view('issue_returns.prints.mrr', [
+            'mrr' => $mrr,
+            'mrrs' => $mrrs,
+            'location' => $location,
+            'serial_no' => $nextSerial,
+        ]);
+    }
+
+    public function printDoReturn(Request $request)
+    {
+        $mrr = IssueReturn::with(['issue'])->findOrFail($request->mrr_id);
+        if ($request->filled('do_return')) {
+            $mrrs = IssueReturn::with(['code', 'product'])
+                            ->where('do_return', $request->do_return)
+                            ->get();
+        }else{
+            return back()->withErrors(['error' => 'No Do Return number provided.']);
+        }
+
+        $nextSerial = null;
+
+        DB::transaction(function () use (&$mrrs, &$nextSerial) {
+            $existing = $mrrs->first(function ($i) {
+                return !is_null($i->serial_do_return) && $i->serial_do_return !== '';
+            });
+
+            if ($existing) {
+                $nextSerial = $existing->serial_do_return;
+                $nullItems = $mrrs->filter(function ($i) {
+                    return is_null($i->serial_do_return) || $i->serial_do_return === '';
+                });
+
+                foreach ($nullItems as $item) {
+                    $item->serial_do_return = $nextSerial;
+                    $item->save();
+                }
+
+            } else {
+                $latestSerial = DB::table('issue_returns')->lockForUpdate()->max('serial_do_return');
+                $nextSerial = $latestSerial ? $latestSerial + 1 : 1;
+
+                IssueReturn::where('do_return', $mrrs->first()->do_return ?? null)
+                    ->whereNull('serial_do_return')
+                    ->update(['serial_do_return' => $nextSerial]);
+
+                foreach ($mrrs as $item) {
+                    if (is_null($item->serial_do_return)) {
+                        $item->serial_do_return = $nextSerial;
+                    }
+                }
+            }
+        });
+
+        $location = null;
+
+        $warehouseName = $mrr->issue->shelfnum->warehouse->name ?? '';
+
+        if (in_array($warehouseName, ['Office', '148 Warehouse', 'Main Warehouse'])) {
+            $location = 'YGN';
+        } elseif ($warehouseName === 'Mandalay') {
+            $location = 'MDY';
+        } else {
+            $location = 'YGN'; 
+        }
+        return view('issue_returns.prints.return', [
+            'mrr' => $mrr,
+            'mrrs' => $mrrs,
+            'location' => $location,
+            'serial_no' => $nextSerial,
+        ]);
+    }
+
+
 }

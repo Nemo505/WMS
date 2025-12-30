@@ -6,6 +6,7 @@ use App\Models\Warehouse;
 use App\Models\Shelf;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Redirect;
 use Auth;
 use Validator;
@@ -52,9 +53,17 @@ class WarehouseController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(),[
-            'name' => 'required|unique:warehouses|max:255',
-            'short_term' => 'required|unique:warehouses|max:255',
+       $validator = Validator::make($request->all(), [
+            'name' => [
+                'required',
+                'max:255',
+                Rule::unique('warehouses')->whereNull('deleted_at')
+            ],
+            'short_term' => [
+                'required',
+                'max:255',
+                Rule::unique('warehouses')->whereNull('deleted_at')
+            ],
         ]);
         
         if ($validator->fails())

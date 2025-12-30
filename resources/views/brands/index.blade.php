@@ -42,26 +42,29 @@
             <form action="" method="GET">
 
               <div class="row d-flex justify-content-between">
-                <div class="col-4">
+                <div class="col-4  ">
+
                     <div class="form-group">
                       <label for="brand">Brand</label>
-
-                      <select id='brand' name="brand_id" class=" form-control">
-                        <option value="" disabled selected>Choose Brand</option>
-                        @foreach ($s_brands as $s_brand)
-                          @if (isset($_REQUEST['brand_id']))
-                              @if ($s_brand->id == $_REQUEST['brand_id'])
-                                  <option value="{{ $s_brand->id }}" selected>{{ $s_brand->name }}</option>
+                        <div >
+                        
+                          <select id='brand' name="brand_id" class=" form-control">
+                            <option value="" disabled selected>Choose Brand</option>
+                            @foreach ($s_brands as $s_brand)
+                              @if (isset($_REQUEST['brand_id']))
+                                  @if ($s_brand->id == $_REQUEST['brand_id'])
+                                      <option value="{{ $s_brand->id }}" selected>{{ $s_brand->name }}</option>
+                                  @else
+                                      <option value="{{ $s_brand->id }}">{{ $s_brand->name }}</option>
+                                  @endif
                               @else
-                                  <option value="{{ $s_brand->id }}">{{ $s_brand->name }}</option>
+                                  <option value="{{ $s_brand->id }}">{{ $s_brand->name }}</option> 
                               @endif
-                          @else
-                              <option value="{{ $s_brand->id }}">{{ $s_brand->name }}</option> 
-                          @endif
-                        @endforeach
-                      </select>
-                  </div>
-                 
+                            @endforeach
+                          </select>
+                          </div >
+                     </div>
+               
                 </div>
 
                 <div class="col-6 d-flex justify-content-end">

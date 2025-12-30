@@ -21,38 +21,6 @@
               <!-- mainform -->
               <div class="row">
                 <div class="col-4">
-                  <div class="form-group ">
-                    <label for="warehouse">Warehouse Name <span style="color: red">*</span></label>
-                    <select id='warehouse' required name="warehouse_id" class="form-control getShelfNum">
-                      @if (!old('warehouse_id'))
-                        <option value="" disabled selected>Choose Warehouse</option>
-                      @endif
-                        
-                      @foreach ($warehouses as $warehouse)
-                      <option value="{{ $warehouse->id }}" 
-                        {{ $warehouse->id == old('warehouse_id') ? 'selected' : '' }}>
-                          {{ $warehouse->name }}</option>
-                      @endforeach
-                        
-                    </select>
-                  </div>
-                </div>
-
-                <div class="col-4">
-                  <div class="form-group">
-                    <div class="form-group ">
-                      <label for="shelfnum">Shelf Number <span style="color: red">*</span></label>
-  
-                      <select id='shelfnum' required name="shelfnum_id" class="form-control">
-                          <option value="" disabled selected>Choose Warehouse First</option>
-                          {{-- AjaxData --}}
-  
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-4">
                   <label for="supplier">Supplier <span style="color: red">*</span></label>
                   <!-- Dropdown --> 
                   <select id='supplier' required name="supplier" class="form-control">
@@ -63,9 +31,6 @@
                       @endforeach
                   </select>
                 </div>
-              </div>
-              
-              <div class="row">
                 <div class="col-4">
                   <div class="form-group">
                     <label for="vr_no">Voucher No <span style="color: red">*</span></label>
@@ -82,19 +47,38 @@
               </div>
               <!-- end mainform -->
 
-              <div class="row my-3 ml-1">
+              <div class="row my-3 ml-1 d-flex justify-content-between">
+                <div class="col-4 d-flex">
                   <button type="button" class="btn btn-primary" id="newColumn" >
                     <i class="fa fa-solid fa-plus" style="color: #ffffff;"></i>
                     Add New
                   </button>
+               
                   <div class="form-check mx-3 my-auto">
                       <input type="checkbox" class="form-check-input" id="checkAll">
                       <label class="form-check-label" for="checkAll">Check all</label>
                   </div>
+      
                   <button type="button" class="btn btn-danger" id="deleteColumn" >
                     <i class="fa fa-trash mx-1"  style="color: #ffffff;"></i>
                     Delete
                   </button>
+                </div>
+
+                <div class="col-8 text-end">
+                  <button  type="button"  class="btn float-right text-white useScanner" style="background-color: rgb(121, 77, 163);">
+                    <i class="fas fa-barcode mx-1" style="color: #ffffff;"></i>
+                    Use Scanner
+                  </button>
+
+                  <div class="d-flex align-items-center" >
+                    <span class="form-control" id="text_scan" style="border: none; box-shadow: none; display: none; color: #dc3545; font-weight: 500; font-size: 13px">
+                      ⚠️ Please enter Supplier and Voucher No before scanning.
+                    </span>
+                    <input type="text" id="scanner" name="scanner" placeholder="scan..." tabindex="1" autofocus class="form-control mr-3" style="display: none; " >
+                  </div>
+                </div>
+
               </div>
 
               <!-- Add New Card -->
@@ -108,26 +92,44 @@
 
                   <div class="col-2">
                     <div class="form-group">
+                        <label for="shelfnum">ShelfNumber <span style="color: red">*</span></label>
+                          <div>
+                            <select id='shelfnum_{{$i}}' required name="shelfnum_{{$i}}" class="form-control">
+                                <option value="" disabled selected>Choose Shelf Number</option>
+                              @foreach ($shelfnums as $shelfnum)
+                                  <option value="{{ $shelfnum->id }}" >{{ $shelfnum->name }} - {{ $shelfnum->shelf_name }} - {{ $shelfnum->warehouse_name }}</option>
+                              @endforeach
+                            </select>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="col-1">
+                    <div class="form-group">
                       <label for="code">Code <span style="color: red">*</span></label>
                       <!-- Dropdown --> 
-                      <select id='code_{{$i}}' required name="code_{{$i}}" class="form-control getCode">
-                        <option value="" disabled selected>Choose Code</option>
-                          @foreach ($codes as $code)
-                              <option value="{{ $code->name }}">
-                                  {{ $code->name }}</option>
-                          @endforeach
-                      </select>
+                      <div>
+                          <select id='code_{{$i}}' required name="code_{{$i}}" class="form-control getCode">
+                            <option value="" disabled selected>Choose Code</option>
+                              @foreach ($codes as $code)
+                                  <option value="{{ $code->name }}">
+                                      {{ $code->name }}</option>
+                              @endforeach
+                          </select>
+                      </div>
                     </div>
                   </div>
 
-                  <div class="col-2">
+                  <div class="col-1">
                     <div class="form-group">
-                      <label for="brand">Brand Name <span style="color: red">*</span></label>
+                      <label for="brand">Brand <span style="color: red">*</span></label>
                       <!-- Dropdown --> 
-                      <select id='brand_{{$i}}' required name="brand_{{$i}}" class=" form-control getBrand ">
-                        <option value="" disabled selected>Choose Brand</option>
-                      
-                      </select>
+                      <div>
+                          <select id='brand_{{$i}}' required name="brand_{{$i}}" class=" form-control getBrand ">
+                            <option value="" disabled selected>Choose Brand</option>
+                          
+                          </select>
+                      </div>
                     </div>
                   </div>
 
@@ -197,15 +199,12 @@
 @section('scripts')
 
 <script>
-  $( "#warehouse" ).ready(function() {
-      // Initialize select2
-      $("#warehouse").select2();
-  });
 
-  $( "#shelfnum" ).ready(function() {
+  $( "#shelfnum_{{$i}}" ).ready(function() {
       // Initialize select2
-      $("#shelfnum").select2();
+      $("#shelfnum_{{$i}}").select2();
   });
+  
   $( "#supplier" ).ready(function() {
       // Initialize select2
       $("#supplier").select2();
@@ -229,39 +228,6 @@
 
 </script>
 
-
-<script>
-  // accessing self numbers under choosen warehouse
-  $('.getShelfNum').on('change', function() {
-      var warehouse_id = this.value;
-      $.ajax({
-          url: "{{ route('products.getShelfNum') }}",
-          type: "GET",
-          data: {
-              "warehouse_id": warehouse_id,
-          },
-          cache: false,
-          success: function(result) {
-            console.log(result);
-              if (result) {
-                  $("#shelfnum").empty();
-                  $("#shelfnum").append(
-                          `<option value="">Choose Shelf Number</option>`
-                      );
-                  $.each(result, function(key, value) {
-                      $("#shelfnum").append(
-                          `<option value="${value.id}">${value.shelfnumName}  (${value.shelfName})</option>`
-                      );
-                  });
-              } else {
-                  $("#shelfnum").empty();
-              }
-          }
-      });
-  });
-     
-</script>
-
 <script>
  
   var codes = '<?php echo $codes ?>'
@@ -269,6 +235,12 @@
 
   // moreCols
    $( "#newColumn" ).click(function() {
+    $( `#shelfnum_${i}`).ready(function() {
+        $(`#shelfnum_${i}`).select2();
+    });
+    $( `#code_${i}`).ready(function() {
+        $(`#code_${i}`).select2();
+    });
     ++i;
       var moreCols = `
                 <div class="row d-flex justify-content-around deleteRow">
@@ -277,29 +249,46 @@
                       <input type="checkbox" class="form-check-input" id="">
                     </div>
                   </div>
-
                   <div class="col-2">
+                      <div class="form-group">
+                        <label for="shelfnum">ShelfNumber <span style="color: red">*</span></label>
+                          <div>
+                            <select id='shelfnum_${i}' required name="shelfnum_${i}" class="form-control">
+                                <option value="" disabled selected>Choose Shelf Number</option>
+                                @foreach ($shelfnums as $shelfnum)
+                                  <option value="{{ $shelfnum->id }}" >{{ $shelfnum->name }} - {{ $shelfnum->shelf_name }} - {{ $shelfnum->warehouse_name }}</option>
+                                @endforeach
+                            </select>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="col-1">
                     <div class="form-group">
                       <label for="code">Code <span style="color: red">*</span></label>
                       <!-- Dropdown --> 
-                      <select id='code_${i}' required name="code_${i}" class="form-control getCode">
-                        <option value="" disabled selected>Choose Code</option>
-                          @foreach ($codes as $code)
-                              <option value="{{ $code->name }}">
-                                  {{ $code->name }}</option>
-                          @endforeach
-                      </select>
+                      <div>
+                          <select id='code_${i}' required name="code_${i}" class="form-control getCode">
+                            <option value="" disabled selected>Choose Code</option>
+                              @foreach ($codes as $code)
+                                  <option value="{{ $code->name }}">
+                                      {{ $code->name }}</option>
+                              @endforeach
+                          </select>
+                      </div>
                     </div>
                   </div>
 
-                  <div class="col-2">
+                  <div class="col-1">
                     <div class="form-group">
-                      <label for="brand">Brand Name <span style="color: red">*</span></label>
+                      <label for="brand">Brand <span style="color: red">*</span></label>
                       <!-- Dropdown --> 
-                      <select id='brand_${i}' required name="brand_${i}" class=" form-control getBrand">
-                        <option value="" disabled selected>Choose Brand</option>
-                       
-                      </select>
+                      <div>
+                          <select id='brand_${i}' required name="brand_${i}" class=" form-control getBrand">
+                            <option value="" disabled selected>Choose Brand</option>
+                           
+                          </select>
+                      </div>
                     </div>
                   </div>
 
@@ -504,8 +493,147 @@
     var deleteRow = $('input:checked').closest('.deleteRow'); 
     deleteRow.empty();
   });
+</script>
 
+<script>
 
+ let isScannerInput = '';
+    
+  $('#scanner').keyup(function() {
+      var value = $('#scanner').val();
+      if (value.length === 8 || value.length === 9) {
+        if (value.length === 9) {
+            value = value.substring(0, 8);
+        }
+          if (isScannerInput === value) {
+              $('#scanner').val('');
+               
+            }else{
+                if ($('#supplier').val() != null && $('#vr_no').val() != '') {
+                  if ($('#scanner').val() != null && $('#scanner').val() != '') {
+                    ++i;
+                        $.ajax({
+                            url: "{{ route('scanners.storeProduct') }}",
+                            type: "GET",
+                            data: {
+                              "barcode": $('#scanner').val(),
+                              "supplier": $("#supplier").val(),
+                              "vr_no": $("#vr_no").val(),
+                            },
+                            cache: false,
+                            success: function (result) {
+                              if (result !== null) {
+            
+                                $('#scanner').val('');
+                                $( ".moreCols" ).append(
+                                  `
+                                  <div class="row d-flex justify-content-around deleteRow">
+                                    <div class="my-auto pl-4 text-center">
+                                      <div class="form-group ">
+                                        <input type="checkbox" class="form-check-input" id="">
+                                      </div>
+                                    </div>
+                  
+                                    <div class="col-2">
+                                        <div class="form-group">
+                                          <label for="shelfnum">ShelfNumber <span style="color: red">*</span></label>
+                                            <div>
+                                              <select id='shelfnum_${i}' required name="shelfnum_${i}" class="form-control">
+                                                  <option value="" disabled selected>Choose Shelf Number</option>
+                                                  @foreach ($shelfnums as $shelfnum)
+                                                    <option value="{{ $shelfnum->id }}" >{{ $shelfnum->name }} - {{ $shelfnum->shelf_name }} - {{ $shelfnum->warehouse_name }}</option>
+                                                  @endforeach
+                                              </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                
+                                    <div class="col-1">
+                                      <div class="form-group">
+                                        <label for="code">Code<span style="color: red">*</span> </label> 
+                                        <!-- Dropdown --> 
+                                        <select id='code_${i}' required name="code_${i}" class="form-control getCode">
+                                          <option value="${result['code'].name}" >${result['code'].name}</option>
+                                        </select>
+                  
+                                      </div>
+                                    </div>
+                
+                                    <div class="col-1">
+                                      <div class="form-group">
+                                        <label for="brand">Brand <span style="color: red">*</span> </label> 
+                                        <!-- Dropdown --> 
+                                        <select id='brand_${i}' required name="brand_${i}" class=" form-control getBrand">
+                                          <option value="${result['code'].brand_id}" >${result['code'].brand_name}</option>
+                                          
+                                        </select>
+                                      </div>
+                                    </div>
+                
+                                    <div class="col-2">
+                                      <div class="form-group">
+                                        <label for="commodity">Commodity<span style="color: red">*</span> </label> 
+                                        <!-- Dropdown --> 
+                                        <select id='commodity_${i}' required name="commodity_${i}" class=" form-control getVr">
+                                          <option value="${result['code'].commodity_id}" >${result['code'].commodity_name}</option>
+                                          
+                                        </select>
+                                      </div>
+                                    </div>
+
+                                    <div class="col-1">
+                                      <div class="form-group">
+                                        <label for="qty">Qty <span style="color: red">*</span></label>
+                                        <input type="number" class="form-control" required id="qty_${i}" name="qty_${i}" step=".01" min=0.01 oninput="validity.valid||(value='');" placeholder="">
+                                      </div>
+                                    </div>
+
+                                    <div class="col-1">
+                                      <div class="form-group">
+                                        <label for="unit_${i}">Unit <span style="color: red">*</span></label>
+                                        <!-- Dropdown --> 
+                                        <select id='unit_${i}' required name="unit_${i}" class=" form-control">
+                                          <option value="" disabled selected>Units</option>
+                                          @foreach ($units as $unit)
+                                              <option value="{{ $unit->id }}">
+                                                  {{ $unit->name }}</option>
+                                          @endforeach
+                                        </select>
+                                      </div>
+                                    </div>
+                
+                                    <div class="col-2">
+                                      <div class="form-group">
+                                        <label for="remark">Remark</label> 
+                                        <input type="text" class="form-control" id="remark_${i}" name="remark_${i}" placeholder="">
+                                      </div>
+                                    </div>
+                
+                                  </div>
+                                  `
+                                )
+                              }
+                            }
+                        });
+                  }else{
+                    $('#scanner').val('');
+                  }
+                }else{
+                  $('#scanner').val('');
+                }
+                isScannerInput = value;
+            }
+      }
+  });
+</script>
+
+<script>
+  $('.useScanner').click(function () {
+    $(this).css('display','none');
+    $('#text_scan').css('display','block');
+    $('#scanner').css('display','block');
+    $('#scanner').focus();
+  })
 </script>
 
 @endsection

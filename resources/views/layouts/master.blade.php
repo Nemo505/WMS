@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="{{ asset('assets/dist/css/adminlte.min.css') }}">
   <!-- Select2 CSS --> 
   <link href="{{ asset('assets/plugins/select2/css/select2.min.css') }}" rel="stylesheet" /> 
+  <link href="{{ asset('assets/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css') }}" rel="stylesheet" /> 
   @yield('css')
 </head>
 <!--
@@ -145,5 +146,7 @@
         });
     });
 </script>
+
+
 </body>
 </html>

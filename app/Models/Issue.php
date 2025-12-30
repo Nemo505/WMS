@@ -11,4 +11,21 @@ class Issue extends Model
    use HasFactory;
     protected $table = "issues";
     protected $guarded = [];
+
+    public function shelfNum() { return $this->belongsTo(ShelfNumber::class, 'shelf_number_id'); } 
+    public function product() { return $this->belongsTo(Product::class); }
+    public function creator() { return $this->belongsTo(User::class, 'created_by'); }
+    public function updater() { return $this->belongsTo(User::class, 'updated_by'); }
+    public function customer() { return $this->belongsTo(Customer::class); }
+    public function department() { return $this->belongsTo(Department::class); }
+
+    public function code() { return $this->belongsTo(Code::class); }
+    protected static function booted()
+    {
+        static::addGlobalScope('activeCode', function ($builder) {
+            $builder->whereHas('code', function ($query) {
+                $query->whereNull('canceled_at');
+            });
+        });
+    }
 }

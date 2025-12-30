@@ -22,6 +22,7 @@ use App\Http\Controllers\AdjustmentController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\BarCodeController;
+use App\Http\Controllers\CanceledCodeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,7 +35,32 @@ use App\Http\Controllers\BarCodeController;
 |
 */
 Auth::routes();
+Route::get('/register', function () {
+    abort(404);
+});
 
+Route::get('cache-clear',function(){
+    Artisan::call('cache:clear');
+    Artisan::call('config:cache');
+    Artisan::call('view:clear');
+    return "Cleared!";
+});
+
+Route::get('migrate',function(){
+   Artisan::call('migrate');
+});
+
+Route::get('seed',function(){
+   Artisan::call('db:seed');
+});
+
+Route::get('migrate-refresh',function(){
+   Artisan::call('migrate:fresh');
+});
+
+Route::get('/linkstorage', function () {
+    Artisan::call('storage:link');
+});
 
 Route::group(['middleware' => 'auth'], function () {
       
@@ -95,6 +121,10 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('/edit', [IssueController::class ,'edit'])->name('issues.edit');
             Route::post('/update', [IssueController::class ,'update'])->name('issues.update');
             Route::get('/delete', [IssueController::class ,'destroy'])->name('issues.delete');
+
+            Route::post('/select-print-do', [IssueController::class ,'printDo'])->name('issues.printDo');
+            Route::get('/select-print-mr', [IssueController::class ,'printMr'])->name('issues.printMr');
+
         });
         
         Route::prefix('issue_returns')->group(function () {
@@ -105,6 +135,9 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('/edit', [IssueReturnController::class ,'edit'])->name('issue_returns.edit');
             Route::post('/update', [IssueReturnController::class ,'update'])->name('issue_returns.update');
             Route::get('/delete', [IssueReturnController::class ,'destroy'])->name('issue_returns.delete');
+            Route::get('/select-print-do-return', [IssueReturnController::class ,'printDoReturn'])->name('issue_returns.printDoReturn');
+            Route::get('/select-print-mrr', [IssueReturnController::class ,'printMrr'])->name('issue_returns.printMrr');
+
             //just for issues products lists
             Route::get('/code-under-shelfnum', [IssueReturnController::class ,'getCode'])->name('issue_returns.getCode');
             Route::get('/issues-lists', [IssueReturnController::class ,'getVr'])->name('issue_returns.getVr');
@@ -140,6 +173,9 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('/store', [ShelfController::class ,'store'])->name('shelves.store');
             Route::post('/update', [ShelfController::class ,'update'])->name('shelves.update');
             Route::get('/delete', [ShelfController::class ,'destroy'])->name('shelves.delete');
+            
+            Route::post('/excel', [ShelfController::class ,'import'])->name('shelves.import');
+            Route::get('/sample', [ShelfController::class ,'sample'])->name('shelves.sample');
         });
         
         Route::prefix('shelf-nums')->group(function () {
@@ -147,7 +183,8 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('/store', [ShelfNumberController::class ,'store'])->name('shelf_nums.store');
             Route::post('/update', [ShelfNumberController::class ,'update'])->name('shelf_nums.update');
             Route::get('/delete', [ShelfNumberController::class ,'destroy'])->name('shelf_nums.delete');
-            //transfers(not create)
+            Route::post('/excel', [ShelfNumberController::class ,'import'])->name('shelf_nums.import');  //transfers(not create)
+            Route::get('/sample', [ShelfNumberController::class ,'sample'])->name('shelf_nums.sample');
             Route::get('/shelves-under-warehouses', [ShelfNumberController::class ,'warehouseShelves'])->name('shelf_nums.getShelf');
         });
         
@@ -158,6 +195,25 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('/delete', [CodeController::class ,'destroy'])->name('codes.delete');
             Route::post('/excel', [CodeController::class ,'import'])->name('codes.import');
             Route::get('/sample', [CodeController::class ,'sample'])->name('codes.sample');
+            Route::post('/cancel', [CodeController::class ,'cancel'])->name('codes.cancel');
+
+
+            #BarCode
+            Route::get('/printBarcode', [CodeController::class ,'printBarcode'])->name('codes.printBarcode');
+            #barcode scanner transfer
+            Route::get('/barcode-store', [BarCodeController::class, 'store'])->name('scanners.store');
+            Route::get('/barcode-store-product', [BarCodeController::class, 'storeProduct'])->name('scanners.storeProduct');
+            Route::get('/barcode-supplier', [BarCodeController::class, 'storeSupplier'])->name('scanners.storeSupplier');
+            #issue
+            Route::get('/barcode-store-mr', [BarCodeController::class, 'storeMR'])->name('scanners.storeMR');
+            #fix
+            Route::get('/barcode-store-mrr', [BarCodeController::class, 'storeMRR'])->name('scanners.storeMRR');
+
+        });
+
+        Route::prefix('canceled')->group(function () {
+            Route::get('/canceled-codes', [CanceledCodeController::class, 'index'])->name('canceled.index');
+            Route::get('/canceled-codes/{code}', [CanceledCodeController::class, 'show'])->name('canceled.show');
         });
         
         
@@ -187,7 +243,6 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('/store', [ProductController::class ,'store'])->name('products.store');
             Route::get('/edit', [ProductController::class ,'edit'])->name('products.edit');
             Route::post('/update', [ProductController::class ,'update'])->name('products.update');
-            Route::get('/printBarcode', [ProductController::class ,'printBarcode'])->name('products.printBarcode');
             //transfer, issues
             Route::get('/shelfno-under-shelf', [ProductController::class ,'getShelfNum'])->name('products.getShelfNum');
             Route::get('/fromCode', [ProductController::class ,'getFromCode'])->name('products.getFromCode');
@@ -196,12 +251,9 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('/excel', [ProductController::class ,'import'])->name('products.import');
             Route::get('/sample', [ProductController::class, 'sample'])->name('products.sample');
 
-            //barcode scanner
-            Route::get('/barcode-scanner', [BarCodeController::class, 'index'])->name('scanners.index');
-            Route::get('/barcode-store', [BarCodeController::class, 'store'])->name('scanners.store');
-            Route::get('/barcode-supplier', [BarCodeController::class, 'storeSupplier'])->name('scanners.storeSupplier');
-            #fix
-            Route::get('/barcode-store-mrr', [BarCodeController::class, 'storeMRR'])->name('scanners.storeMRR');
+            # backup route
+            Route::get('/back-up', [ProductController::class, 'backup'])->name('products.backup');
+
         });
         
         Route::prefix('adjustments')->group(function () {
@@ -226,6 +278,3 @@ Route::group(['middleware' => 'auth'], function () {
 
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-Route::get('migrate',function(){
-    Artisan::call('migrate');
- });

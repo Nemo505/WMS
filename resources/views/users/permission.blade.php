@@ -24,7 +24,7 @@
                             <select class="form-control select2" required name="user" id="user">
                                 <option disabled selected>Select</option>
                                 @foreach ($users as $user)
-                                    @if (!$user->hasRole('admin'))
+                                     @if (!$user->hasRole('admin'))
                                         
                                         @if (isset($_REQUEST['user_id']))
                                             @if ($user->id == $_REQUEST['user_id'])
@@ -280,15 +280,7 @@
                     </div>
 
                     <div class="col-3 mx-auto my-3">
-                        <label class="control-label">BarCode Scanner</label>
-                        @foreach ($permissions as $permission)
-                            @if ($permission->group == 'barcode')
-                                <div class=" form-check mx-3 my-2">
-                                    <input type="checkbox" class="form-check-input" name="{{$permission->name}}">
-                                    <label class="form-check-label" for="permission">{{$permission->display_name}}</label>
-                                </div>
-                            @endif
-                        @endforeach
+                        
                     </div>
 
                 </div>

@@ -52,8 +52,8 @@
                     <label for="password">Password<span style="color: red">*</span> </label> 
                     <input type="password" name="password" required class="form-control" 
                           required id="password" 
-                          pattern=".{8}" 
-                          title="8 characters"
+                          pattern=".{6,8}" 
+                          title="6 to 8 characters"
                           placeholder="Enter Password">
                   </div>
                 </div>              
@@ -69,8 +69,8 @@
               <div class="row">
                 <div class="col-6">
                   <div class="form-group">
-                    <label for="emergency">Emergency<span style="color: red">*</span> </label> 
-                    <input type="text" name="emergency" required class="form-control" id="emergency" placeholder="Enter Emergency Contact">
+                    <label for="emergency">Emergency </label> 
+                    <input type="text" name="emergency" class="form-control" id="emergency" placeholder="Enter Emergency Contact">
                   </div>
                 </div>
                 <div class="col-6">
@@ -88,7 +88,7 @@
           <div class="card-footer ">
             <div class="d-flex justify-content-around">
 
-              <a type="" class="btn btn-secondary">Cancel</a>
+              <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
               <button type="submit" class="btn btn-primary">Submit</button>
             </div>
           </div>
